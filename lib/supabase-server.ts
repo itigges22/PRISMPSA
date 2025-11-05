@@ -2,17 +2,23 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// Check if Supabase is configured
-const isSupabaseConfigured = supabaseUrl && supabaseAnonKey && 
-  supabaseUrl !== 'your-supabase-url' && 
-  supabaseAnonKey !== 'your-anon-key';
+// Check if Supabase is configured (runtime check)
+const isSupabaseConfigured = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return supabaseUrl && supabaseAnonKey && 
+    supabaseUrl !== 'your-supabase-url' && 
+    supabaseAnonKey !== 'your-anon-key';
+};
 
 // Server component Supabase client (for use in server components)
 export const createServerSupabase = async () => {
-  if (!isSupabaseConfigured) return null;
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured: Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    return null;
+  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const cookieStore = await cookies();
   return createServerClient(supabaseUrl!, supabaseAnonKey!, {
     cookies: {
@@ -41,7 +47,13 @@ export const createServerSupabase = async () => {
 // Note: cookies() from next/headers CANNOT be used in Route Handlers (API routes)
 // We must parse cookies from the request headers instead
 export const createApiSupabaseClient = (request: NextRequest) => {
-  if (!isSupabaseConfigured) return null;
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured: Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    return null;
+  }
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   // Parse cookies from request header - this is the correct way for Route Handlers
   const cookieHeader = request.headers.get('cookie') || '';

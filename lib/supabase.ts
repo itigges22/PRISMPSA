@@ -1,20 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// Check if Supabase is configured
-const isSupabaseConfigured = supabaseUrl && supabaseAnonKey && 
-  supabaseUrl !== 'your-supabase-url' && 
-  supabaseAnonKey !== 'your-anon-key';
+// Check if Supabase is configured (runtime check)
+const isSupabaseConfigured = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return supabaseUrl && supabaseAnonKey && 
+    supabaseUrl !== 'your-supabase-url' && 
+    supabaseAnonKey !== 'your-anon-key';
+};
 
 // Singleton client instance to avoid multiple GoTrueClient instances
 let clientInstance: any = null;
 
 // Client component Supabase client (for use in client components)
 export const createClientSupabase = () => {
-  if (!isSupabaseConfigured) return null;
+  if (!isSupabaseConfigured()) return null;
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   // Check if we're in a browser environment (not SSR)
   if (typeof window === 'undefined') {
@@ -29,7 +33,11 @@ export const createClientSupabase = () => {
   
   // Create new instance only if none exists (browser only)
   try {
-    clientInstance = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase environment variables are not set');
+      return null;
+    }
+    clientInstance = createBrowserClient(supabaseUrl, supabaseAnonKey);
     return clientInstance;
   } catch (error) {
     console.error('Error creating Supabase client:', error);
