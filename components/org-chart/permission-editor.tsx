@@ -18,6 +18,7 @@ interface PermissionEditorProps {
   onSave: (permissions: Record<Permission, boolean>) => Promise<boolean>;
   isSystemRole?: boolean;
   disabled?: boolean;
+  hideSaveButton?: boolean; // Hide the "Save Changes" button (used when parent form handles saving)
 }
 
 export function PermissionEditor({
@@ -27,7 +28,8 @@ export function PermissionEditor({
   onPermissionsChange,
   onSave,
   isSystemRole = false,
-  disabled = false
+  disabled = false,
+  hideSaveButton = false
 }: PermissionEditorProps) {
   const [permissions, setPermissions] = useState<Record<Permission, boolean>>(currentPermissions);
   const [hasChanges, setHasChanges] = useState(false);
@@ -135,27 +137,29 @@ export function PermissionEditor({
               Configure permissions for the {roleName} role
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            {hasChanges && (
+          {!hideSaveButton && (
+            <div className="flex items-center gap-2">
+              {hasChanges && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={saving}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Reset
+                </Button>
+              )}
               <Button
-                variant="outline"
                 size="sm"
-                onClick={handleReset}
-                disabled={saving}
+                onClick={handleSave}
+                disabled={!hasChanges || saving || disabled}
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? 'Saving...' : 'Save Changes'}
               </Button>
-            )}
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={!hasChanges || saving || disabled}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

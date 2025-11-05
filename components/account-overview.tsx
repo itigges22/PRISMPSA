@@ -1,7 +1,7 @@
 'use client';
 
 // Account overview component - updated to fix module resolution
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,8 +58,9 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format, formatDistance, addDays, isSameDay } from 'date-fns';
 import { accountKanbanConfigService, KanbanColumn } from '@/lib/account-kanban-config';
-import { isSuperadmin, UserWithRoles, hasPermission } from '@/lib/rbac';
+import { isSuperadmin, UserWithRoles, hasPermission, canViewProject } from '@/lib/rbac';
 import { Permission } from '@/lib/permissions';
+import { checkPermissionHybrid } from '@/lib/permission-checker';
 import { getMilestones, createMilestone, deleteMilestone, type Milestone } from '@/lib/milestone-service';
 import { MilestoneDialog } from '@/components/milestone-dialog';
 import { projectIssuesService, type ProjectIssue } from '@/lib/project-issues-service';
@@ -93,6 +94,26 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
   const [viewMode, setViewMode] = useState<'kanban' | 'gantt' | 'table'>('kanban');
   const [projects, setProjects] = useState(account.projects);
   const [kanbanColumns, setKanbanColumns] = useState<KanbanColumn[]>(DEFAULT_KANBAN_COLUMNS);
+  const [accountMembers, setAccountMembers] = useState<Array<{
+    id: string;
+    user_id: string;
+    account_id: string;
+    created_at: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      image: string | null;
+      roles: Array<{
+        id: string;
+        name: string;
+        department: {
+          id: string;
+          name: string;
+        } | null;
+      }>;
+    } | null;
+  }>>([]);
   const [loadingKanbanConfig, setLoadingKanbanConfig] = useState(true);
   const [customColumnAssignments, setCustomColumnAssignments] = useState<Record<string, string>>({});
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -134,6 +155,60 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
   const [canEditKanban, setCanEditKanban] = useState(false);
   const [canEditGantt, setCanEditGantt] = useState(false);
   const [canMoveAllKanbanItems, setCanMoveAllKanbanItems] = useState(false);
+
+  // Load account members
+  useEffect(() => {
+    const loadAccountMembers = async () => {
+      try {
+        const response = await fetch(`/api/accounts/${account.id}/members`);
+        
+        // Get response text first to check if it's valid JSON
+        const responseText = await response.text();
+        let data: any;
+        
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Failed to parse API response:', {
+            status: response.status,
+            statusText: response.statusText,
+            responseText: responseText.substring(0, 200)
+          });
+          // Set empty array if response is not valid JSON
+          setAccountMembers([]);
+          return;
+        }
+        
+        if (!response.ok) {
+          // Log the error details from the response - include full data object
+          console.error('Failed to load account members:', {
+            status: response.status,
+            statusText: response.statusText,
+            fullResponseData: data, // Log the entire response object
+            error: data?.error || 'Unknown error',
+            details: data?.details || data?.message || 'No details provided',
+            code: data?.code || 'No error code',
+            url: `/api/accounts/${account.id}/members`
+          });
+          // Set empty array if error - don't crash the page
+          setAccountMembers([]);
+          return;
+        }
+        
+        // Success - set the members
+        setAccountMembers(data.members || []);
+      } catch (error: any) {
+        console.error('Error loading account members:', {
+          error: error.message || error,
+          stack: error.stack
+        });
+        // Set empty array on error - don't crash the page
+        setAccountMembers([]);
+      }
+    };
+    
+    loadAccountMembers();
+  }, [account.id]);
 
   // Check permissions
   useEffect(() => {
@@ -367,6 +442,71 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
     const isStakeholder = project.stakeholders?.some((s: any) => s.user_id === userProfile.id);
     
     return isAssignedUser || isStakeholder;
+  };
+
+  // Cache for project view permissions
+  const [canViewProjectCache, setCanViewProjectCache] = useState<Record<string, boolean>>({});
+  
+  // Create stable project IDs string for dependency tracking
+  const projectIdsString = useMemo(() => {
+    return projects.map(p => p.id).sort().join(',');
+  }, [projects]);
+  
+  // Pre-check view permissions for all projects
+  useEffect(() => {
+    if (!userProfile || projects.length === 0) {
+      // Clear cache if no user or projects
+      setCanViewProjectCache({});
+      return;
+    }
+    
+    const checkAllProjectPermissions = async () => {
+      try {
+        const permissions: Record<string, boolean> = {};
+        
+        console.log(`[Kanban] Checking permissions for ${projects.length} projects for user ${userProfile.id} in account ${account.id}`);
+        
+        // Check each project individually - user can view project page if:
+        // 1. They have VIEW_ALL_PROJECTS permission, OR
+        // 2. They are assigned to the project (via project_assignments, created_by, assigned_user_id, or tasks), OR
+        // 3. They have account-level access AND are assigned to at least one project in the account
+        
+        for (const project of projects) {
+          try {
+            // Check project-specific access with account context
+            // This allows account-level access to grant project access
+            const canView = await checkPermissionHybrid(userProfile, Permission.VIEW_PROJECTS, { 
+              projectId: project.id,
+              accountId: account.id 
+            });
+            permissions[project.id] = canView;
+            console.log(`[Kanban] ✓ Project "${project.name}" (${project.id.substring(0, 8)}...): canView=${canView}`);
+          } catch (error) {
+            console.error(`[Kanban] ✗ Error checking permission for project ${project.id}:`, error);
+            // Default to false on error (won't show links for inaccessible projects)
+            permissions[project.id] = false;
+          }
+        }
+        
+        console.log('[Kanban] ✅ Permission cache updated:', Object.keys(permissions).length, 'projects checked');
+        console.log('[Kanban] Permission results:', permissions);
+        setCanViewProjectCache(permissions);
+      } catch (error) {
+        console.error('[Kanban] ❌ Error checking project permissions:', error);
+      }
+    };
+    
+    checkAllProjectPermissions();
+  }, [userProfile?.id, projectIdsString, account.id]);
+  
+  // Helper function to check if user can view a specific project
+  const canUserViewProject = (project: ProjectWithDetails): boolean => {
+    const cached = canViewProjectCache[project.id];
+    if (cached === undefined) {
+      // Not checked yet - return false to hide links (safer)
+      return false;
+    }
+    return cached;
   };
 
   const handleDataChange = async (newKanbanData: any[]) => {
@@ -966,26 +1106,56 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
                   <p className="text-sm text-muted-foreground">{account.primary_contact_email || 'No email'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Account Manager</label>
-                  {account.account_manager ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={account.account_manager.image || ''} />
-                        <AvatarFallback>
-                          {account.account_manager.name?.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{account.account_manager.name}</span>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Not assigned</p>
-                  )}
-                </div>
-                <div>
                   <label className="text-sm font-medium text-muted-foreground">Created</label>
                   <p className="text-sm">{format(new Date(account.created_at), 'MMM dd, yyyy')}</p>
                 </div>
               </div>
+              
+              {/* Account Members Section */}
+              {accountMembers.length > 0 && (
+                <div className="mt-6 pt-4 border-t">
+                  <label className="text-sm font-medium text-muted-foreground mb-3 block">Account Members</label>
+                  <div className="space-y-3">
+                    {accountMembers.map((member) => (
+                      member.user && (
+                        <div key={member.id} className="flex items-center justify-between p-3 bg-muted/30 rounded border">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarImage src={member.user.image || undefined} />
+                              <AvatarFallback>
+                                {member.user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{member.user.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{member.user.email}</p>
+                              {/* Show user roles */}
+                              {member.user.roles && member.user.roles.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {member.user.roles.map((role) => (
+                                    <Badge 
+                                      key={role.id} 
+                                      variant="secondary" 
+                                      className="text-xs"
+                                    >
+                                      {role.name}
+                                      {role.department && (
+                                        <span className="text-muted-foreground ml-1">
+                                          ({role.department.name})
+                                        </span>
+                                      )}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1384,6 +1554,14 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
                                   const isAssignedToProject = project ? canUserModifyProject(project) : false;
                                   const canMoveThisItem = canMoveAllKanbanItems || isAssignedToProject;
                                   const isDisabled = !canEditKanban || !canMoveThisItem;
+                                  // Check if user can view this project page
+                                  const canViewProject = project ? canUserViewProject(project) : false;
+                                  // Check if we've checked permissions yet (to avoid graying out before check completes)
+                                  const hasCheckedPermissions = project ? (canViewProjectCache[project.id] !== undefined) : false;
+                                  
+                                  // Only gray out if permissions have been checked AND user cannot view the project page
+                                  // Cards are visible in Kanban (since user has account access), but grayed out if they can't view project page
+                                  const shouldGrayOut = hasCheckedPermissions && !canViewProject;
                                   
                                   return (
                                   <KanbanCard
@@ -1391,7 +1569,9 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
                                     id={item.id}
                                     key={item.id}
                                     name={item.name}
-                                    className={`p-4 touch-manipulation select-none ${!canMoveThisItem ? 'opacity-50' : ''}`}
+                                    className={`p-4 touch-manipulation select-none ${
+                                      shouldGrayOut ? 'opacity-50 grayscale' : ''
+                                    }`}
                                     disabled={isDisabled}
                                   >
                                     <div className="flex items-start justify-between gap-2">
@@ -1436,19 +1616,21 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
                                       onTouchStart={(e) => e.stopPropagation()}
                                     >
                                       <div className="flex items-center gap-1">
-                                        <Link href={`/projects/${item.id}`} passHref>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 w-6 p-0"
-                                            title="View project details"
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            onTouchStart={(e) => e.stopPropagation()}
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <ExternalLink className="h-3 w-3" />
-                                          </Button>
-                                        </Link>
+                                        {canViewProject && (
+                                          <Link href={`/projects/${item.id}`} passHref>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 w-6 p-0"
+                                              title="View project details"
+                                              onMouseDown={(e) => e.stopPropagation()}
+                                              onTouchStart={(e) => e.stopPropagation()}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <ExternalLink className="h-3 w-3" />
+                                            </Button>
+                                          </Link>
+                                        )}
                                         {(() => {
                                           const project = projects.find(p => p.id === item.id);
                                           return project && canUserModifyProject(project) && (
@@ -1522,12 +1704,19 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
                                   {columnItems.map((item: any) => {
                                     const project = projects.find(p => p.id === item.id);
                                     const isDisabled = project ? !canUserModifyProject(project) : false;
+                                    const canViewProject = project ? canUserViewProject(project) : false;
+                                    // Check if we've checked permissions yet (to avoid graying out before check completes)
+                                    const hasCheckedPermissions = project ? (canViewProjectCache[project.id] !== undefined) : false;
+                                    
+                                    // Only gray out if permissions have been checked AND user cannot view the project page
+                                    // Cards are visible in Kanban (since user has account access), but grayed out if they can't view project page
+                                    const shouldGrayOut = hasCheckedPermissions && !canViewProject;
                                     
                                     return (
                                       <div
                                         key={item.id}
                                         className={`bg-white rounded-lg p-3 border ${
-                                          isDisabled ? 'opacity-50' : ''
+                                          shouldGrayOut ? 'opacity-50 grayscale' : ''
                                         }`}
                                       >
                                         <div className="flex items-start justify-between gap-2">
@@ -1568,16 +1757,18 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
                                         </p>
                                         <div className="flex items-center justify-between mt-2">
                                           <div className="flex items-center gap-1">
-                                            <Link href={`/projects/${item.id}`} passHref>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 w-6 p-0"
-                                                title="View project details"
-                                              >
-                                                <ExternalLink className="h-3 w-3" />
-                                              </Button>
-                                            </Link>
+                                            {canViewProject && (
+                                              <Link href={`/projects/${item.id}`} passHref>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 w-6 p-0"
+                                                  title="View project details"
+                                                >
+                                                  <ExternalLink className="h-3 w-3" />
+                                                </Button>
+                                              </Link>
+                                            )}
                                             {(() => {
                                               const project = projects.find(p => p.id === item.id);
                                               return project && canUserModifyProject(project) && canEditKanban && (

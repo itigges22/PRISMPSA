@@ -10,7 +10,8 @@ import {
   Plus, 
   RefreshCw, 
   Building2,
-  Network
+  Network,
+  Briefcase
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoleHierarchyDnd, RoleWithUsers } from '@/components/org-chart/role-hierarchy-dnd';
@@ -19,6 +20,7 @@ import { RoleEditDialog } from '@/components/org-chart/role-edit-dialog';
 import { UserAssignmentDialog } from '@/components/org-chart/user-assignment-dialog';
 import { ReportingRoleDialog } from '@/components/org-chart/reporting-role-dialog';
 import { DepartmentView } from '@/components/org-chart/department-view';
+import { AccountView } from '@/components/org-chart/account-view';
 import { RoleGuard } from '@/components/role-guard';
 import { Permission } from '@/lib/permissions';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -38,7 +40,7 @@ export default function RoleManagementPage() {
   const [roles, setRoles] = useState<RoleWithUsers[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewType, setViewType] = useState<'hierarchy' | 'department'>('hierarchy');
+  const [viewType, setViewType] = useState<'hierarchy' | 'department' | 'accounts'>('hierarchy');
   
   
   // Dialogs
@@ -413,6 +415,10 @@ export default function RoleManagementPage() {
             <Building2 className="h-4 w-4" />
             Department View
           </TabsTrigger>
+          <TabsTrigger value="accounts" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            Accounts View
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="hierarchy" className="space-y-6 mt-6">
@@ -457,6 +463,12 @@ export default function RoleManagementPage() {
         <TabsContent value="department" className="space-y-6 mt-6">
           <DepartmentView
             onRoleSelect={handleEditRole}
+            isReadOnly={isReadOnly}
+          />
+        </TabsContent>
+
+        <TabsContent value="accounts" className="space-y-6 mt-6">
+          <AccountView
             isReadOnly={isReadOnly}
           />
         </TabsContent>

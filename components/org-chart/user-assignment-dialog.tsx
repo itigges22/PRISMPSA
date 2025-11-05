@@ -58,10 +58,12 @@ export function UserAssignmentDialog({
       const response = await fetch('/api/users');
       if (!response.ok) throw new Error('Failed to load users');
       const data = await response.json();
-      setUsers(data);
+      // API returns { users: [...] }, so extract the users array
+      setUsers(Array.isArray(data.users) ? data.users : (Array.isArray(data) ? data : []));
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load users');
+      setUsers([]); // Ensure users is always an array
     } finally {
       setLoading(false);
     }
@@ -74,9 +76,12 @@ export function UserAssignmentDialog({
       const response = await fetch(`/api/roles/${role.id}/users`);
       if (!response.ok) throw new Error('Failed to load assigned users');
       const data = await response.json();
-      setAssignedUserIds(new Set(data.map((u: User) => u.id)));
+      // Ensure data is an array before mapping
+      const usersArray = Array.isArray(data) ? data : [];
+      setAssignedUserIds(new Set(usersArray.map((u: User) => u.id)));
     } catch (error) {
       console.error('Error loading assigned users:', error);
+      setAssignedUserIds(new Set()); // Ensure it's always a Set
     }
   }
 
@@ -151,7 +156,9 @@ export function UserAssignmentDialog({
     }
   }
 
-  const filteredUsers = users.filter(user =>
+  // Safety check: ensure users is always an array
+  const usersArray = Array.isArray(users) ? users : [];
+  const filteredUsers = usersArray.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );

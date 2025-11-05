@@ -9,11 +9,9 @@ import {
   Users, 
   Shield, 
   Building2, 
-  Edit, 
   UserPlus, 
   ChevronDown,
-  ChevronRight,
-  Settings
+  ChevronRight
 } from 'lucide-react';
 
 // Type definitions (copied from organization-service to avoid import issues)
@@ -212,23 +210,6 @@ function DepartmentCard({
                     <Badge variant="outline" className="text-xs">
                       {role.user_count} users
                     </Badge>
-                    
-                    {!isReadOnly && (
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRoleUpdate(role.id);
-                          }}
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </div>
 

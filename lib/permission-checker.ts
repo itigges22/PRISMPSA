@@ -65,13 +65,35 @@ export function isSuperadmin(userProfile: UserWithRoles | null): boolean {
 }
 
 /**
- * Check if user is assigned to a specific project (via project assignment OR task assignment)
+ * Check if user is assigned to a specific project (via project assignment, task assignment, or direct project fields)
  */
 export async function isAssignedToProject(userId: string, projectId: string): Promise<boolean> {
   const supabase = createClientSupabase();
   if (!supabase) return false;
 
-  // Check project assignments
+  // First check the project itself - if user is creator or assigned user, they have access
+  const { data: project, error: projectFetchError } = await supabase
+    .from('projects')
+    .select('created_by, assigned_user_id')
+    .eq('id', projectId)
+    .single();
+
+  if (project) {
+    // User is the creator of the project
+    if (project.created_by === userId) {
+      return true;
+    }
+    // User is the assigned user on the project
+    if (project.assigned_user_id === userId) {
+      return true;
+    }
+  }
+
+  if (projectFetchError && projectFetchError.code !== 'PGRST116') {
+    logger.error('Error fetching project for assignment check', { userId, projectId }, projectFetchError);
+  }
+
+  // Check project assignments table
   const { data: projectAssignment, error: projectError } = await supabase
     .from('project_assignments')
     .select('id')
@@ -277,7 +299,21 @@ export async function checkPermissionHybrid(
     }
 
     // 4. Check base permission
-    const hasBase = await hasBasePermission(userProfile, permission);
+    // EXCEPTION: For VIEW_PROJECTS with account context, allow account-level access even without base permission
+    // (Users can view projects in accounts they have access to, even if they don't have general VIEW_PROJECTS permission)
+    const isViewProjectsWithAccount = permission === Permission.VIEW_PROJECTS && context?.accountId;
+    
+    let hasBase = await hasBasePermission(userProfile, permission);
+    
+    // If checking VIEW_PROJECTS with account context and no base permission, check account access instead
+    if (!hasBase && isViewProjectsWithAccount && context.accountId) {
+      const accountAccess = await hasAccountAccess(userProfile.id, context.accountId);
+      if (accountAccess) {
+        // User has account access, treat as having base permission for this check
+        hasBase = true;
+      }
+    }
+    
     if (!hasBase) {
       // No base permission = no access
       const duration = Date.now() - startTime;
@@ -326,13 +362,31 @@ export async function checkPermissionHybrid(
     // 7. Check context-specific access
     if (context.projectId) {
       // Check if user is assigned to this project
+      // If they're assigned, they can view it (base permission already checked above)
       hasAccess = await isAssignedToProject(userProfile.id, context.projectId);
       
-      // If not directly assigned, check if they have override permission
-      // Note: Override permissions are already checked above, so this is just for completeness
+      // If not directly assigned to this project, check if they have account-level access
+      // Users with account access can view projects in that account
+      if (!hasAccess && context.accountId) {
+        const accountAccess = await hasAccountAccess(userProfile.id, context.accountId);
+        if (accountAccess) {
+          // Double-check this project is in the account they have access to
+          const supabase = createClientSupabase();
+          if (supabase) {
+            const { data: project } = await supabase
+              .from('projects')
+              .select('account_id')
+              .eq('id', context.projectId)
+              .single();
+            if (project && project.account_id === context.accountId) {
+              hasAccess = true;
+            }
+          }
+        }
+      }
     }
 
-    if (context.accountId) {
+    if (context.accountId && !context.projectId) {
       // Check if user has access to any project in this account
       hasAccess = await hasAccountAccess(userProfile.id, context.accountId);
     }

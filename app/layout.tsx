@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ClientNavigation } from "@/components/client-navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { Toaster } from "sonner";
+import { ChunkErrorHandler } from "@/components/chunk-error-handler";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -27,6 +28,7 @@ export default function RootLayout({
           <body
             className={`${raleway.variable} font-sans antialiased`}
           >
+            <ChunkErrorHandler />
             <div className="min-h-screen bg-gray-50">
               <Suspense fallback={
                 <nav className="bg-white shadow-sm border-b">

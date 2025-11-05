@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
-import { allProjectUpdatesService, AllProjectUpdate } from '@/lib/all-project-updates-service'
+import { AllProjectUpdate } from '@/lib/all-project-updates-service'
 import { formatDistanceToNow } from 'date-fns'
 import { Activity, Clock, User } from 'lucide-react'
 
@@ -27,11 +27,29 @@ export default function ProjectUpdatesCard({ className }: ProjectUpdatesCardProp
     try {
       setLoading(true)
       setError(null)
-      const data = await allProjectUpdatesService.getAllProjectUpdates()
-      setUpdates(data)
+      
+      // Use API endpoint that filters based on permissions
+      const response = await fetch('/api/project-updates')
+      
+      if (!response.ok) {
+        // If 401/403, user might not be authenticated yet - return empty array
+        if (response.status === 401 || response.status === 403) {
+          setUpdates([])
+          return
+        }
+        throw new Error(`Failed to fetch project updates: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      setUpdates(data || [])
     } catch (err) {
       console.error('Error loading project updates:', err)
-      setError('Failed to load project updates')
+      // Don't show error for auth failures - just show empty state
+      if (err instanceof Error && err.message.includes('401')) {
+        setUpdates([])
+      } else {
+        setError('Failed to load project updates')
+      }
     } finally {
       setLoading(false)
     }

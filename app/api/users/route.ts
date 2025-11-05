@@ -15,10 +15,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
 
-    // Fetch all user profiles
+    // Fetch all user profiles with their roles
     const { data: users, error } = await supabase
       .from('user_profiles')
-      .select('id, name, email, image')
+      .select(`
+        id,
+        name,
+        email,
+        image,
+        user_roles!user_roles_user_id_fkey(
+          id,
+          roles!user_roles_role_id_fkey(
+            id,
+            name,
+            department_id,
+            departments!roles_department_id_fkey(
+              id,
+              name
+            )
+          )
+        )
+      `)
       .order('name');
 
     if (error) {
@@ -26,7 +43,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
-    return NextResponse.json(users || []);
+    return NextResponse.json({ users: users || [] });
   } catch (error) {
     return handleGuardError(error);
   }

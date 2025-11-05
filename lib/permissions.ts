@@ -63,6 +63,10 @@ export enum Permission {
   CREATE_UPDATE = 'create_update',
   EDIT_UPDATE = 'edit_update',
   DELETE_UPDATE = 'delete_update',
+  VIEW_ALL_PROJECT_UPDATES = 'view_all_project_updates', // Override permission - Can view ALL project updates
+  VIEW_ASSIGNED_PROJECTS_UPDATES = 'view_assigned_projects_updates', // Only updates from assigned projects
+  VIEW_DEPARTMENT_PROJECTS_UPDATES = 'view_department_projects_updates', // Only updates from department projects
+  VIEW_ACCOUNT_PROJECTS_UPDATES = 'view_account_projects_updates', // Only updates from account projects
   
   // ========================================
   // PROJECT ISSUES PERMISSIONS
@@ -298,7 +302,7 @@ export const PermissionDefinitions: Record<Permission, { name: string; descripti
   // ========================================
   [Permission.VIEW_UPDATES]: {
     name: 'View Project Updates',
-    description: 'View project status updates',
+    description: 'View project updates in project pages',
     category: 'Updates'
   },
   [Permission.CREATE_UPDATE]: {
@@ -314,6 +318,27 @@ export const PermissionDefinitions: Record<Permission, { name: string; descripti
   [Permission.DELETE_UPDATE]: {
     name: 'Delete Project Updates',
     description: 'Remove project status updates',
+    category: 'Updates'
+  },
+  [Permission.VIEW_ALL_PROJECT_UPDATES]: {
+    name: 'View All Project Updates',
+    description: 'Can view ALL project updates on the welcome page',
+    category: 'Updates',
+    isOverride: true
+  },
+  [Permission.VIEW_ASSIGNED_PROJECTS_UPDATES]: {
+    name: 'View Assigned Projects Updates',
+    description: 'Allows users to only view project updates on the welcome page that pertain to projects they are working on',
+    category: 'Updates'
+  },
+  [Permission.VIEW_DEPARTMENT_PROJECTS_UPDATES]: {
+    name: 'View Department Projects Updates',
+    description: 'Allows users to only view all project updates that pertain to their entire department',
+    category: 'Updates'
+  },
+  [Permission.VIEW_ACCOUNT_PROJECTS_UPDATES]: {
+    name: 'View Account Projects Updates',
+    description: 'Allows users to only view all project updates that pertain to their account they are assigned on',
     category: 'Updates'
   },
   
@@ -395,7 +420,7 @@ export const PermissionDefinitions: Record<Permission, { name: string; descripti
   },
   [Permission.MOVE_ALL_KANBAN_ITEMS]: {
     name: 'Move All Kanban Items',
-    description: 'Move all items on Kanban board. If disabled, can only move items assigned to user.',
+    description: 'Can move all projects on the Kan Ban board',
     category: 'Kanban'
   },
   

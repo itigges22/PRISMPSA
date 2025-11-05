@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,23 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { PermissionEditor } from './permission-editor';
 import { Permission, getAllPermissions } from '@/lib/permissions';
-import { roleManagementService, CreateRoleData } from '@/lib/role-management-service';
-import { organizationService } from '@/lib/organization-service';
-import { validateRole, ValidationResult } from '@/lib/validation';
+import { CreateRoleData } from '@/lib/role-management-service';
+import { validateRole } from '@/lib/validation';
 import { logger, componentRender, componentError } from '@/lib/debug-logger';
 
 interface Department {
   id: string;
   name: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  department_id: string;
 }
 
 interface RoleCreationDialogProps {
@@ -57,12 +49,10 @@ export function RoleCreationDialog({
 }: RoleCreationDialogProps) {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     department_id: '',
-    reporting_role_id: '',
   });
   const [permissions, setPermissions] = useState<Record<Permission, boolean>>(() => {
     const initialPermissions = {} as Record<Permission, boolean>;
@@ -72,28 +62,12 @@ export function RoleCreationDialog({
     return initialPermissions;
   });
 
-  // Load departments and roles when dialog opens
+  // Load departments when dialog opens
   useEffect(() => {
     if (externalDepartments) {
       setDepartments(externalDepartments);
     }
   }, [externalDepartments]);
-
-  useEffect(() => {
-    if (open) {
-      loadRoles();
-    }
-  }, [open]);
-
-  const loadRoles = async () => {
-    try {
-      // Load roles for reporting structure
-      const allRoles = await roleManagementService.getAllRoles();
-      setRoles(allRoles);
-    } catch (error) {
-      console.error('Error loading roles:', error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +81,6 @@ export function RoleCreationDialog({
         description: formData.description || undefined,
         department_id: formData.department_id,
         permissions,
-        reporting_role_id: formData.reporting_role_id === 'none' ? undefined : formData.reporting_role_id || undefined,
       };
 
       // Validate the role data
@@ -178,7 +151,6 @@ export function RoleCreationDialog({
       name: '',
       description: '',
       department_id: '',
-      reporting_role_id: '',
     });
     const resetPermissions = {} as Record<Permission, boolean>;
     getAllPermissions().forEach(permission => {
@@ -200,18 +172,13 @@ export function RoleCreationDialog({
     return true; // For creation dialog, we just update local state
   };
 
-  const getFilteredRoles = () => {
-    if (!formData.department_id) return roles;
-    return roles.filter(role => role.department_id === formData.department_id);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Role</DialogTitle>
           <DialogDescription>
-            Create a new role with specific permissions and reporting structure.
+            Create a new role with specific permissions.
           </DialogDescription>
         </DialogHeader>
         
@@ -260,26 +227,6 @@ export function RoleCreationDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reporting_role">Reporting Role</Label>
-            <Select
-              value={formData.reporting_role_id}
-              onValueChange={(value) => handleInputChange('reporting_role_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select reporting role (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No reporting role</SelectItem>
-                {getFilteredRoles().map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-4">
             <Label className="text-base font-medium">Permissions</Label>
             <PermissionEditor
@@ -289,6 +236,7 @@ export function RoleCreationDialog({
               onPermissionsChange={handlePermissionsChange}
               onSave={handleSavePermissions}
               disabled={loading}
+              hideSaveButton={true}
             />
           </div>
 

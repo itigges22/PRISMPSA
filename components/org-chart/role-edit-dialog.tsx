@@ -238,6 +238,7 @@ export function RoleEditDialog({
               onSave={handleSavePermissions}
               isSystemRole={isSystemRole}
               disabled={loading || isSystemRole}
+              hideSaveButton={true}
             />
           </div>
 
