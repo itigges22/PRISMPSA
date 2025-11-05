@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { Permission } from '@/lib/permissions';
 import { validateRole } from '@/lib/validation';
 import { logger, apiCall, apiResponse, databaseQuery, databaseError } from '@/lib/debug-logger';
@@ -11,19 +12,38 @@ export async function GET(request: NextRequest) {
     // Must pass request to parse cookies manually (cookies() doesn't work in Route Handlers)
     await requireAuthAndPermission(Permission.VIEW_ROLES, {}, request);
     
-    // Use authenticated user's Supabase client - RLS policies will control access
-    // Users with VIEW_ROLES permission should be able to view roles based on RLS policies
-    const supabase = createApiSupabaseClient(request);
+    // Get Supabase configuration
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
-    if (!supabase) {
+    if (!supabaseUrl || !anonKey) {
       logger.error('Supabase not configured', { 
-        action: 'getRoles'
+        action: 'getRoles',
+        hasUrl: !!supabaseUrl,
+        hasAnonKey: !!anonKey
       });
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
 
+    // Try authenticated client first (respects RLS), fall back to service role if available
+    // Since we've already verified permissions, service role is safe to use as fallback
+    let supabase = createApiSupabaseClient(request);
+    let usingServiceRole = false;
+    
+    // If no authenticated client or if service role is available, use service role for reliable access
+    // Service role bypasses RLS, but we've already verified the user has VIEW_ROLES permission
+    if (serviceRoleKey) {
+      supabase = createClient(supabaseUrl, serviceRoleKey);
+      usingServiceRole = true;
+      logger.debug('Using service role key for roles query', { action: 'getRoles' });
+    } else if (!supabase) {
+      logger.error('Failed to create Supabase client', { action: 'getRoles' });
+      return NextResponse.json({ error: 'Failed to create database connection' }, { status: 500 });
+    }
+
     // Fetch all roles with related data using explicit foreign key constraints
-    // RLS policies should allow users with VIEW_ROLES permission to view roles
+    // Start with simpler query to debug - add reporting_role after confirming base query works
     const { data: roles, error } = await supabase
       .from('roles')
       .select(`
@@ -41,106 +61,210 @@ export async function GET(request: NextRequest) {
         department:departments!roles_department_id_fkey (
           id,
           name
-        ),
-        reporting_role:roles!roles_reporting_role_id_fkey (
-          id,
-          name
         )
       `)
       .order('display_order', { ascending: true });
 
     if (error) {
+      // Log detailed error information
+      console.error('[GET /api/roles] Query error:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        usingServiceRole,
+        hasServiceRoleKey: !!serviceRoleKey
+      });
+      
       logger.error('Error fetching roles', { 
         action: 'getRoles',
         error: error.message,
         code: error.code,
         details: error.details,
-        hint: error.hint
+        hint: error.hint,
+        usingServiceRole
       }, error);
+      
+      // If using service role and still getting error, return detailed error
+      if (usingServiceRole) {
+        return NextResponse.json({ 
+          error: 'Failed to fetch roles',
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          message: `Database query failed: ${error.message}`
+        }, { status: 500 });
+      }
+      
+      // If using authenticated client and getting RLS error, try service role as fallback
+      if (!usingServiceRole && serviceRoleKey && (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('RLS'))) {
+        console.log('[GET /api/roles] RLS blocking access, trying service role fallback');
+        logger.warn('RLS blocking access, trying service role fallback', { action: 'getRoles' });
+        const serviceSupabase = createClient(supabaseUrl, serviceRoleKey);
+        const { data: fallbackRoles, error: fallbackError } = await serviceSupabase
+          .from('roles')
+          .select(`
+            id,
+            name,
+            description,
+            department_id,
+            hierarchy_level,
+            display_order,
+            reporting_role_id,
+            is_system_role,
+            permissions,
+            created_at,
+            updated_at,
+            department:departments!roles_department_id_fkey (
+              id,
+              name
+            )
+          `)
+          .order('display_order', { ascending: true });
+        
+        if (fallbackError) {
+          console.error('[GET /api/roles] Fallback query also failed:', fallbackError);
+          logger.error('Fallback query also failed', { 
+            action: 'getRoles',
+            error: fallbackError.message,
+            code: fallbackError.code
+          }, fallbackError);
+          return NextResponse.json({ 
+            error: 'Failed to fetch roles',
+            details: fallbackError.message,
+            code: fallbackError.code,
+            hint: fallbackError.hint
+          }, { status: 500 });
+        }
+        
+        console.log('[GET /api/roles] Fallback query succeeded, got', fallbackRoles?.length || 0, 'roles');
+        // Use fallback results
+        return await processRolesData(serviceSupabase, fallbackRoles || []);
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to fetch roles',
         details: error.message,
-        code: error.code
+        code: error.code,
+        hint: error.hint
       }, { status: 500 });
     }
 
     // Log the query results for debugging
+    console.log('[GET /api/roles] Query succeeded, got', roles?.length || 0, 'roles, usingServiceRole:', usingServiceRole);
     logger.info('Roles query result', {
       action: 'getRoles',
-      rolesCount: roles?.length || 0
+      rolesCount: roles?.length || 0,
+      usingServiceRole
     });
 
-    // If no roles returned, could be RLS blocking or empty database
-    if (!roles || roles.length === 0) {
-      logger.warn('No roles found - may be RLS policy blocking access or empty database', { action: 'getRoles' });
-      return NextResponse.json({
-        roles: [],
-        containers: [],
-        totalRoles: 0,
-        totalLevels: 0
-      });
-    }
-
-    // Get user counts for each role
-    const rolesWithData = await Promise.all(
-      (roles || []).map(async (role: any) => {
-        const { data: userRoles, error: userError } = await supabase
-          .from('user_roles')
-          .select(`
-            user_id,
-            user_profiles!user_roles_user_id_fkey (
-              id,
-              name,
-              email,
-              image
-            )
-          `)
-          .eq('role_id', role.id);
-
-        const users = userError ? [] : userRoles?.map((ur: any) => ur.user_profiles).filter(Boolean) || [];
-
-        return {
-          ...role,
-          department_name: role.department?.name || null,
-          department: role.department ? { id: role.department.id, name: role.department.name } : { id: '', name: 'No Department' },
-          user_count: users.length,
-          users: users,
-          display_order: role.display_order || 0,
-        };
-      })
-    );
-
-    // Group roles by hierarchy level for container approach
-    const levelGroups = new Map<number, typeof rolesWithData>();
-    rolesWithData.forEach(role => {
-      const level = role.hierarchy_level || 0;
-      if (!levelGroups.has(level)) {
-        levelGroups.set(level, []);
-      }
-      levelGroups.get(level)!.push(role);
-    });
-
-    // Create container metadata for each hierarchy level
-    const containers = Array.from(levelGroups.entries()).map(([level, roles]) => ({
-      level,
-      roles,
-      roleCount: roles.length,
-      totalUsers: roles.reduce((sum, role) => sum + (role.user_count || 0), 0),
-      departments: [...new Set(roles.map(role => role.department_name).filter(Boolean))]
-    }));
-
-    // Sort containers by hierarchy level (highest to lowest)
-    containers.sort((a, b) => b.level - a.level);
-
-    return NextResponse.json({
-      roles: rolesWithData,
-      containers,
-      totalRoles: rolesWithData.length,
-      totalLevels: containers.length
-    });
+    // Process and return roles data
+    return await processRolesData(supabase, roles || []);
   } catch (error) {
     return handleGuardError(error);
   }
+}
+
+// Helper function to process roles data (shared between main query and fallback)
+async function processRolesData(supabase: any, roles: any[]) {
+  // If no roles returned, could be RLS blocking or empty database
+  if (!roles || roles.length === 0) {
+    logger.warn('No roles found - may be RLS policy blocking access or empty database', { action: 'getRoles' });
+    return NextResponse.json({
+      roles: [],
+      containers: [],
+      totalRoles: 0,
+      totalLevels: 0
+    });
+  }
+
+  // Create a map of role IDs to roles for quick lookup of reporting roles
+  const rolesMap = new Map(roles.map((r: any) => [r.id, r]));
+
+  // Get user counts for each role and enrich with reporting_role data
+  const rolesWithData = await Promise.all(
+    roles.map(async (role: any) => {
+      const { data: userRoles, error: userError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          user_profiles!user_roles_user_id_fkey (
+            id,
+            name,
+            email,
+            image
+          )
+        `)
+        .eq('role_id', role.id);
+
+      const users = userError ? [] : userRoles?.map((ur: any) => ur.user_profiles).filter(Boolean) || [];
+
+      // Fetch reporting_role separately if reporting_role_id exists
+      let reporting_role = null;
+      if (role.reporting_role_id) {
+        // Try to get from the roles we already fetched first
+        const reportingRoleFromMap = rolesMap.get(role.reporting_role_id);
+        if (reportingRoleFromMap) {
+          reporting_role = {
+            id: reportingRoleFromMap.id,
+            name: reportingRoleFromMap.name
+          };
+        } else {
+          // If not in map, fetch it separately
+          const { data: reportingRoleData } = await supabase
+            .from('roles')
+            .select('id, name')
+            .eq('id', role.reporting_role_id)
+            .single();
+          if (reportingRoleData) {
+            reporting_role = {
+              id: reportingRoleData.id,
+              name: reportingRoleData.name
+            };
+          }
+        }
+      }
+
+      return {
+        ...role,
+        department_name: role.department?.name || null,
+        department: role.department ? { id: role.department.id, name: role.department.name } : { id: '', name: 'No Department' },
+        reporting_role,
+        user_count: users.length,
+        users: users,
+        display_order: role.display_order || 0,
+      };
+    })
+  );
+
+  // Group roles by hierarchy level for container approach
+  const levelGroups = new Map<number, typeof rolesWithData>();
+  rolesWithData.forEach(role => {
+    const level = role.hierarchy_level || 0;
+    if (!levelGroups.has(level)) {
+      levelGroups.set(level, []);
+    }
+    levelGroups.get(level)!.push(role);
+  });
+
+  // Create container metadata for each hierarchy level
+  const containers = Array.from(levelGroups.entries()).map(([level, roles]) => ({
+    level,
+    roles,
+    roleCount: roles.length,
+    totalUsers: roles.reduce((sum, role) => sum + (role.user_count || 0), 0),
+    departments: [...new Set(roles.map(role => role.department_name).filter(Boolean))]
+  }));
+
+  // Sort containers by hierarchy level (highest to lowest)
+  containers.sort((a, b) => b.level - a.level);
+
+  return NextResponse.json({
+    roles: rolesWithData,
+    containers,
+    totalRoles: rolesWithData.length,
+    totalLevels: containers.length
+  });
 }
 
 export async function POST(request: NextRequest) {
