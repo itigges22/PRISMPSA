@@ -1,0 +1,64 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# instructions folder
+/instructions/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+#cursor
+*.cursor
+
+# Debug and testing files (not needed in production)
+*.backup
+*.bak
+*CHAT.md
+*chat.md
+*.sql
+PERFORMANCE_REPORT.md
+README/local-debug/
+
+#Removing .env local files from the repo for security reasons.
+.env.local
+*.env
+
+# test scripts
+performance-test.js
+
+# local MCP configuration
+.mcp.json
