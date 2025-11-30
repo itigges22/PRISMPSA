@@ -251,35 +251,49 @@ function WorkflowCanvasInner({
       return;
     }
 
-    // Check for circular references (cycles)
-    const hasCycle = (nodeId: string, visited: Set<string>, recStack: Set<string>): boolean => {
-      visited.add(nodeId);
-      recStack.add(nodeId);
+    // Validate that a path from Start to End exists
+    // This allows revision loops (rejection → back to previous step) while ensuring
+    // the workflow can complete through the "approved" path
+    const hasPathToEnd = (): boolean => {
+      const startNode = nodes.find((n) => n.data.type === 'start');
+      const endNode = nodes.find((n) => n.data.type === 'end');
+      if (!startNode || !endNode) return false;
 
-      const outgoingEdges = edges.filter((e) => e.source === nodeId);
-      for (const edge of outgoingEdges) {
-        if (!visited.has(edge.target)) {
-          if (hasCycle(edge.target, visited, recStack)) {
-            return true;
+      const visited = new Set<string>();
+      const queue = [startNode.id];
+
+      while (queue.length > 0) {
+        const currentId = queue.shift()!;
+        if (currentId === endNode.id) return true; // Found path to end
+        if (visited.has(currentId)) continue;
+        visited.add(currentId);
+
+        const currentNode = nodes.find((n) => n.id === currentId);
+        const outgoingEdges = edges.filter((e) => e.source === currentId);
+
+        for (const edge of outgoingEdges) {
+          // For conditional nodes, follow all paths for validation
+          // Rejection loops are valid as long as an approval path to End exists
+          if (currentNode?.data.type === 'conditional') {
+            const edgeData = edge.data as any;
+            // Follow approved path OR any path without a decision label (default path)
+            // Skip rejected/needs_changes paths as they create valid revision loops
+            if (edgeData?.decision === 'approved' || edgeData?.decision === undefined || edgeData?.decision === null) {
+              queue.push(edge.target);
+            }
+          } else {
+            // For non-conditional nodes, follow all outgoing edges
+            queue.push(edge.target);
           }
-        } else if (recStack.has(edge.target)) {
-          return true; // Cycle detected
         }
       }
 
-      recStack.delete(nodeId);
-      return false;
+      return false; // No path to end found
     };
 
-    const visited = new Set<string>();
-    const recStack = new Set<string>();
-    for (const node of nodes) {
-      if (!visited.has(node.id)) {
-        if (hasCycle(node.id, visited, recStack)) {
-          toast.error('Workflow contains circular references (infinite loops). Please remove any connections that create cycles.');
-          return;
-        }
-      }
+    if (!hasPathToEnd()) {
+      toast.error('Workflow must have a valid path from Start to End through approval steps. Check your connections.');
+      return;
     }
 
     // Check for orphaned nodes (nodes with no connections)
