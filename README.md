@@ -172,6 +172,104 @@ Two flexible options:
 
 ---
 
+## 🔄 Workflow Automation: SOPs That Actually Work
+
+### The Problem with Traditional SOPs
+
+Every marketing agency has Standard Operating Procedures. They're documented in Google Docs, printed in binders, explained in onboarding meetings—and promptly forgotten. Why? Because traditional SOPs are:
+
+- **Static documents** that don't match dynamic reality
+- **Disconnected** from actual work tools
+- **Unenforceable** without micromanagement
+- **Invisible** to leadership (until something breaks)
+
+**The result?** Work flows through informal channels. "Hey, is this done?" Slack messages. Missed handoffs. Blame games. Quality inconsistency.
+
+### Visual Workflow Builder
+
+PRISM PSA transforms your SOPs into **visual, interactive workflows** that guide work through your organization:
+
+**Create Workflows Visually**
+- Drag-and-drop node-based editor (similar to n8n or Zapier)
+- Node types: Department handoffs, Role assignments, Client approvals, Conditional branches
+- Connect nodes to define valid paths work can take
+- Set requirements at each step (forms, approvals, deliverables)
+
+**Example: Video Production Workflow**
+```
+Account Manager (briefing) → Creative Lead (concept) → Videographer (production)
+→ Creative Lead (review) → Account Manager (client prep) → Client (approval) → Delivery
+```
+
+Each step has clear ownership. Each handoff is tracked. No work falls through the cracks.
+
+### Why Workflow Automation Matters for Marketing Agencies
+
+**For Account Managers:**
+- Know exactly where every project stands
+- Get notified when work reaches client-ready status
+- Never miss a handoff or approval
+
+**For Creative Teams:**
+- Clear understanding of what's expected at each stage
+- No ambiguity about "who has this next?"
+- Automatic assignment based on role and capacity
+
+**For Leadership:**
+- See where work bottlenecks occur
+- Identify process inefficiencies with data
+- Make informed decisions about resource allocation
+
+**For Clients:**
+- Professional approval workflows built into the process
+- Clear visibility into project progression
+- Feedback captured at the right moments
+
+### Flexible, Not Rigid
+
+Real work doesn't always follow the script. PRISM PSA understands this:
+
+- **Out-of-order handoffs are allowed** - Sometimes you need to skip a step or loop back
+- **Every deviation is documented** - Leadership sees when and why processes diverged
+- **Innovation emerges from flexibility** - The best process improvements come from seeing how work actually flows
+
+This isn't about forcing compliance—it's about **visibility with flexibility**.
+
+---
+
+## 🤝 Client Portal: Professional Client Experience
+
+### Stop the "Any Updates?" Emails
+
+Clients deserve visibility without pestering your team. PRISM PSA's Client Portal provides:
+
+**Project Visibility**
+- Clients see their projects' current status
+- Progress through workflow stages visible
+- Timeline and milestone tracking
+
+**Built-in Approval Workflows**
+- When work reaches client approval stage, they get notified
+- Review, approve, or request revisions directly in the portal
+- Feedback captured and routed to the right team
+
+**Feedback Collection**
+- Satisfaction scoring after project completion
+- Private feedback (only visible to account managers and leadership)
+- Data-driven client relationship insights
+
+### How It Works
+
+1. Account managers invite clients via email
+2. Clients create a limited portal account
+3. They see only their account's projects
+4. Approval requests appear in their dashboard
+5. Feedback forms appear after project completion
+
+**Security:** Client access is isolated. They see only their own projects. Row Level Security ensures no data leakage.
+
+---
+
 ## 📊 What You Get: Real-World Use Cases
 
 ### For Account Managers
@@ -285,6 +383,25 @@ Two flexible options:
 **Task-Level Time Tracking** - Time entries link directly to tasks, creating an audit trail from client hours billed back to specific deliverables. Managers can see not just "how much time was logged" but "what was actually accomplished."
 
 **Hierarchical Data Model** - Clients → Accounts → Projects → Tasks creates clear relationships with cascade rules. Delete a project? Associated tasks are handled appropriately. Remove a user from an account? Their project assignments update automatically.
+
+**Workflow State Machine** - The workflow engine uses a state-machine architecture with:
+- `workflow_templates` - Reusable workflow definitions
+- `workflow_nodes` - Individual steps (department, role, client approval, conditional)
+- `workflow_connections` - Valid transition paths between nodes
+- `workflow_instances` - Active workflow executions tied to projects
+- `workflow_history` - Complete audit trail of every handoff, including out-of-order transitions
+
+**Dynamic Form Builder** - Forms are stored as JSONB schemas supporting:
+- Multiple field types: text, number, date, dropdown, multiselect, file upload, textarea, email, checkbox
+- Conditional field visibility (show field B only if field A = value)
+- Form responses linked to workflow history for complete traceability
+- Admin-configurable templates without code changes
+
+**Service Layer Pattern** - Business logic is organized into dedicated service files (`*-service.ts`) that:
+- Encapsulate complex operations
+- Provide consistent interfaces for API routes
+- Enable testing and reuse
+- Separate concerns from data access layer
 
 ---
 
@@ -546,6 +663,92 @@ PRISM PSA is built with enterprise-grade security:
 - **Production Hardening** - Security headers (CSP, HSTS, X-Frame-Options), HTTPS enforcement, environment-aware security levels
 
 **Data Privacy:** Row Level Security ensures users only see data they're authorized to access. Even database administrators can't bypass RLS policies. Client confidentiality is protected by design.
+
+---
+
+## 🚀 Future Roadmap
+
+PRISM PSA is continuously evolving. Here's what's planned for future releases:
+
+### Phase 2: Analytics Foundation
+
+**ELO Rating System**
+- Admin-configurable performance scoring per role
+- Factors: deadline adherence, client satisfaction, revision frequency, collaboration
+- Users see their progression and standing within their role
+- Leadership uses data for informed assignment decisions
+
+**Enhanced Wellbeing Analytics**
+- Track workload sentiment over time
+- Leadership alerts when team members show declining wellbeing
+- Integrate with capacity to prevent burnout
+
+**Workflow Analytics Engine**
+- Identify bottlenecks in your processes
+- Measure average time at each workflow stage
+- Surface inefficiencies and improvement opportunities
+
+**Project Health Indicators**
+- Real-time calculation of project health (Green/Yellow/Red)
+- Based on: deadline proximity, activity frequency, open issues, hours vs estimates
+- Proactive alerts before projects become critical
+
+### Phase 3: Dashboard Enhancements
+
+**Personal Dashboard Enhancement**
+- ELO scores and trends at a glance
+- Wellbeing tracking integration
+- Active workflow status for all assigned work
+- Performance insights and improvement suggestions
+
+**Leadership Capacity Dashboard**
+- Color-coded team heatmap showing capacity and wellbeing
+- Predictive forecasting for upcoming bottlenecks
+- Quick action buttons for workload redistribution
+
+**Skills Tracking Integration**
+- Tag tasks with required skills
+- Track skill development across the organization
+- Match assignments to skill profiles
+
+**Department & Account Analytics Pages**
+- Aggregate performance metrics by team
+- Comparative benchmarking across departments
+- Deep-dive analytics for account managers
+
+### Phase 4: Organizational Analytics
+
+**Executive Analytics Dashboard**
+- Consolidated org-wide metrics
+- Quality trends, capacity utilization, client satisfaction
+- Predictive alerts and recommendations
+
+**Collaboration Network Visualization**
+- Interactive graph showing who works with whom
+- Identify silos and cross-team collaboration opportunities
+- Measure collaboration density and patterns
+
+**Leadership Intelligence Hub**
+- Permission-gated page for executive insights
+- Weekly auto-generated intelligence reports
+- Action items: check-ins needed, recognition opportunities, redistribution needs
+
+### Phase 5: Recognition & Engagement
+
+**Performance Tier System**
+- Tier assignments based on ELO and other metrics
+- Progress tracking toward next tier
+- Recognition for advancement
+
+**Achievements System**
+- Admin-configurable badges and achievements
+- Auto-awarded when criteria met
+- Displayed on profiles and dashboards
+
+**Competitive Challenges** (Optional)
+- Time-bound competitions with leaderboards
+- Department vs department, individual rankings
+- Configurable to match your culture
 
 ---
 
