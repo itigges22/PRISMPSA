@@ -56,9 +56,9 @@ PRISM PSA was purpose-built for an organization operating a complex, professiona
 - **Real client deliverables** with actual deadlines and consequences
 - **Educational mission** requiring visibility into full workflows for learning
 
-The agency tried everything—Basecamp for projects, Monday.com for tasks, Notion for documentation, Slack for communication, spreadsheets for capacity. Nothing integrated. Leadership resorted to micromanagement because there was no other way to maintain visibility. Team culture suffered because no one understood how their work connected to the bigger picture.
+The agency tried everything—Basecamp for projects, Monday.com for tasks, Notion for documentation, Slack for communication, spreadsheets for capacity. Nothing integrated. Leadership lacked visibility into what was happening across teams. Team culture suffered because no one understood how their work connected to the bigger picture.
 
-**PRISM PSA consolidates all of this into one intelligent system** that provides transparency without micromanagement, accountability without chaos, and professional delivery while supporting experiential learning.
+**PRISM PSA consolidates all of this into one intelligent system** that provides transparency, accountability without chaos, and professional delivery while supporting experiential learning.
 
 ---
 
@@ -85,15 +85,17 @@ Work flows naturally through the organization:
 4. **Tasks break down** into actionable work with estimates and dependencies
 5. **Progress flows up** through project updates, time tracking, and status changes
 
-**Department membership is dynamic**—if you're assigned to Graphics projects, you're in the Graphics department. Rotate to Social Media projects? Your department view automatically updates. This reflects how people actually collaborate, not arbitrary static assignments.
+**Account assignments flow through workflows**—Your role and department stay consistent, but the client accounts you work on change dynamically based on project assignments. When a workflow step assigns you to a project, you automatically gain visibility into that account's work. This reflects how agencies actually operate: specialists maintain their expertise while flexibly supporting different clients.
 
-### Multiple Views for Different Workflows
+### Multiple Views for Task Management
 
-**Kanban Boards** - Account teams see their projects moving through Planning → In Progress → Review → Complete. Drag-and-drop simplicity with customizable columns per account.
+**Kanban Boards** - Teams see their **tasks** moving through status columns (To Do → In Progress → Review → Done). Drag-and-drop simplicity for managing daily work.
 
-**Gantt Charts** - Project managers visualize timelines, dependencies, and critical paths. See which tasks block others and identify bottlenecks before they become crises.
+**Gantt Charts** - Project managers visualize **task** timelines, dependencies, and critical paths. See which tasks block others and identify bottlenecks before they become crises.
 
-**Table Views** - Leadership gets sortable, filterable lists for bulk updates and quick status checks across all projects.
+**Table Views** - Leadership gets sortable, filterable lists for bulk task updates and quick status checks.
+
+**Workflow Views** - **Projects** move through custom workflows that define your agency's standard operating procedures. See exactly where each project stands in your delivery process.
 
 **Analytics Dashboards** - Data-driven insights into department performance, resource allocation, project health, and utilization trends.
 
@@ -127,7 +129,7 @@ Here's the game-changer: **PRISM PSA tracks capacity at every level**.
 - **Actual Hours** = Real logged time from time tracking
 - **Utilization** = (Actual ÷ Available) × 100
 
-**Example:** Sarah works 40 hours/week on 3 client accounts. Each account sees 13.3 hours of Sarah's capacity. She has 8 hours allocated to tasks this week and has logged 6 hours. Her utilization is 45%—she has room for more work.
+**Example:** Sarah works 40 hours/week and is assigned to 3 client accounts. Her capacity is proportionally split, so each account sees ~13.3 hours of her available time. If Sarah logs 32 hours across all her work this week, her overall utilization is 80% (32 ÷ 40)—a healthy, sustainable workload.
 
 ### Time Tracking Without the Pain
 
@@ -180,7 +182,7 @@ Every marketing agency has Standard Operating Procedures. They're documented in 
 
 - **Static documents** that don't match dynamic reality
 - **Disconnected** from actual work tools
-- **Unenforceable** without micromanagement
+- **Unenforceable** without constant follow-up
 - **Invisible** to leadership (until something breaks)
 
 **The result?** Work flows through informal channels. "Hey, is this done?" Slack messages. Missed handoffs. Blame games. Quality inconsistency.
@@ -225,15 +227,16 @@ Each step has clear ownership. Each handoff is tracked. No work falls through th
 - Clear visibility into project progression
 - Feedback captured at the right moments
 
-### Flexible, Not Rigid
+### Guardrails, Not Handcuffs
 
-Real work doesn't always follow the script. PRISM PSA understands this:
+Workflows provide structure without being rigid:
 
-- **Out-of-order handoffs are allowed** - Sometimes you need to skip a step or loop back
-- **Every deviation is documented** - Leadership sees when and why processes diverged
-- **Innovation emerges from flexibility** - The best process improvements come from seeing how work actually flows
+- **Standard paths guide work** - Team members know exactly what comes next
+- **Consistent quality** - Every project follows proven processes
+- **Clear accountability** - No ambiguity about who owns what at each stage
+- **Process improvement** - See how work actually flows and optimize over time
 
-This isn't about forcing compliance—it's about **visibility with flexibility**.
+This isn't about forcing compliance—it's about **consistency with clarity**.
 
 ---
 
@@ -767,20 +770,22 @@ PRISM PSA was built for a student-run agency, making it ideal for organizations 
 - **Comprehensive onboarding** - New members see the full workflow in one place
 - **Educational transparency** - Juniors learn by seeing how seniors manage complex projects
 - **Flexible capacity** - Set availability that matches your academic schedule
-- **Built-in accountability** - Clear expectations reduce micromanagement
+- **Built-in accountability** - Clear expectations and workflow tracking
 - **Career skill building** - Work with professional-grade tools that prepare you for industry
 
 ---
 
 ## 🤝 Contributing
 
-This is a proprietary enterprise application developed for a specific organizational need. For feature requests, bug reports, or questions about adapting PRISM PSA for your organization, contact the development team.
+Contributions are welcome! This project was originally developed for a student-run marketing agency but is designed to be adaptable for any professional services organization.
+
+For feature requests, bug reports, or questions about adapting PRISM PSA for your organization, please open an issue on GitHub.
 
 ---
 
 ## 📄 License
 
-Proprietary - All Rights Reserved
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
