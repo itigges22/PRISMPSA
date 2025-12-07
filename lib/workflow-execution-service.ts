@@ -47,6 +47,15 @@ export interface WorkflowInstance {
   status: 'active' | 'completed' | 'cancelled';
   started_at: string;
   completed_at: string | null;
+  // Snapshot of the workflow at the time the instance was created
+  // This ensures changes to the template don't affect in-progress workflows
+  started_snapshot?: {
+    nodes: any[];
+    connections: any[];
+    template_name?: string;
+    captured_at?: string;
+  } | null;
+  // Snapshot saved when workflow completes
   completed_snapshot?: {
     nodes: any[];
     connections: any[];
@@ -160,6 +169,26 @@ export async function startWorkflowForProject(
       return { success: false, error: 'Invalid workflow template ID' };
     }
 
+    // Check if workflow template exists and is active
+    const { data: template, error: templateError } = await supabase
+      .from('workflow_templates')
+      .select('id, name, is_active')
+      .eq('id', workflowTemplateId)
+      .single();
+
+    if (templateError || !template) {
+      console.error('Workflow template not found:', workflowTemplateId);
+      return { success: false, error: 'Workflow template not found' };
+    }
+
+    if (!template.is_active) {
+      console.error('Workflow template is not active:', workflowTemplateId);
+      return {
+        success: false,
+        error: `Workflow "${template.name}" is not active. Please activate it in the workflow editor before using.`
+      };
+    }
+
     // Get workflow nodes and find the start node
     const { data: nodes, error: nodesError } = await supabase
       .from('workflow_nodes')
@@ -180,7 +209,10 @@ export async function startWorkflowForProject(
 
     if (!nodes || nodes.length === 0) {
       console.error('No workflow nodes found for template:', workflowTemplateId);
-      return { success: false, error: 'No workflow nodes found for this template' };
+      return {
+        success: false,
+        error: `Workflow "${template.name}" has no nodes configured. Please add at least Start and End nodes in the workflow editor.`
+      };
     }
 
     // Find start node or first node
@@ -194,7 +226,16 @@ export async function startWorkflowForProject(
 
     const nextNode = findNextNode(startNode.id, connections, nodes);
 
-    // Create workflow instance
+    // Create workflow snapshot - this preserves the workflow state at the time the project starts
+    // Any future changes to the workflow template will NOT affect this project
+    const startedSnapshot = {
+      nodes: nodes,
+      connections: connections || [],
+      template_name: template.name,
+      captured_at: new Date().toISOString()
+    };
+
+    // Create workflow instance with snapshot
     const { data: instance, error: instanceError } = await supabase
       .from('workflow_instances')
       .insert({
@@ -202,6 +243,7 @@ export async function startWorkflowForProject(
         project_id: projectId,
         current_node_id: nextNode?.id || startNode.id,
         status: 'active',
+        started_snapshot: startedSnapshot, // Store snapshot for independent execution
       })
       .select()
       .single();
@@ -334,10 +376,10 @@ export async function progressWorkflow(
   }
 
   try {
-    // Get current workflow instance
+    // Get current workflow instance (including snapshot)
     const { data: instance, error: instanceError } = await supabase
       .from('workflow_instances')
-      .select('*, workflow_templates(*)')
+      .select('*, started_snapshot, workflow_templates(*)')
       .eq('id', workflowInstanceId)
       .single();
 
@@ -345,20 +387,36 @@ export async function progressWorkflow(
       return { success: false, error: 'Workflow instance not found' };
     }
 
-    // Get all nodes and connections
-    const { data: nodes } = await supabase
-      .from('workflow_nodes')
-      .select('*')
-      .eq('workflow_template_id', instance.workflow_template_id);
+    // Use snapshot data if available (for workflow independence from template changes)
+    // Fall back to querying live tables for backwards compatibility with older instances
+    let nodes: any[];
+    let connections: any[];
 
-    const { data: connections } = await supabase
-      .from('workflow_connections')
-      .select('*')
-      .eq('workflow_template_id', instance.workflow_template_id);
+    if (instance.started_snapshot?.nodes && instance.started_snapshot?.connections) {
+      // Use the snapshot - this ensures template changes don't affect in-progress workflows
+      nodes = instance.started_snapshot.nodes;
+      connections = instance.started_snapshot.connections;
+      console.log('[Workflow] Using snapshot data for instance:', workflowInstanceId);
+    } else {
+      // Fallback for older instances without snapshot - query live tables
+      console.log('[Workflow] No snapshot found, querying live tables for instance:', workflowInstanceId);
+      const { data: liveNodes } = await supabase
+        .from('workflow_nodes')
+        .select('*')
+        .eq('workflow_template_id', instance.workflow_template_id);
+
+      const { data: liveConnections } = await supabase
+        .from('workflow_connections')
+        .select('*')
+        .eq('workflow_template_id', instance.workflow_template_id);
+
+      nodes = liveNodes || [];
+      connections = liveConnections || [];
+    }
 
     const currentNode = nodes?.find((n: any) => n.id === instance.current_node_id);
     if (!currentNode) {
-      return { success: false, error: 'Current node not found' };
+      return { success: false, error: 'Current node not found in workflow' };
     }
 
     // AUTHORIZATION: Check if user can progress this workflow step
@@ -672,6 +730,171 @@ function findDecisionBasedNextNode(
 }
 
 /**
+ * Evaluate a single form condition against submitted form data
+ * Returns true if the condition is satisfied
+ */
+function evaluateFormCondition(
+  condition: {
+    sourceFormFieldId?: string;
+    conditionType?: string;
+    value?: string;
+    value2?: string;
+  },
+  formData: Record<string, any>
+): boolean {
+  if (!condition.sourceFormFieldId || !condition.conditionType) {
+    return false;
+  }
+
+  const fieldValue = formData[condition.sourceFormFieldId];
+  const conditionValue = condition.value;
+  const conditionValue2 = condition.value2;
+
+  // Handle null/undefined field values
+  const fieldStr = fieldValue !== null && fieldValue !== undefined ? String(fieldValue) : '';
+  const conditionStr = conditionValue !== null && conditionValue !== undefined ? String(conditionValue) : '';
+
+  switch (condition.conditionType) {
+    // Text/String conditions
+    case 'equals':
+      return fieldStr.toLowerCase() === conditionStr.toLowerCase();
+
+    case 'contains':
+      return fieldStr.toLowerCase().includes(conditionStr.toLowerCase());
+
+    case 'starts_with':
+      return fieldStr.toLowerCase().startsWith(conditionStr.toLowerCase());
+
+    case 'ends_with':
+      return fieldStr.toLowerCase().endsWith(conditionStr.toLowerCase());
+
+    case 'is_empty':
+      return fieldValue === undefined || fieldValue === null || fieldValue === '' ||
+             (Array.isArray(fieldValue) && fieldValue.length === 0);
+
+    case 'is_not_empty':
+      return fieldValue !== undefined && fieldValue !== null && fieldValue !== '' &&
+             !(Array.isArray(fieldValue) && fieldValue.length === 0);
+
+    // Number conditions
+    case 'greater_than':
+      return Number(fieldValue) > Number(conditionValue);
+
+    case 'less_than':
+      return Number(fieldValue) < Number(conditionValue);
+
+    case 'greater_or_equal':
+      return Number(fieldValue) >= Number(conditionValue);
+
+    case 'less_or_equal':
+      return Number(fieldValue) <= Number(conditionValue);
+
+    case 'between':
+      const numVal = Number(fieldValue);
+      return numVal >= Number(conditionValue) && numVal <= Number(conditionValue2);
+
+    // Date conditions
+    case 'before':
+      return new Date(fieldValue) < new Date(conditionValue!);
+
+    case 'after':
+      return new Date(fieldValue) > new Date(conditionValue!);
+
+    // Checkbox conditions
+    case 'is_checked':
+      return fieldValue === true || fieldValue === 'true' || fieldValue === 'yes';
+
+    case 'is_not_checked':
+      return fieldValue === false || fieldValue === 'false' || fieldValue === 'no' || !fieldValue;
+
+    default:
+      console.warn(`[evaluateFormCondition] Unknown condition type: ${condition.conditionType}`);
+      return false;
+  }
+}
+
+/**
+ * Find next node for conditional routing based on form data evaluation
+ * Evaluates conditions defined in the connection's condition object
+ */
+function findConditionalNextNodeWithFormData(
+  conditionalNode: any,
+  formData: Record<string, any>,
+  connections: any[] | null,
+  nodes: any[] | null
+): any | null {
+  if (!connections || !nodes) {
+    return null;
+  }
+
+  // Get all outgoing connections from this conditional node
+  const outgoingConnections = connections.filter(c => c.from_node_id === conditionalNode.id);
+
+  console.log('[findConditionalNextNodeWithFormData] Evaluating conditional routing:', {
+    conditionalNodeId: conditionalNode.id,
+    conditionalNodeLabel: conditionalNode.label,
+    formDataKeys: Object.keys(formData),
+    formDataValues: formData, // Log actual values for debugging
+    outgoingConnectionCount: outgoingConnections.length,
+    connectionConditions: outgoingConnections.map(c => ({
+      toNodeId: c.to_node_id,
+      hasCondition: !!c.condition,
+      conditionType: c.condition?.conditionType,
+      sourceFormFieldId: c.condition?.sourceFormFieldId,
+      value: c.condition?.value
+    }))
+  });
+
+  // Try each connection's condition
+  for (const connection of outgoingConnections) {
+    const condition = connection.condition;
+
+    // Skip if no condition defined
+    if (!condition) continue;
+
+    // Check if this is a form-based condition (has sourceFormFieldId)
+    if (condition.sourceFormFieldId && condition.conditionType) {
+      const matches = evaluateFormCondition(condition, formData);
+      console.log('[findConditionalNextNodeWithFormData] Condition evaluation:', {
+        fieldId: condition.sourceFormFieldId,
+        conditionType: condition.conditionType,
+        expectedValue: condition.value,
+        actualValue: formData[condition.sourceFormFieldId],
+        matches
+      });
+
+      if (matches) {
+        const targetNode = nodes.find(n => n.id === connection.to_node_id);
+        console.log('[findConditionalNextNodeWithFormData] Found matching condition path:', targetNode?.label);
+        return targetNode || null;
+      }
+    }
+  }
+
+  // No form-based condition matched - look for default path
+  // Default path is a connection without form condition (no sourceFormFieldId)
+  const defaultConnection = outgoingConnections.find(c =>
+    !c.condition ||
+    (!c.condition.sourceFormFieldId && !c.condition.decision && !c.condition.conditionValue)
+  );
+
+  if (defaultConnection) {
+    const defaultNode = nodes.find(n => n.id === defaultConnection.to_node_id);
+    console.log('[findConditionalNextNodeWithFormData] Using default path:', defaultNode?.label);
+    return defaultNode || null;
+  }
+
+  // Last resort - use first connection
+  if (outgoingConnections.length > 0) {
+    const fallbackNode = nodes.find(n => n.id === outgoingConnections[0].to_node_id);
+    console.log('[findConditionalNextNodeWithFormData] Using fallback (first connection):', fallbackNode?.label);
+    return fallbackNode || null;
+  }
+
+  return null;
+}
+
+/**
  * Assign project to user(s) based on workflow node
  * Also handles removing previous assignments (except project creator)
  */
@@ -973,10 +1196,12 @@ export async function getUserPendingApprovals(supabase: SupabaseClient, userId: 
       .eq('user_id', userId);
 
     const roleIds = userRoles?.map((ur) => ur.role_id) || [];
-    if (roleIds.length === 0) return [];
+    // Note: Don't return early if roleIds is empty - user may still have direct assignments via assigned_user_id
 
     // Query workflow_active_steps to get ALL active steps (supports parallel workflows)
-    // Use explicit foreign key hints for PostgREST
+    // NOTE: We don't join workflow_nodes because the FK may not exist after template modifications
+    // We use snapshot data from workflow_instances.started_snapshot instead
+    // Use explicit FK names to avoid "multiple relationships" errors
     const { data: activeSteps, error } = await supabase
       .from('workflow_active_steps')
       .select(`
@@ -985,18 +1210,14 @@ export async function getUserPendingApprovals(supabase: SupabaseClient, userId: 
         node_id,
         status,
         activated_at,
-        workflow_nodes:workflow_active_steps_node_id_fkey!inner(
-          id,
-          label,
-          node_type,
-          entity_id
-        ),
+        assigned_user_id,
         workflow_instances:workflow_active_steps_workflow_instance_id_fkey!inner(
           id,
           status,
           project_id,
           workflow_template_id,
           current_node_id,
+          started_snapshot,
           projects:workflow_instances_project_id_fkey!inner(
             id,
             name,
@@ -1015,37 +1236,84 @@ export async function getUserPendingApprovals(supabase: SupabaseClient, userId: 
       return [];
     }
 
-    // Filter to only approval/form nodes where the user has the required role
-    const filteredSteps = (activeSteps || []).filter((step: any) => {
-      const node = step.workflow_nodes;
-      const instance = step.workflow_instances;
+    // Pre-fetch workflow_node_assignments for this user
+    // This allows us to check if user is assigned to specific nodes in any workflow instance
+    const { data: nodeAssignments } = await supabase
+      .from('workflow_node_assignments')
+      .select('workflow_instance_id, node_id')
+      .eq('user_id', userId);
 
-      if (!node || !instance) return false;
+    // Create a set of "instanceId:nodeId" keys for quick lookup
+    const assignedNodeKeys = new Set<string>(
+      (nodeAssignments || []).map((na: any) => `${na.workflow_instance_id}:${na.node_id}`)
+    );
+
+    // Filter to only approval/form nodes where the user is assigned or has the required role
+    const filteredSteps = (activeSteps || []).filter((step: any) => {
+      const instance = step.workflow_instances;
+      if (!instance) return false;
 
       // Only include active workflow instances
       if (instance.status !== 'active') return false;
 
+      // Get node data from snapshot (we don't join workflow_nodes because FK may not exist)
+      const node = instance.started_snapshot?.nodes?.find((n: any) => n.id === step.node_id);
+
+      if (!node) {
+        console.warn('Could not find node data for active step:', {
+          stepId: step.id,
+          nodeId: step.node_id,
+          hasSnapshot: !!instance.started_snapshot
+        });
+        return false;
+      }
+
       // Check if node is approval or form type
       if (!['approval', 'form'].includes(node.node_type)) return false;
 
-      // Check if user has the required role for this node
-      if (!node.entity_id) return false;
-      return roleIds.includes(node.entity_id);
+      // CHECK 1: User is specifically assigned to this step (e.g., sync leader, manual assignment)
+      if (step.assigned_user_id === userId) {
+        console.log('Pending approval matched via assigned_user_id:', { stepId: step.id, nodeLabel: node.label });
+        return true;
+      }
+
+      // CHECK 2: User is assigned via workflow_node_assignments table
+      const nodeKey = `${step.workflow_instance_id}:${step.node_id}`;
+      if (assignedNodeKeys.has(nodeKey)) {
+        console.log('Pending approval matched via workflow_node_assignments:', { stepId: step.id, nodeLabel: node.label });
+        return true;
+      }
+
+      // CHECK 3: User has the required role for this node
+      if (node.entity_id && roleIds.includes(node.entity_id)) {
+        console.log('Pending approval matched via role:', { stepId: step.id, nodeLabel: node.label, entityId: node.entity_id });
+        return true;
+      }
+
+      // No match - user is not assigned and doesn't have the role
+      return false;
     });
 
     // Transform to match expected format (for backwards compatibility)
-    const result = filteredSteps.map((step: any) => ({
-      ...step.workflow_instances,
-      workflow_nodes: step.workflow_nodes,
-      projects: step.workflow_instances.projects,
-      active_step_id: step.id,
-      current_node_id: step.node_id // Override with this specific step's node
-    }));
+    const result = filteredSteps.map((step: any) => {
+      // Get node data from snapshot (always use snapshot since we don't join workflow_nodes)
+      const nodeData = step.workflow_instances.started_snapshot?.nodes?.find((n: any) => n.id === step.node_id);
+
+      return {
+        ...step.workflow_instances,
+        workflow_nodes: nodeData,
+        projects: step.workflow_instances.projects,
+        active_step_id: step.id,
+        current_node_id: step.node_id, // Override with this specific step's node
+        assigned_user_id: step.assigned_user_id // Include for debugging
+      };
+    });
 
     console.log('Pending approvals query (parallel-aware):', {
       userId,
       roleIds,
       totalActiveSteps: activeSteps?.length || 0,
+      nodeAssignmentCount: nodeAssignments?.length || 0,
       filteredCount: result.length
     });
 
@@ -1799,10 +2067,10 @@ export async function progressWorkflowStep(
   }
 
   try {
-    // Get workflow instance
+    // Get workflow instance with snapshot
     const { data: instance, error: instanceError } = await supabase
       .from('workflow_instances')
-      .select('*, workflow_templates(*)')
+      .select('*, started_snapshot, workflow_templates(*)')
       .eq('id', workflowInstanceId)
       .single();
 
@@ -1810,16 +2078,32 @@ export async function progressWorkflowStep(
       return { success: false, error: 'Workflow instance not found' };
     }
 
-    // Get all nodes and connections
-    const { data: nodes } = await supabase
-      .from('workflow_nodes')
-      .select('*')
-      .eq('workflow_template_id', instance.workflow_template_id);
+    // Get nodes and connections - prefer snapshot over live tables
+    // This ensures deleted/modified templates don't break in-progress workflows
+    let nodes: any[] = [];
+    let connections: any[] = [];
 
-    const { data: connections } = await supabase
-      .from('workflow_connections')
-      .select('*')
-      .eq('workflow_template_id', instance.workflow_template_id);
+    if (instance.started_snapshot?.nodes && instance.started_snapshot?.connections) {
+      // Use snapshot data (protects against template deletion/modification)
+      nodes = instance.started_snapshot.nodes;
+      connections = instance.started_snapshot.connections;
+      console.log('[progressWorkflowStep] Using snapshot data');
+    } else {
+      // Fallback to live tables for older instances without snapshot
+      console.log('[progressWorkflowStep] Falling back to live table queries');
+      const { data: liveNodes } = await supabase
+        .from('workflow_nodes')
+        .select('*')
+        .eq('workflow_template_id', instance.workflow_template_id);
+
+      const { data: liveConnections } = await supabase
+        .from('workflow_connections')
+        .select('*')
+        .eq('workflow_template_id', instance.workflow_template_id);
+
+      nodes = liveNodes || [];
+      connections = liveConnections || [];
+    }
 
     // Determine current node based on whether we're using parallel or legacy mode
     let currentNode: any;
@@ -2021,6 +2305,101 @@ export async function progressWorkflowStep(
     } else {
       // Check if this is a fork point
       nextNodes = findNextNodes(currentNode.id, connections, nodes);
+    }
+
+    // AUTO-ROUTE THROUGH CONDITIONAL NODES
+    // If the next node is a conditional and we have form data, auto-evaluate and route
+    // This allows forms to directly branch based on their responses without user interaction
+    if (nextNodes.length > 0) {
+      // Build accumulated form data from various sources
+      let accumulatedFormData: Record<string, any> = {};
+
+      // Add inline form data if provided (highest priority - most recent submission)
+      if (inlineFormData && Object.keys(inlineFormData).length > 0) {
+        // For inline forms, the actual responses are nested under 'responses' key
+        // Extract them to the top level for conditional evaluation
+        if (inlineFormData.responses && typeof inlineFormData.responses === 'object') {
+          accumulatedFormData = { ...accumulatedFormData, ...inlineFormData.responses };
+          console.log('[progressWorkflowStep] Extracted inline form responses for conditional routing:', Object.keys(inlineFormData.responses));
+        } else {
+          // Fallback: spread as-is (for non-nested form data)
+          accumulatedFormData = { ...accumulatedFormData, ...inlineFormData };
+        }
+        console.log('[progressWorkflowStep] Using inline form data for conditional routing');
+      }
+
+      // If we have a form response ID, fetch that form's data
+      if (formResponseId) {
+        const { data: formResponse } = await supabase
+          .from('form_responses')
+          .select('response_data')
+          .eq('id', formResponseId)
+          .single();
+
+        if (formResponse?.response_data) {
+          accumulatedFormData = { ...accumulatedFormData, ...formResponse.response_data };
+          console.log('[progressWorkflowStep] Added form response data for conditional routing');
+        }
+      }
+
+      // If still no form data, try to get the most recent form response from workflow history
+      if (Object.keys(accumulatedFormData).length === 0) {
+        const { data: recentFormHistory } = await supabase
+          .from('workflow_history')
+          .select(`
+            form_response_id,
+            form_responses(response_data)
+          `)
+          .eq('workflow_instance_id', workflowInstanceId)
+          .not('form_response_id', 'is', null)
+          .order('handed_off_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (recentFormHistory?.form_responses?.response_data) {
+          accumulatedFormData = { ...recentFormHistory.form_responses.response_data };
+          console.log('[progressWorkflowStep] Fetched recent form data from history for conditional routing');
+        }
+      }
+
+      // Now auto-route through any conditional nodes
+      for (let i = 0; i < nextNodes.length; i++) {
+        let nextNode = nextNodes[i];
+        let routingIterations = 0;
+        const maxIterations = 10; // Prevent infinite loops
+
+        while (nextNode && nextNode.node_type === 'conditional' && routingIterations < maxIterations) {
+          routingIterations++;
+          console.log(`[progressWorkflowStep] Auto-routing through conditional node: ${nextNode.label} (iteration ${routingIterations})`);
+
+          // Try form-based routing first
+          const conditionalNextNode = findConditionalNextNodeWithFormData(
+            nextNode,
+            accumulatedFormData,
+            connections,
+            nodes
+          );
+
+          if (conditionalNextNode) {
+            // Log the routing for history
+            console.log(`[progressWorkflowStep] Conditional routed to: ${conditionalNextNode.label}`);
+            nextNode = conditionalNextNode;
+          } else {
+            // Fallback to legacy decision-based routing if no form match
+            const legacyNext = findConditionalNextNode(nextNode, decision, connections, nodes);
+            if (legacyNext) {
+              nextNode = legacyNext;
+            } else {
+              // No route found - break the loop
+              console.warn(`[progressWorkflowStep] No route found from conditional node: ${nextNode.label}`);
+              break;
+            }
+          }
+        }
+
+        // Update the next node in the array
+        nextNodes[i] = nextNode;
+      }
     }
 
     // CRITICAL: Validate rejection routing - prevent silent completion

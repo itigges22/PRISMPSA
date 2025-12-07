@@ -288,7 +288,7 @@ export default function PendingUsersPage() {
               Access Denied
             </CardTitle>
             <CardDescription>
-              You don't have permission to manage user approvals.
+              You don&apos;t have permission to manage user approvals.
             </CardDescription>
           </CardHeader>
         </Card>

@@ -668,7 +668,7 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
         // Check if user can modify this project
         if (!canUserModifyProject(project)) {
           console.warn('User does not have permission to modify this project');
-          alert('You do not have permission to modify this project. You can only modify projects you are assigned to or are a stakeholder on.');
+          toast.error('You do not have permission to modify this project. You can only modify projects you are assigned to or are a stakeholder on.');
           continue;
         }
         
@@ -722,7 +722,7 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
 
           if (!response.ok) {
             console.error('Failed to update project status:', result.error);
-            alert(result.error || 'Failed to update project status. Please try again.');
+            toast.error(result.error || 'Failed to update project status. Please try again.');
             return;
           }
 
@@ -748,14 +748,14 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
             console.log('Custom column assignment stored:', movedItem.column);
           } else {
             console.error('Failed to update project status');
-            alert('Failed to update project status. Please try again.');
+            toast.error('Failed to update project status. Please try again.');
           }
         }
       }
       
     } catch (error) {
       console.error('Error in handleDataChange:', error);
-      alert('Error updating project. Please try again.');
+      toast.error('Error updating project. Please try again.');
     }
   };
 
@@ -918,11 +918,11 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
         console.log('Project deleted successfully');
       } else {
         console.error('Failed to delete project - service returned false');
-        alert('Failed to delete project. Please try again.');
+        toast.error('Failed to delete project. Please try again.');
       }
     } catch (error) {
       console.error('Error deleting project:', error);
-      alert('Error deleting project. Please try again.');
+      toast.error('Error deleting project. Please try again.');
     } finally {
       // Close dialog and reset state
       setDeleteDialogOpen(false);
@@ -983,7 +983,7 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
       // Check if user can modify this project
       if (!canUserModifyProject(project)) {
         console.warn('User does not have permission to modify this project');
-        alert('You do not have permission to modify this project. You can only modify projects you are assigned to or are a stakeholder on.');
+        toast.error('You do not have permission to modify this project. You can only modify projects you are assigned to or are a stakeholder on.');
         return;
       }
       
@@ -1118,7 +1118,7 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
       setMilestones((prev) => prev.filter((m) => m.id !== id));
     } catch (error) {
       console.error('Failed to delete milestone:', error);
-      alert('Failed to delete milestone. Please try again.');
+      toast.error('Failed to delete milestone. Please try again.');
     }
   };
 
@@ -1569,7 +1569,7 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
         {/* 4. Key Metrics Card - Health Scores */}
         <Card>
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {/* Health Score */}
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0">
@@ -1598,7 +1598,18 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile, ha
 
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0">
-                  <Calendar className="w-8 h-8 text-green-600" />
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Completed Projects</p>
+                  <p className="text-2xl font-bold text-green-600">{metrics.completedProjects}</p>
+                  <p className="text-xs text-muted-foreground">Successfully finished</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <Calendar className="w-8 h-8 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Upcoming Deadlines</p>

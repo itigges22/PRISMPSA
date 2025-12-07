@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import {
@@ -77,7 +78,7 @@ export default function PeopleManagementDialog({
   const handleDeletePerson = async (personId: string) => {
     // Prevent deletion of the default "Unassigned" user
     if (personId === 'default-user') {
-      alert('Cannot delete the default "Unassigned" user. This user is required for the system to function properly.');
+      toast.error('Cannot delete the default "Unassigned" user. This user is required for the system to function properly.');
       return;
     }
 

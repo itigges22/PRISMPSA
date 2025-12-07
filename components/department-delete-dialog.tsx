@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner';
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -41,7 +42,7 @@ export default function DepartmentDeleteDialog({
 
   const handleDelete = async () => {
     if (!canDeleteDepartment) {
-      alert('You do not have permission to delete departments.');
+      toast.error('You do not have permission to delete departments.');
       setOpen(false);
       return;
     }
@@ -53,13 +54,13 @@ export default function DepartmentDeleteDialog({
       if (success) {
         setOpen(false)
         onDepartmentDeleted?.()
-        alert('Department deleted successfully!')
+        toast.error('Department deleted successfully!')
       } else {
-        alert('Failed to delete department. Please try again.')
+        toast.error('Failed to delete department. Please try again.')
       }
     } catch (error) {
       console.error('Error deleting department:', error)
-      alert('An error occurred while deleting the department.')
+      toast.error('An error occurred while deleting the department.')
     } finally {
       setLoading(false)
     }
@@ -87,7 +88,7 @@ export default function DepartmentDeleteDialog({
         
         <div className="space-y-3 pt-2">
           <p className="text-sm text-muted-foreground">
-            You are about to delete <span className="font-semibold text-gray-900">"{departmentName}"</span>.
+            You are about to delete <span className="font-semibold text-gray-900">&quot;{departmentName}&quot;</span>.
           </p>
           <div className="bg-red-50 border border-red-200 rounded-md p-3">
             <p className="text-sm text-red-800">

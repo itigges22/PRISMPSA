@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
 import { hasPermission } from '@/lib/rbac';
 import { Permission } from '@/lib/permissions';
-import { getWorkflowTemplates, createWorkflowTemplate } from '@/lib/workflow-service';
+import { getWorkflowTemplates, getAllWorkflowTemplates, createWorkflowTemplate } from '@/lib/workflow-service';
 import { validateRequestBody, createWorkflowTemplateSchema } from '@/lib/validation-schemas';
 
 // GET /api/admin/workflows/templates - List all workflow templates
@@ -47,8 +47,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions to view workflows' }, { status: 403 });
     }
 
-    // Get templates
-    const templates = await getWorkflowTemplates();
+    // Check if inactive templates should be included (for admin workflow editor)
+    const includeInactive = request.nextUrl.searchParams.get('include_inactive') === 'true';
+
+    // Get templates - include inactive if requested
+    const templates = includeInactive
+      ? await getAllWorkflowTemplates()
+      : await getWorkflowTemplates();
 
     return NextResponse.json({ success: true, templates }, { status: 200 });
   } catch (error) {

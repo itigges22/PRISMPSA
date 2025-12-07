@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import {
@@ -91,7 +92,7 @@ export function RoleCreationDialog({
           errors: validation.errors,
           warnings: validation.warnings
         });
-        alert(`Validation failed: ${validation.errors.join(', ')}`);
+        toast.error(`Validation failed: ${validation.errors.join(', ')}`);
         setLoading(false);
         return;
       }
@@ -131,7 +132,7 @@ export function RoleCreationDialog({
           status: response.status,
           error: errorData.error
         });
-        alert(`Failed to create role: ${errorData.error || 'Please try again.'}`);
+        toast.error(`Failed to create role: ${errorData.error || 'Please try again.'}`);
       }
     } catch (error) {
       componentError('RoleCreationDialog', error as Error, { 
@@ -140,7 +141,7 @@ export function RoleCreationDialog({
       logger.error('Exception in role creation', { 
         action: 'handleSubmit' 
       }, error as Error);
-      alert('An error occurred while creating the role.');
+      toast.error('An error occurred while creating the role.');
     } finally {
       setLoading(false);
     }

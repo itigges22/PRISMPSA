@@ -2,17 +2,19 @@
 
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { GitBranch, Users, UserCheck, CheckCircle, Play, Flag, FileText, GitMerge, Combine, HelpCircle } from 'lucide-react';
-import { Tooltip } from '@/components/ui/tooltip';
+import { Users, UserCheck, Play, Flag, FileText, GitMerge, Combine, Building2, LucideIcon } from 'lucide-react';
 
-export type WorkflowNodeType = 'start' | 'department' | 'role' | 'approval' | 'form' | 'conditional' | 'sync' | 'end';
+// Note: 'department' and 'sync' kept for backwards compatibility with existing workflows
+export type WorkflowNodeType = 'start' | 'department' | 'role' | 'approval' | 'form' | 'conditional' | 'sync' | 'end' | 'client';
 
 export interface WorkflowNodeData {
   label: string;
   type: WorkflowNodeType;
   config?: {
+    // Department config (legacy - no longer used for new workflows)
     departmentId?: string;
     departmentName?: string;
+    // Role config
     roleId?: string;
     roleName?: string;
     approverRoleId?: string;
@@ -45,7 +47,7 @@ export interface WorkflowNodeData {
   [key: string]: unknown;
 }
 
-const nodeStyles: Record<WorkflowNodeType, { bg: string; border: string; icon: any; description: string }> = {
+const nodeStyles: Record<WorkflowNodeType, { bg: string; border: string; icon: LucideIcon; description: string }> = {
   start: {
     bg: 'bg-green-50',
     border: 'border-green-500',
@@ -53,16 +55,17 @@ const nodeStyles: Record<WorkflowNodeType, { bg: string; border: string; icon: a
     description: 'Entry point: Where every workflow begins. Only one per workflow.',
   },
   department: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-500',
-    icon: GitBranch,
-    description: 'Route work to an entire department. All members can see it.',
+    // Legacy - kept for backwards compatibility
+    bg: 'bg-gray-100',
+    border: 'border-gray-400',
+    icon: Users,
+    description: 'Legacy department node. Use Role nodes instead.',
   },
   role: {
     bg: 'bg-purple-50',
     border: 'border-purple-500',
     icon: Users,
-    description: 'Assign to specific role (e.g., Video Editor, Designer). Requires selecting a team member.',
+    description: 'Assign to specific role (e.g., Video Editor, Designer). Department is auto-assigned.',
   },
   approval: {
     bg: 'bg-amber-50',
@@ -80,19 +83,26 @@ const nodeStyles: Record<WorkflowNodeType, { bg: string; border: string; icon: a
     bg: 'bg-pink-50',
     border: 'border-pink-500',
     icon: GitMerge,
-    description: 'Branch workflow based on form responses. Connect to a Form node and create up to 5 output paths.',
+    description: 'Smart routing: Takes ONE path based on conditions. Only one path is executed.',
   },
   sync: {
-    bg: 'bg-indigo-50',
-    border: 'border-indigo-500',
+    // Legacy - kept for backwards compatibility (parallel workflows disabled)
+    bg: 'bg-gray-100',
+    border: 'border-gray-400',
     icon: Combine,
-    description: 'Wait point: Pauses until all incoming parallel paths complete before continuing.',
+    description: 'Legacy sync node. Parallel workflows are disabled.',
   },
   end: {
     bg: 'bg-gray-50',
     border: 'border-gray-500',
     icon: Flag,
     description: 'Completion point: Marks workflow as done. Every workflow needs at least one.',
+  },
+  client: {
+    bg: 'bg-orange-50',
+    border: 'border-orange-500',
+    icon: Building2,
+    description: 'Client approval: Requires external client approval before proceeding.',
   },
 };
 
@@ -117,22 +127,13 @@ export const WorkflowNode = memo(({ data, selected }: NodeProps) => {
           type="target"
           position={Position.Top}
           className="w-3 h-3 !bg-gray-400 border-2 border-white"
+          isConnectable={true}
+          style={{ zIndex: 20 }}
         />
       )}
 
-      {/* Info Icon in top-right corner */}
-      <Tooltip
-        content={<p className="text-xs">{style.description}</p>}
-        side="right"
-        delayDuration={300}
-      >
-        <div className="absolute top-1 right-1 cursor-help">
-          <HelpCircle className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700" />
-        </div>
-      </Tooltip>
-
-        {/* Node Content */}
-        <div className="flex items-center gap-2">
+        {/* Node Content - ensure it doesn't block handle interactions */}
+        <div className="flex items-center gap-2 relative" style={{ zIndex: 1 }}>
           <Icon className="w-5 h-5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-sm truncate">{nodeData.label}</div>
@@ -145,11 +146,6 @@ export const WorkflowNode = memo(({ data, selected }: NodeProps) => {
             {nodeData.config?.approverRoleName && (
               <div className="text-xs text-gray-600 truncate">
                 Approver: {nodeData.config.approverRoleName}
-              </div>
-            )}
-            {nodeData.config?.requiredApprovals && (
-              <div className="text-xs text-gray-600">
-                {nodeData.config.requiredApprovals} approval{nodeData.config.requiredApprovals > 1 ? 's' : ''} required
               </div>
             )}
             {nodeData.config?.formTemplateName && (
@@ -171,50 +167,84 @@ export const WorkflowNode = memo(({ data, selected }: NodeProps) => {
           type="source"
           position={Position.Bottom}
           className="w-3 h-3 !bg-gray-400 border-2 border-white"
+          isConnectable={true}
+          style={{ zIndex: 20 }}
         />
       )}
 
       {/* Conditional nodes get dynamic output handles based on configured branches */}
       {nodeData.type === 'conditional' && nodeData.config?.conditions && nodeData.config.conditions.length > 0 ? (
-        // Show custom branches
-        <>
-          {nodeData.config.conditions.map((condition: any, index: number) => {
+        // Show custom branches with labeled handles
+        // IMPORTANT: Handles must be direct children - no wrapper divs!
+        // Using larger handles (w-4 h-4) for better drag detection
+        nodeData.config.conditions.map((condition: { id?: string; value?: string; label: string; color?: string }, index: number) => {
+          const total = nodeData.config!.conditions!.length;
+          const leftPercent = total === 1 ? 50 : (index + 1) * (100 / (total + 1));
+          const handleId = condition.id || condition.value || `condition-${index}`;
+          return (
+            <Handle
+              key={handleId}
+              type="source"
+              position={Position.Bottom}
+              id={handleId}
+              className="!w-4 !h-4 border-2 border-white rounded-full"
+              isConnectable={true}
+              style={{
+                left: `${leftPercent}%`,
+                transform: 'translateX(-50%)',
+                bottom: '-8px',
+                backgroundColor: condition.color || '#3B82F6',
+                zIndex: 100,
+                cursor: 'crosshair',
+                pointerEvents: 'all',
+              }}
+              title={`${condition.label} - Drag to connect`}
+            />
+          );
+        })
+      ) : nodeData.type === 'conditional' ? (
+        // No branches configured yet - show default source handle so connections can still be made
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="default"
+          className="!w-4 !h-4 !bg-pink-400 border-2 border-white rounded-full"
+          isConnectable={true}
+          style={{ zIndex: 100, cursor: 'crosshair', bottom: '-8px', pointerEvents: 'all' }}
+          title="Configure branches first, then connect"
+        />
+      ) : null}
+
+      {/* Branch labels rendered separately (below handles) */}
+      {nodeData.type === 'conditional' && nodeData.config?.conditions && nodeData.config.conditions.length > 0 && (
+        <div className="absolute bottom-[-28px] left-0 right-0 pointer-events-none">
+          {nodeData.config.conditions.map((condition: { id?: string; value?: string; label: string; color?: string }, index: number) => {
             const total = nodeData.config!.conditions!.length;
             const leftPercent = total === 1 ? 50 : (index + 1) * (100 / (total + 1));
             return (
-              <div key={condition.id || index}>
-                <Handle
-                  type="source"
-                  position={Position.Bottom}
-                  id={condition.value || condition.id}
-                  className="w-3 h-3 border-2 border-white"
-                  style={{
-                    left: `${leftPercent}%`,
-                    backgroundColor: condition.color || '#3B82F6'
-                  }}
-                  title={condition.label}
-                />
-                <span
-                  className="absolute bottom-[-18px] text-[8px] font-semibold pointer-events-none whitespace-nowrap overflow-hidden max-w-[60px] text-ellipsis"
-                  style={{
-                    left: `${leftPercent}%`,
-                    transform: 'translateX(-50%)',
-                    color: condition.color || '#3B82F6'
-                  }}
-                  title={condition.label}
-                >
-                  {condition.label.length > 10 ? condition.label.substring(0, 10) + '...' : condition.label}
-                </span>
-              </div>
+              <span
+                key={`label-${condition.id || condition.value || index}`}
+                className="absolute text-[8px] font-semibold whitespace-nowrap overflow-hidden max-w-[60px] text-ellipsis"
+                style={{
+                  left: `${leftPercent}%`,
+                  transform: 'translateX(-50%)',
+                  color: condition.color || '#3B82F6'
+                }}
+                title={condition.label}
+              >
+                {condition.label.length > 10 ? condition.label.substring(0, 10) + '...' : condition.label}
+              </span>
             );
           })}
-        </>
-      ) : nodeData.type === 'conditional' ? (
-        // No branches configured yet - show placeholder
-        <div className="absolute bottom-[-20px] left-1/2 transform -translate-x-1/2">
-          <span className="text-[9px] text-gray-400 whitespace-nowrap">No branches configured</span>
         </div>
-      ) : null}
+      )}
+
+      {/* "Configure branches" hint for unconfigured conditional nodes */}
+      {nodeData.type === 'conditional' && (!nodeData.config?.conditions || nodeData.config.conditions.length === 0) && (
+        <div className="absolute bottom-[-20px] left-1/2 transform -translate-x-1/2 pointer-events-none">
+          <span className="text-[9px] text-gray-400 whitespace-nowrap">Configure branches</span>
+        </div>
+      )}
     </div>
   );
 });

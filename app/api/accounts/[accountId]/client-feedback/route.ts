@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
-import { getClientFeedbackByAccount } from '@/lib/client-portal-service';
 import { hasPermission } from '@/lib/rbac';
 import { Permission } from '@/lib/permissions';
 import { hasAccountAccessServer } from '@/lib/access-control-server';

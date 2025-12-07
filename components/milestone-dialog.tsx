@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import {
@@ -90,7 +91,7 @@ export function MilestoneDialog({
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create milestone:', error);
-      alert('Failed to create milestone. Please try again.');
+      toast.error('Failed to create milestone. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

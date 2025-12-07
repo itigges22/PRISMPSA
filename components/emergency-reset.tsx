@@ -35,7 +35,7 @@ export default function EmergencyReset() {
       
       {showReset && (
         <div className="text-yellow-800 space-y-2">
-          <p className="text-xs">If you're experiencing issues after database setup:</p>
+          <p className="text-xs">If you&apos;re experiencing issues after database setup:</p>
           <div className="space-y-1 text-xs">
             <p>1. Check console for specific errors</p>
             <p>2. Try refreshing the page</p>

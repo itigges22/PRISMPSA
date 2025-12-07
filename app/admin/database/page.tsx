@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Database, CheckCircle, AlertCircle, Clock, Activity } from 'lucide-react'
-import { RoleGuard } from '@/components/role-guard'
 import { Permission } from '@/lib/permissions'
 import { hasPermission } from '@/lib/rbac'
 
@@ -14,7 +13,7 @@ export default function DatabaseStatusPage() {
   const { user, userProfile, loading } = useAuth()
   const router = useRouter()
   const [hasAccess, setHasAccess] = useState(false)
-  const [dbStatus, setDbStatus] = useState({
+  const [dbStatus] = useState({
     connected: true,
     responseTime: 45,
     uptime: '99.9%',

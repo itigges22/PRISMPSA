@@ -136,6 +136,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create task: ' + taskError.message }, { status: 500 })
     }
 
+    // Add user as project collaborator if not already assigned
+    if (body.project_id) {
+      const { data: existingAssignment } = await supabase
+        .from('project_assignments')
+        .select('id, removed_at')
+        .eq('project_id', body.project_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!existingAssignment) {
+        // Insert new assignment
+        await supabase.from('project_assignments').insert({
+          project_id: body.project_id,
+          user_id: user.id,
+          role_in_project: 'collaborator',
+          assigned_by: user.id
+        })
+      } else if (existingAssignment.removed_at) {
+        // Reactivate removed assignment
+        await supabase
+          .from('project_assignments')
+          .update({ removed_at: null, role_in_project: 'collaborator' })
+          .eq('id', existingAssignment.id)
+      }
+    }
+
     return NextResponse.json({ success: true, task }, { status: 201 })
   } catch (error) {
     console.error('Error in POST /api/tasks:', error)

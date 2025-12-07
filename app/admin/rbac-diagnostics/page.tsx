@@ -46,7 +46,8 @@ export default function RBACDiagnosticsPage() {
   const [testing, setTesting] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPermission, setSelectedPermission] = useState('');
+  // Permission filter state (reserved for future use)
+  const [_selectedPermission, _setSelectedPermission] = useState('');
 
   useEffect(() => {
     fetchDiagnostics();
@@ -331,7 +332,7 @@ export default function RBACDiagnosticsPage() {
                     <CardContent>
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(role.permissions)
-                          .filter(([_, enabled]) => enabled)
+                          .filter(([, enabled]) => enabled)
                           .map(([permission]) => (
                             <Badge key={permission} variant="secondary" className="text-xs">
                               {permission}

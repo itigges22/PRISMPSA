@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
-import { requireAuthAndPermission } from '@/lib/server-guards';
-import { Permission } from '@/lib/permissions';
 import { isSuperadmin } from '@/lib/rbac';
 import { getCurrentUserProfileServer } from '@/lib/auth-server';
 
@@ -36,13 +34,15 @@ export async function POST(request: NextRequest) {
     }
     
     // Find or create "Internal Affairs" department
-    let { data: internalAffairsDept, error: internalAffairsError } = await supabase
+    const { data: internalAffairsDept, error: internalAffairsError } = await supabase
       .from('departments')
       .select('id, name')
       .ilike('name', 'Internal Affairs')
       .limit(1)
       .single();
     
+    let finalInternalAffairsDept = internalAffairsDept;
+
     if (internalAffairsError || !internalAffairsDept) {
       // Create Internal Affairs department if it doesn't exist
       const { data: newDept, error: createError } = await supabase
@@ -53,16 +53,16 @@ export async function POST(request: NextRequest) {
         })
         .select()
         .single();
-      
+
       if (createError || !newDept) {
         return NextResponse.json({ error: 'Failed to create Internal Affairs department' }, { status: 500 });
       }
-      
-      internalAffairsDept = newDept;
+
+      finalInternalAffairsDept = newDept;
     }
-    
+
     // Ensure we have a valid department
-    if (!internalAffairsDept) {
+    if (!finalInternalAffairsDept) {
       return NextResponse.json({ error: 'Internal Affairs department not found or created' }, { status: 500 });
     }
     
@@ -98,22 +98,22 @@ export async function POST(request: NextRequest) {
     
     const { error: updateError } = await supabase
       .from('roles')
-      .update({ 
-        department_id: internalAffairsDept.id,
+      .update({
+        department_id: finalInternalAffairsDept.id,
         updated_at: new Date().toISOString()
       })
       .in('id', roleIds);
-    
+
     if (updateError) {
       return NextResponse.json({ error: 'Failed to update roles' }, { status: 500 });
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       message: `Successfully moved ${systemRoles.length} role(s) to Internal Affairs department`,
       moved: systemRoles.length,
       roles: systemRoles.map(r => r.name),
       fromDepartment: systemDept.name,
-      toDepartment: internalAffairsDept.name
+      toDepartment: finalInternalAffairsDept.name
     });
   } catch (error: any) {
     console.error('Error in POST /api/admin/move-system-roles:', error);

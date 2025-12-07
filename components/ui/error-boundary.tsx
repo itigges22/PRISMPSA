@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { logger, componentError } from '@/lib/debug-logger';
+import { toast } from 'sonner';
 
 interface Props {
   children: ReactNode;
@@ -139,11 +140,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2))
       .then(() => {
-        alert('Debug information copied to clipboard');
+        toast.success('Debug information copied to clipboard');
       })
       .catch(() => {
         console.log('Debug information:', debugInfo);
-        alert('Debug information logged to console');
+        toast.info('Debug information logged to console');
       });
   };
 

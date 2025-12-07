@@ -151,7 +151,7 @@ export default function WelcomePage() {
               Sign In
             </Button>
             <p className="text-sm text-gray-500">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button 
                 onClick={() => router.push('/signup')}
                 className="text-blue-600 hover:text-blue-700 underline"
@@ -221,7 +221,7 @@ export default function WelcomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-yellow-800">
-              Welcome to PRISM! Your account has been created successfully, but you haven't been assigned a role yet. 
+              Welcome to PRISM! Your account has been created successfully, but you haven&apos;t been assigned a role yet.
               An administrator will review your account and assign you to the appropriate role and department.
             </p>
             <div className="p-4 bg-white rounded-md border border-yellow-200">
@@ -325,7 +325,7 @@ export default function WelcomePage() {
       {!isSetupComplete && !isActuallyUnassigned && (
         <div className="max-w-4xl mx-auto w-full">
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
-            What's Next?
+            What&apos;s Next?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
@@ -359,11 +359,11 @@ export default function WelcomePage() {
                   <Building2 className="w-5 h-5 text-green-600" />
                   <span>Department Access</span>
                 </CardTitle>
-                <CardDescription>Access your department's tools and projects</CardDescription>
+                <CardDescription>Access your department&apos;s tools and projects</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600 mb-4">
-                  Once assigned, you'll have access to department-specific features and projects.
+                  Once assigned, you&apos;ll have access to department-specific features and projects.
                 </p>
                 <div className="space-y-2 text-sm">
                   <p className="font-medium">Department Features:</p>

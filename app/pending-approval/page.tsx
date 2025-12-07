@@ -204,7 +204,7 @@ export default function PendingApprovalPage() {
                   <h4 className="font-medium text-amber-800">What happens next?</h4>
                   <ul className="text-sm text-amber-700 mt-2 space-y-1">
                     <li>• An administrator will review your account</li>
-                    <li>• You'll receive an email notification when approved</li>
+                    <li>• You&apos;ll receive an email notification when approved</li>
                     <li>• Once approved, you can access all features</li>
                     <li>• This process typically takes 1-2 business days</li>
                   </ul>

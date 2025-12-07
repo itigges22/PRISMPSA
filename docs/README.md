@@ -27,6 +27,7 @@ Workflow system documentation and testing.
 - `WORKFLOW_DATABASE_AUDIT_REPORT.md` - Database audit
 - `WORKFLOW_DATABASE_VERIFICATION.md` - Verification procedures
 - `WORKFLOW_FORM_NODE_FIX.md` - Form node fixes
+- `CONDITIONAL_NODE_HANDLE_FIX.md` - Conditional node handle connection fix
 - `E2E_WORKFLOW_TEST_RESULTS.md` - End-to-end test results
 - `NOV26_E2E_WORKFLOW_TESTING.md` - Workflow testing session
 
@@ -66,6 +67,7 @@ Database-related documentation and findings.
 Bug fixes and resolution patterns.
 - `FIXES_APPLIED.md` - Applied fixes log
 - `AUTHENTICATED_CLIENT_FIX_PATTERN.md` - Auth client pattern
+- `BADGE_RACE_CONDITION_FIX.md` - Workflow badge display race condition fix
 
 ### `/session-logs`
 Development session progress logs.

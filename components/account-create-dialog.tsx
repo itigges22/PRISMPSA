@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 // Account creation dialog for superadmins only
 import { useState, useEffect } from 'react';
@@ -44,7 +45,7 @@ export function AccountCreateDialog({ onAccountCreated, userProfile }: AccountCr
     e.preventDefault();
 
     if (!canCreateAccount) {
-      alert('You do not have permission to create accounts.');
+      toast.error('You do not have permission to create accounts.');
       return;
     }
 
@@ -69,7 +70,7 @@ export function AccountCreateDialog({ onAccountCreated, userProfile }: AccountCr
 
       if (!response.ok) {
         console.error('Error creating account:', result.error);
-        alert(result.error || 'Failed to create account. Please try again.');
+        toast.error(result.error || 'Failed to create account. Please try again.');
         return;
       }
 
@@ -85,7 +86,7 @@ export function AccountCreateDialog({ onAccountCreated, userProfile }: AccountCr
       onAccountCreated?.();
     } catch (error) {
       console.error('Error creating account:', error);
-      alert('Failed to create account. Please try again.');
+      toast.error('Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }

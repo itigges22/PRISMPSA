@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PlusIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { createClientSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { hasPermission } from '@/lib/rbac';
@@ -157,12 +158,12 @@ export default function ProjectCreationDialog({
     e.preventDefault();
     
     if (!formData.accountId) {
-      alert('Please select an account for this project.');
+      toast.error('Please select an account for this project.');
       return;
     }
 
     if (!formData.estimatedHours || parseInt(formData.estimatedHours) <= 0) {
-      alert('Please enter estimated hours for this project.');
+      toast.error('Please enter estimated hours for this project.');
       return;
     }
 
@@ -170,7 +171,7 @@ export default function ProjectCreationDialog({
     if (userProfile && formData.accountId) {
       const canCreate = await hasPermission(userProfile, Permission.CREATE_PROJECT, { accountId: formData.accountId });
       if (!canCreate) {
-        alert('You do not have permission to create projects for this account.');
+        toast.error('You do not have permission to create projects for this account.');
         return;
       }
     }
@@ -186,7 +187,7 @@ export default function ProjectCreationDialog({
       // Get current user
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('You must be logged in to create a project.');
+        toast.error('You must be logged in to create a project.');
         setLoading(false);
         return;
       }
@@ -211,7 +212,7 @@ export default function ProjectCreationDialog({
 
       if (projectError) {
         console.error('Error creating project:', projectError);
-        alert('Failed to create project. Please try again.');
+        toast.error('Failed to create project. Please try again.');
         return;
       }
 
@@ -253,7 +254,7 @@ export default function ProjectCreationDialog({
       });
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

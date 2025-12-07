@@ -62,3 +62,28 @@ performance-test.js
 
 # local MCP configuration
 .mcp.json
+
+# Claude Code local settings and plans
+.claude/settings.local.json
+.claude/plans/
+
+# Codacy CLI logs (generated during analysis)
+.codacy/logs/
+
+# Test screenshots (large binary files - not needed in repo)
+docs/testing/*.png
+# Note: public/prism-logo.png is the app logo and should be tracked
+
+# Editor and IDE local files
+*.swp
+*.swo
+.idea/
+*.sublime-*
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Temporary files
+*.temp
+*.cache

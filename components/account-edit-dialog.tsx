@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 // Account edit dialog - requires EDIT_ACCOUNT permission
 import { useState, useEffect } from 'react';
@@ -63,7 +64,7 @@ export function AccountEditDialog({ account, userProfile, onAccountUpdated, chil
     e.preventDefault();
 
     if (!canEditAccount) {
-      alert('You do not have permission to edit this account.');
+      toast.error('You do not have permission to edit this account.');
       return;
     }
 
@@ -88,7 +89,7 @@ export function AccountEditDialog({ account, userProfile, onAccountUpdated, chil
 
       if (!response.ok) {
         console.error('Error updating account:', result.error);
-        alert(result.error || 'Failed to update account. Please try again.');
+        toast.error(result.error || 'Failed to update account. Please try again.');
         return;
       }
 
@@ -98,7 +99,7 @@ export function AccountEditDialog({ account, userProfile, onAccountUpdated, chil
       router.refresh();
     } catch (error) {
       console.error('Error updating account:', error);
-      alert('Failed to update account. Please try again.');
+      toast.error('Failed to update account. Please try again.');
     } finally {
       setLoading(false);
     }

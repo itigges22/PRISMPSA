@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Bulk fix: Add authenticated supabase client to all hasPermission calls in API routes
  *

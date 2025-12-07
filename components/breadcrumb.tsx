@@ -21,6 +21,7 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
   const pathname = usePathname()
   const [departmentNames, setDepartmentNames] = useState<Map<string, string>>(new Map())
+  const [projectAccountInfo, setProjectAccountInfo] = useState<{ accountId: string; accountName: string } | null>(null)
 
   // Check if a segment is a UUID (department ID, account ID, or project ID)
   const isUUID = (str: string): boolean => {
@@ -55,23 +56,30 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         }
       }
       
-      // Fetch project names if in project path
+      // Fetch project names AND account info if in project path
       if (pathname.includes('/projects/')) {
         const projectIndex = pathSegments.indexOf('projects')
         if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
           const projectId = pathSegments[projectIndex + 1]
           if (isUUID(projectId)) {
-            // Fetch project name from database
+            // Fetch project name AND account info from database
             const { createClientSupabase } = await import('@/lib/supabase')
             const supabase = createClientSupabase()
             if (supabase) {
               const { data } = await supabase
                 .from('projects')
-                .select('name')
+                .select('name, account_id, accounts(name)')
                 .eq('id', projectId)
                 .single()
               if (data) {
                 names.set(projectId, data.name)
+                // Store account info for breadcrumb replacement
+                if (data.account_id && data.accounts) {
+                  setProjectAccountInfo({
+                    accountId: data.account_id,
+                    accountName: (data.accounts as any).name
+                  })
+                }
               }
             }
           }
@@ -127,6 +135,20 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
 
       // Skip if it's the dashboard segment (already added)
       if (segment === 'dashboard') return
+
+      // For project pages, replace "projects" segment with account info
+      if (segment === 'projects' && pathname.includes('/projects/') && projectAccountInfo) {
+        breadcrumbs.push({
+          label: projectAccountInfo.accountName,
+          href: `/accounts/${projectAccountInfo.accountId}`,
+        })
+        return
+      }
+
+      // Skip the "projects" segment if we're waiting for account info to load
+      if (segment === 'projects' && pathname.includes('/projects/') && !projectAccountInfo) {
+        return // Will appear once account data is fetched
+      }
 
       const isLast = index === pathSegments.length - 1
       let label: string

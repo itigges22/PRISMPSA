@@ -14,9 +14,11 @@ import {
   CheckCircle2,
   Clock,
   Circle,
+  Building2,
+  LucideIcon,
 } from 'lucide-react';
 
-export type VisualizationNodeType = 'start' | 'department' | 'role' | 'approval' | 'form' | 'conditional' | 'sync' | 'end';
+export type VisualizationNodeType = 'start' | 'department' | 'role' | 'approval' | 'form' | 'conditional' | 'sync' | 'end' | 'client';
 
 export interface VisualizationNodeData {
   label: string;
@@ -34,7 +36,7 @@ export interface VisualizationNodeData {
   [key: string]: unknown;
 }
 
-const nodeStyles: Record<VisualizationNodeType, { bg: string; border: string; icon: any }> = {
+const nodeStyles: Record<VisualizationNodeType, { bg: string; border: string; icon: LucideIcon }> = {
   start: {
     bg: 'bg-green-50',
     border: 'border-green-500',
@@ -74,6 +76,11 @@ const nodeStyles: Record<VisualizationNodeType, { bg: string; border: string; ic
     bg: 'bg-gray-50',
     border: 'border-gray-500',
     icon: Flag,
+  },
+  client: {
+    bg: 'bg-orange-50',
+    border: 'border-orange-500',
+    icon: Building2,
   },
 };
 

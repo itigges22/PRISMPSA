@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { createClientSupabase } from '@/lib/supabase'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Clock, Download, Filter, AlertTriangle, Users, Calendar, Edit, Trash2 } from 'lucide-react'
+import { Clock, Download, Filter, AlertTriangle, Edit, Trash2 } from 'lucide-react'
 import { hasPermission } from '@/lib/permission-checker'
 import { Permission } from '@/lib/permissions'
 import { toast } from 'sonner'
@@ -297,7 +297,7 @@ export default function AdminTimeTrackingPage() {
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-          <p className="text-gray-500">You don't have permission to view team time entries.</p>
+          <p className="text-gray-500">You don&apos;t have permission to view team time entries.</p>
         </div>
       </div>
     )

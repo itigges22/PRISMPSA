@@ -161,13 +161,10 @@ export function NodeConfigDialog({
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedApproverRole, setSelectedApproverRole] = useState('');
-  const [requiredApprovals, setRequiredApprovals] = useState('1');
   const [selectedFormTemplate, setSelectedFormTemplate] = useState('');
   const [allowAttachments, setAllowAttachments] = useState(false);
   const [conditionType, setConditionType] = useState<'form_value'>('form_value');
   const [conditionBranches, setConditionBranches] = useState<ConditionBranch[]>([]);
-  const [allowFeedback, setAllowFeedback] = useState(true);
-  const [allowSendBack, setAllowSendBack] = useState(true);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -179,12 +176,19 @@ export function NodeConfigDialog({
   const sourceNodeInfo = useMemo(() => {
     if (nodeData?.type !== 'conditional' || !nodeId) return null;
 
+    // Debug logging
+    console.log('[NodeConfigDialog] Looking for incoming edge to conditional node:', nodeId);
+    console.log('[NodeConfigDialog] Available edges:', allEdges.map(e => ({ source: e.source, target: e.target })));
+    console.log('[NodeConfigDialog] Available nodes:', allNodes.map(n => ({ id: n.id, type: n.data.type })));
+
     // Find incoming edge to this node
     const incomingEdge = allEdges.find(e => e.target === nodeId);
+    console.log('[NodeConfigDialog] Found incoming edge:', incomingEdge);
     if (!incomingEdge) return { type: 'none' as const, node: null };
 
     // Find the source node
     const sourceNode = allNodes.find(n => n.id === incomingEdge.source);
+    console.log('[NodeConfigDialog] Found source node:', sourceNode?.data.type);
     if (!sourceNode) return { type: 'none' as const, node: null };
 
     return { type: sourceNode.data.type, node: sourceNode };
@@ -275,11 +279,8 @@ export function NodeConfigDialog({
       setSelectedDepartment(nodeData.config?.departmentId || '');
       setSelectedRole(nodeData.config?.roleId || '');
       setSelectedApproverRole(nodeData.config?.approverRoleId || '');
-      setRequiredApprovals(String(nodeData.config?.requiredApprovals || 1));
       setSelectedFormTemplate(nodeData.config?.formTemplateId || '');
       setAllowAttachments(nodeData.config?.allowAttachments || false);
-      setAllowFeedback(nodeData.config?.allowFeedback !== undefined ? nodeData.config.allowFeedback : true);
-      setAllowSendBack(nodeData.config?.allowSendBack !== undefined ? nodeData.config.allowSendBack : true);
       setFormFields(nodeData.config?.formFields || []);
       setFormName(nodeData.config?.formName || '');
       setFormDescription(nodeData.config?.formDescription || '');
@@ -319,9 +320,8 @@ export function NodeConfigDialog({
         config.approverRoleId = selectedApproverRole;
         config.approverRoleName = role?.name;
       }
-      config.requiredApprovals = parseInt(requiredApprovals) || 1;
-      config.allowFeedback = allowFeedback;
-      config.allowSendBack = allowSendBack;
+      // Note: requiredApprovals, allowFeedback, allowSendBack removed
+      // Approval/Reject paths are always available via edge connections
     }
 
     if (nodeData.type === 'form') {
@@ -390,22 +390,13 @@ export function NodeConfigDialog({
             />
           </div>
 
-          {/* Department Selection */}
+          {/* Legacy Department Node (deprecated - show warning) */}
           {nodeData.type === 'department' && (
-            <div className="space-y-2">
-              <Label htmlFor="department">Department *</Label>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm font-medium text-amber-800">Department nodes are deprecated</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Please use Role nodes instead. Roles automatically include department assignment.
+              </p>
             </div>
           )}
 
@@ -464,37 +455,12 @@ export function NodeConfigDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="required-approvals">Required Approvals</Label>
-                <Input
-                  id="required-approvals"
-                  type="number"
-                  min="1"
-                  value={requiredApprovals}
-                  onChange={(e) => setRequiredApprovals(e.target.value)}
-                />
-              </div>
-              <div className="space-y-3 pt-2 border-t">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="allow-feedback"
-                    checked={allowFeedback}
-                    onCheckedChange={(checked) => setAllowFeedback(checked as boolean)}
-                  />
-                  <Label htmlFor="allow-feedback" className="text-sm font-normal cursor-pointer">
-                    Allow approvers to provide feedback
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="allow-send-back"
-                    checked={allowSendBack}
-                    onCheckedChange={(checked) => setAllowSendBack(checked as boolean)}
-                  />
-                  <Label htmlFor="allow-send-back" className="text-sm font-normal cursor-pointer">
-                    Allow approvers to send back for revisions
-                  </Label>
-                </div>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800">
+                  <strong>Note:</strong> Approval nodes have two automatic outputs:
+                  <span className="text-green-700 font-medium"> Approved</span> (continues forward) and
+                  <span className="text-red-700 font-medium"> Rejected</span> (can loop back to previous steps).
+                </p>
               </div>
             </>
           )}

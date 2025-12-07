@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import {
@@ -74,7 +75,7 @@ export default function GroupManagementDialog({
   const handleDeleteGroup = async (groupId: string) => {
     // Prevent deletion of the default "General" group
     if (groupId === 'general') {
-      alert('Cannot delete the default "General" group. This group is required for the system to function properly.');
+      toast.error('Cannot delete the default "General" group. This group is required for the system to function properly.');
       return;
     }
 

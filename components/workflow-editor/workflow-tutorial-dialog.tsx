@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { GitBranch, Users, UserCheck, Play, Flag, FileText, GitMerge } from 'lucide-react';
+import { Users, UserCheck, Play, Flag, FileText, GitMerge } from 'lucide-react';
 
 interface WorkflowTutorialDialogProps {
   open: boolean;
@@ -20,13 +20,6 @@ const nodeTypes = [
     description: 'Entry point: Where every workflow begins. Only one per workflow.',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-500',
-  },
-  {
-    name: 'Department',
-    icon: GitBranch,
-    description: 'Route work to an entire department. All members can see it.',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
   },
   {
     name: 'Role',
@@ -52,7 +45,7 @@ const nodeTypes = [
   {
     name: 'Conditional',
     icon: GitMerge,
-    description: 'Smart routing: Different paths based on previous decision (e.g., if approved → delivery, if rejected → revisions).',
+    description: 'Smart routing: Takes ONE path based on conditions (form responses, approval decisions). Only one path is executed.',
     bgColor: 'bg-pink-50',
     borderColor: 'border-pink-500',
   },
@@ -102,7 +95,7 @@ export function WorkflowTutorialDialog({ open, onOpenChange }: WorkflowTutorialD
             <ol className="text-sm text-blue-800 space-y-2">
               <li>1. Drag a <strong>Start</strong> node onto the canvas</li>
               <li>2. Add <strong>Role</strong> or <strong>Approval</strong> nodes for workflow steps</li>
-              <li>3. Connect nodes by dragging from one node's handle to another</li>
+              <li>3. Connect nodes by dragging from one node&apos;s handle to another</li>
               <li>4. Double-click each node to configure it (select roles, departments, etc.)</li>
               <li>5. Add an <strong>End</strong> node to mark workflow completion</li>
               <li>6. Click <strong>Save Workflow</strong> when done</li>
@@ -140,7 +133,7 @@ export function WorkflowTutorialDialog({ open, onOpenChange }: WorkflowTutorialD
               <li>✓ Configure each node after adding it (double-click to configure)</li>
               <li>✓ Use Conditional nodes after Approval for smart routing</li>
               <li>✗ Avoid circular loops - they create infinite cycles</li>
-              <li>✗ Don't leave nodes unconfigured - the system will prevent saving</li>
+              <li>✗ Don&apos;t leave nodes unconfigured - the system will prevent saving</li>
             </ul>
           </div>
 

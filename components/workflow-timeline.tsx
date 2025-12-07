@@ -31,6 +31,11 @@ interface WorkflowInstance {
   workflow_templates?: {
     name: string;
   };
+  started_snapshot?: {
+    nodes?: any[];
+    connections?: any[];
+    template_name?: string;
+  } | null;
 }
 
 export function WorkflowTimeline({ workflowInstanceId }: WorkflowTimelineProps) {
@@ -53,11 +58,12 @@ export function WorkflowTimeline({ workflowInstanceId }: WorkflowTimelineProps) 
       const supabase = createClientSupabase();
       if (!supabase) return;
 
-      // Get workflow instance
+      // Get workflow instance with snapshot
       const { data: instance, error: instanceError } = await supabase
         .from('workflow_instances')
         .select(`
           *,
+          started_snapshot,
           workflow_templates(name)
         `)
         .eq('id', workflowInstanceId)
@@ -77,31 +83,46 @@ export function WorkflowTimeline({ workflowInstanceId }: WorkflowTimelineProps) 
 
       setWorkflowInstance(instance);
 
-      // Get all nodes for this workflow template
-      const { data: nodes, error: nodesError } = await supabase
-        .from('workflow_nodes')
-        .select('*')
-        .eq('workflow_template_id', instance.workflow_template_id)
-        .order('position_y');
+      // Get nodes and connections - prefer snapshot over live tables
+      // This ensures deleted/modified templates don't break in-progress workflows
+      let nodes: any[] = [];
+      let connections: any[] = [];
 
-      if (nodesError || !nodes) {
-        console.error('Error loading workflow nodes:', nodesError);
-        return;
-      }
+      if (instance.started_snapshot?.nodes && instance.started_snapshot?.connections) {
+        // Use snapshot data (protects against template deletion/modification)
+        nodes = instance.started_snapshot.nodes;
+        connections = instance.started_snapshot.connections;
+        console.log('[WorkflowTimeline] Using snapshot data');
+      } else {
+        // Fallback to live tables for older instances without snapshot
+        console.log('[WorkflowTimeline] No snapshot, querying live tables');
+        const { data: liveNodes, error: nodesError } = await supabase
+          .from('workflow_nodes')
+          .select('*')
+          .eq('workflow_template_id', instance.workflow_template_id)
+          .order('position_y');
 
-      // Get connections to build the flow
-      const { data: connections, error: connectionsError } = await supabase
-        .from('workflow_connections')
-        .select('*')
-        .eq('workflow_template_id', instance.workflow_template_id);
+        if (nodesError || !liveNodes) {
+          console.error('Error loading workflow nodes:', nodesError);
+          return;
+        }
 
-      if (connectionsError) {
-        console.error('Error loading connections:', connectionsError);
-        return;
+        const { data: liveConnections, error: connectionsError } = await supabase
+          .from('workflow_connections')
+          .select('*')
+          .eq('workflow_template_id', instance.workflow_template_id);
+
+        if (connectionsError) {
+          console.error('Error loading connections:', connectionsError);
+          return;
+        }
+
+        nodes = liveNodes;
+        connections = liveConnections || [];
       }
 
       // Build ordered node list by following connections from start node
-      const ordered = buildOrderedNodeList(nodes, connections || []);
+      const ordered = buildOrderedNodeList(nodes, connections);
       setOrderedNodes(ordered);
 
       // Find current node index
@@ -201,9 +222,9 @@ export function WorkflowTimeline({ workflowInstanceId }: WorkflowTimelineProps) 
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Workflow Progress</span>
-          {workflowInstance.workflow_templates && (
+          {(workflowInstance.started_snapshot?.template_name || workflowInstance.workflow_templates?.name) && (
             <Badge variant="outline" className="font-normal">
-              {workflowInstance.workflow_templates.name}
+              {workflowInstance.started_snapshot?.template_name || workflowInstance.workflow_templates?.name?.replace(/^\[DELETED\]\s*/, '')}
             </Badge>
           )}
         </CardTitle>

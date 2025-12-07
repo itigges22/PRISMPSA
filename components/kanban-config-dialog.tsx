@@ -28,7 +28,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-// import { toast } from 'sonner';
+import { toast } from 'sonner';
 
 interface KanbanConfigDialogProps {
   accountId: string;
@@ -204,11 +204,11 @@ export function KanbanConfigDialog({
         console.log('Kanban configuration updated successfully');
       } else {
         console.error('Failed to update kanban configuration:', result.error);
-        alert(result.error || 'Failed to update kanban configuration');
+        toast.error(result.error || 'Failed to update kanban configuration');
       }
     } catch (error) {
       console.error('Error saving kanban config:', error);
-      alert('An error occurred while saving kanban configuration');
+      toast.error('An error occurred while saving kanban configuration');
     } finally {
       setLoading(false);
     }

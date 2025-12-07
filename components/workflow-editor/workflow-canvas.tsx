@@ -17,8 +17,10 @@ import {
   MarkerType,
   Panel,
   useReactFlow,
+  useUpdateNodeInternals,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { v4 as uuidv4 } from 'uuid';
 import { WorkflowNode, WorkflowNodeData, WorkflowNodeType } from './workflow-node';
 import { NodeSidebar } from './node-sidebar';
 import { NodeConfigDialog } from './node-config-dialog';
@@ -28,7 +30,7 @@ import { WorkflowTutorialDialog } from './workflow-tutorial-dialog';
 import { Button } from '@/components/ui/button';
 import { Save, Trash2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
-import { validateWorkflow, ValidationResult } from '@/lib/workflow-validation';
+import { validateWorkflow } from '@/lib/workflow-validation';
 
 interface Department {
   id: string;
@@ -39,6 +41,7 @@ interface Role {
   id: string;
   name: string;
   department_id: string;
+  user_count?: number;
 }
 
 interface WorkflowCanvasProps {
@@ -83,6 +86,7 @@ function WorkflowCanvasInner({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [selectedNodeForConfig, setSelectedNodeForConfig] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -100,31 +104,43 @@ function WorkflowCanvasInner({
       if (sourceNode?.data.type === 'conditional') {
         const handleId = params.sourceHandle;
 
-        // Find the condition label from config
+        // Find the condition from config - this contains the actual evaluation parameters
         let label = handleId || 'Unknown';
-        let decision = handleId;
+        let edgeData: Record<string, any> = {
+          label,
+          conditionValue: handleId,
+          conditionType: 'form_value',
+          decision: handleId,
+        };
 
         if (sourceNode.data.config?.conditions) {
           const condition = sourceNode.data.config.conditions.find(
             (c: any) => c.value === handleId || c.id === handleId
           );
-          label = condition?.label || handleId || 'Unknown';
-          decision = handleId;
+          if (condition) {
+            label = condition.label || handleId || 'Unknown';
+            // Include full condition data for form evaluation
+            edgeData = {
+              label,
+              conditionValue: condition.value,
+              conditionType: condition.conditionType, // 'equals', 'contains', etc.
+              decision: handleId,
+              // Critical: These fields are needed for form-based conditional routing
+              sourceFormFieldId: sourceNode.data.config.sourceFormFieldId,
+              value: condition.value,
+              value2: condition.value2,
+            };
+          }
         }
 
         const newEdge: Edge = {
-          id: `edge-${params.source}-${params.target}-${Date.now()}`,
+          id: uuidv4(),
           source: params.source!,
           target: params.target!,
           sourceHandle: params.sourceHandle,
           targetHandle: params.targetHandle,
           type: 'labeled',
-          data: {
-            label,
-            conditionValue: decision,
-            conditionType: 'form_value',
-            decision,
-          },
+          data: edgeData,
         };
         setEdges((eds) => addEdge(newEdge, eds));
         return;
@@ -134,7 +150,7 @@ function WorkflowCanvasInner({
       // No dialog needed - the conditional will handle the branching
       if (sourceNode?.data.type === 'approval' && targetNode?.data.type === 'conditional') {
         const newEdge: Edge = {
-          id: `edge-${params.source}-${params.target}-${Date.now()}`,
+          id: uuidv4(),
           source: params.source!,
           target: params.target!,
           sourceHandle: params.sourceHandle,
@@ -154,17 +170,12 @@ function WorkflowCanvasInner({
         return;
       }
 
-      // CASE 3b: Connecting FROM a sync node to any other node type
-      // Show dialog to select all_approved/any_rejected path (aggregate decision routing)
-      if (sourceNode?.data.type === 'sync') {
-        setPendingConnection(params);
-        setEdgeConfigDialogOpen(true);
-        return;
-      }
+      // NOTE: Sync nodes are deprecated (parallel workflows disabled)
+      // Legacy sync nodes will be blocked by validation
 
       // CASE 4: All other connections - no dialog, just connect with curved style
       const newEdge: Edge = {
-        id: `edge-${params.source}-${params.target}-${Date.now()}`,
+        id: uuidv4(),
         source: params.source!,
         target: params.target!,
         sourceHandle: params.sourceHandle,
@@ -182,7 +193,7 @@ function WorkflowCanvasInner({
       if (!pendingConnection) return;
 
       const newEdge: Edge = {
-        id: `edge-${pendingConnection.source}-${pendingConnection.target}-${Date.now()}`,
+        id: uuidv4(),
         source: pendingConnection.source!,
         target: pendingConnection.target!,
         sourceHandle: pendingConnection.sourceHandle,
@@ -218,7 +229,8 @@ function WorkflowCanvasInner({
         y: event.clientY,
       });
 
-      const newNodeId = `${type}-${Date.now()}`;
+      // Generate a proper UUID for the node (required by database)
+      const newNodeId = uuidv4();
       const newNode: Node<WorkflowNodeData> = {
         id: newNodeId,
         type: 'workflowNode',
@@ -267,8 +279,17 @@ function WorkflowCanvasInner({
       if (clearOutgoingEdges) {
         setEdges((eds) => eds.filter((edge) => edge.source !== selectedNodeForConfig));
       }
+
+      // CRITICAL: Force React Flow to recalculate handle bounds after config change.
+      // This is necessary because when conditional node branches are added dynamically
+      // (via the config dialog), React Flow doesn't automatically register the new handles.
+      // Without this, newly created conditional node handles won't be draggable.
+      // Use setTimeout to ensure the DOM has updated before recalculating.
+      setTimeout(() => {
+        updateNodeInternals(selectedNodeForConfig);
+      }, 50);
     },
-    [selectedNodeForConfig, setNodes, setEdges]
+    [selectedNodeForConfig, setNodes, setEdges, updateNodeInternals]
   );
 
   const handleSave = async () => {
@@ -277,7 +298,16 @@ function WorkflowCanvasInner({
       return;
     }
 
+    // Debug logging
+    console.log('[Workflow Canvas] Initiating save...');
+    console.log('[Workflow Canvas] Nodes to save:', nodes.length);
+    console.log('[Workflow Canvas] Node IDs:', nodes.map(n => ({ id: n.id, type: n.data.type, label: n.data.label })));
+    console.log('[Workflow Canvas] Edges to save:', edges.length);
+    console.log('[Workflow Canvas] Edge connections:', edges.map(e => ({ id: e.id, source: e.source, target: e.target })));
+
     // Run comprehensive workflow validation
+    // Note: Role user count validation is NOT done here - workflows can be saved
+    // even if roles don't have users yet. The validation happens when ACTIVATING.
     const validation = validateWorkflow(nodes, edges);
 
     // Show errors first (blocking)
@@ -430,13 +460,7 @@ function WorkflowCanvasInner({
               ? nodes.find((n) => n.id === pendingConnection.source)?.data.type || 'approval'
               : 'approval'
           }
-          conditionType={
-            pendingConnection?.source
-              ? nodes.find((n) => n.id === pendingConnection.source)?.data.type === 'sync'
-                ? 'sync_aggregate_decision'
-                : 'approval_decision'
-              : 'approval_decision'
-          }
+          conditionType="approval_decision"
           onSave={handleEdgeConfigSave}
         />
 

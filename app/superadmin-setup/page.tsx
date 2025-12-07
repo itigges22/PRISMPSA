@@ -274,22 +274,22 @@ export default function SuperadminSetupPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <h4 className="font-medium">Step 1: Check Status</h4>
-            <p className="text-sm text-gray-600">Click "Check Status" to see if you already have superadmin role.</p>
+            <p className="text-sm text-gray-600">Click &quot;Check Status&quot; to see if you already have superadmin role.</p>
           </div>
-          
+
           <div className="space-y-2">
             <h4 className="font-medium">Step 2: Assign Role</h4>
-            <p className="text-sm text-gray-600">Click "Assign Superadmin Role" to give yourself full system access.</p>
+            <p className="text-sm text-gray-600">Click &quot;Assign Superadmin Role&quot; to give yourself full system access.</p>
           </div>
-          
+
           <div className="space-y-2">
             <h4 className="font-medium">Step 3: Access All Features</h4>
-            <p className="text-sm text-gray-600">Once assigned, you'll have access to all pages, navigation items, and debugging tools.</p>
+            <p className="text-sm text-gray-600">Once assigned, you&apos;ll have access to all pages, navigation items, and debugging tools.</p>
           </div>
-          
+
           <div className="space-y-2">
             <h4 className="font-medium">Step 4: Remove When Done</h4>
-            <p className="text-sm text-gray-600">Click "Remove Superadmin Role" when you're done debugging to return to normal access.</p>
+            <p className="text-sm text-gray-600">Click &quot;Remove Superadmin Role&quot; when you&apos;re done debugging to return to normal access.</p>
           </div>
         </CardContent>
       </Card>

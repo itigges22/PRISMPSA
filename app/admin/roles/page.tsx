@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
@@ -60,7 +59,7 @@ export default function RoleManagementPage() {
   
   // Edit Mode (from RoleHierarchyDnd component)
   const [inEditMode, setInEditMode] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [, setHasUnsavedChanges] = useState(false);
   
   // Queued operations for Edit Mode (managed by parent, executed on save)
   const [pendingRoleEdits, setPendingRoleEdits] = useState<Map<string, any>>(new Map());

@@ -14,6 +14,7 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import ELK from 'elkjs/lib/elk.bundled.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { createClientSupabase } from '@/lib/supabase';
@@ -31,14 +32,14 @@ interface WorkflowNode {
   position_x: number;
   position_y: number;
   entity_id: string | null;
-  settings: any;
+  settings: Record<string, unknown>;
 }
 
 interface WorkflowConnection {
   id: string;
   from_node_id: string;
   to_node_id: string;
-  condition: any;
+  condition: Record<string, unknown> | null;
 }
 
 interface WorkflowInstance {
@@ -50,6 +51,11 @@ interface WorkflowInstance {
   workflow_templates?: {
     name: string;
   };
+  started_snapshot?: {
+    nodes?: WorkflowNode[];
+    connections?: WorkflowConnection[];
+    template_name?: string;
+  } | null;
   completed_snapshot?: {
     nodes: WorkflowNode[];
     connections: WorkflowConnection[];
@@ -76,21 +82,76 @@ const nodeTypes: NodeTypes = {
   visualizationNode: WorkflowVisualizationNode,
 };
 
-// Auto-layout constants for HORIZONTAL visualization (left to right)
+// ELK layout instance
+const elk = new ELK();
+
+// Layout constants for ELK
 const LAYOUT = {
-  NODE_WIDTH: 140,
-  NODE_HEIGHT: 45,
-  HORIZONTAL_GAP: 80,  // Gap between levels (left-right) - increased for edge labels
-  VERTICAL_GAP: 60,    // Gap between parallel branches (up-down) - increased to avoid edge overlap
-  START_X: 20,
-  CENTER_Y: 100,       // Center line for main path
+  NODE_WIDTH: 160,
+  NODE_HEIGHT: 50,
 };
 
 /**
- * Calculate horizontal auto-layout positions for visualization
- * Flow goes left-to-right, with fork branches spread above/below the center line
+ * Calculate layout positions using ELK (Eclipse Layout Kernel)
+ * Provides proper hierarchical left-to-right layout for complex workflows
  */
-function calculateAutoLayout(
+async function calculateElkLayout(
+  nodes: WorkflowNode[],
+  connections: WorkflowConnection[]
+): Promise<Map<string, { x: number; y: number }>> {
+  const positions = new Map<string, { x: number; y: number }>();
+
+  if (nodes.length === 0) return positions;
+
+  // Create ELK graph
+  const elkGraph = {
+    id: 'root',
+    layoutOptions: {
+      'elk.algorithm': 'layered',
+      'elk.direction': 'RIGHT',
+      'elk.spacing.nodeNode': '50',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '80',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.edgeRouting': 'ORTHOGONAL',
+      'elk.layered.mergeEdges': 'true',
+      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+    },
+    children: nodes.map(node => ({
+      id: node.id,
+      width: LAYOUT.NODE_WIDTH,
+      height: LAYOUT.NODE_HEIGHT,
+    })),
+    edges: connections.map(conn => ({
+      id: conn.id,
+      sources: [conn.from_node_id],
+      targets: [conn.to_node_id],
+    })),
+  };
+
+  try {
+    const layoutedGraph = await elk.layout(elkGraph);
+
+    // Extract positions from layouted graph
+    layoutedGraph.children?.forEach(node => {
+      positions.set(node.id, {
+        x: node.x ?? 0,
+        y: node.y ?? 0,
+      });
+    });
+  } catch (error) {
+    console.error('ELK layout error, falling back to simple layout:', error);
+    // Fallback to simple layout
+    return calculateSimpleLayout(nodes, connections);
+  }
+
+  return positions;
+}
+
+/**
+ * Simple fallback layout when ELK fails
+ */
+function calculateSimpleLayout(
   nodes: WorkflowNode[],
   connections: WorkflowConnection[]
 ): Map<string, { x: number; y: number }> {
@@ -112,13 +173,13 @@ function calculateAutoLayout(
     incoming.get(c.to_node_id)?.push(c.from_node_id);
   });
 
-  // Find start node (or node with no incoming edges)
+  // Find start node
   let startNode = nodes.find(n => n.node_type === 'start');
   if (!startNode) {
     startNode = nodes.find(n => (incoming.get(n.id)?.length || 0) === 0) || nodes[0];
   }
 
-  // BFS to assign levels (horizontal position = level)
+  // BFS to assign levels
   const levels = new Map<string, number>();
   const queue: { id: string; level: number }[] = [{ id: startNode.id, level: 0 }];
   const visited = new Set<string>();
@@ -127,7 +188,6 @@ function calculateAutoLayout(
     const { id, level } = queue.shift()!;
 
     if (visited.has(id)) {
-      // Update level if we found a longer path
       const existingLevel = levels.get(id) || 0;
       if (level > existingLevel) {
         levels.set(id, level);
@@ -146,14 +206,14 @@ function calculateAutoLayout(
     });
   }
 
-  // Handle any disconnected nodes
+  // Handle disconnected nodes
   nodes.forEach(n => {
     if (!levels.has(n.id)) {
       levels.set(n.id, 0);
     }
   });
 
-  // Group nodes by level
+  // Group by level
   const nodesByLevel = new Map<number, string[]>();
   levels.forEach((level, nodeId) => {
     if (!nodesByLevel.has(level)) {
@@ -162,18 +222,20 @@ function calculateAutoLayout(
     nodesByLevel.get(level)!.push(nodeId);
   });
 
-  // Calculate positions - HORIZONTAL layout
-  // X = level (left to right)
-  // Y = spread nodes at same level vertically, centered around CENTER_Y
+  // Calculate positions
+  const horizontalGap = LAYOUT.NODE_WIDTH + 80;
+  const verticalGap = LAYOUT.NODE_HEIGHT + 40;
+  const centerY = 150;
+
   nodesByLevel.forEach((nodeIds, level) => {
     const nodesAtLevel = nodeIds.length;
-    const totalHeight = nodesAtLevel * LAYOUT.NODE_HEIGHT + (nodesAtLevel - 1) * LAYOUT.VERTICAL_GAP;
-    const startY = LAYOUT.CENTER_Y - totalHeight / 2;
+    const totalHeight = nodesAtLevel * LAYOUT.NODE_HEIGHT + (nodesAtLevel - 1) * verticalGap;
+    const startY = centerY - totalHeight / 2;
 
     nodeIds.forEach((nodeId, index) => {
       positions.set(nodeId, {
-        x: LAYOUT.START_X + level * (LAYOUT.NODE_WIDTH + LAYOUT.HORIZONTAL_GAP),
-        y: startY + index * (LAYOUT.NODE_HEIGHT + LAYOUT.VERTICAL_GAP),
+        x: 20 + level * horizontalGap,
+        y: startY + index * (LAYOUT.NODE_HEIGHT + verticalGap),
       });
     });
   });
@@ -219,6 +281,8 @@ function WorkflowVisualizationInner({
         .from('workflow_instances')
         .select(`
           *,
+          started_snapshot,
+          completed_snapshot,
           workflow_templates(name)
         `)
         .eq('id', workflowInstanceId)
@@ -231,17 +295,21 @@ function WorkflowVisualizationInner({
 
       setWorkflowInstance(instance);
 
-      // For completed workflows with a snapshot, use the snapshot data
-      // This ensures the visualization remains unchanged even if the template is modified
+      // For workflows, use snapshot data if available
+      // This ensures the visualization remains unchanged even if the template is deleted or modified
       let workflowNodes: WorkflowNode[];
       let connections: WorkflowConnection[];
 
       if (instance.status === 'completed' && instance.completed_snapshot) {
-        // Use snapshot data for completed workflows
+        // Use completed_snapshot data for completed workflows
         workflowNodes = instance.completed_snapshot.nodes;
         connections = instance.completed_snapshot.connections;
+      } else if (instance.started_snapshot?.nodes && instance.started_snapshot?.connections) {
+        // Use started_snapshot for in-progress workflows (protects against template deletion)
+        workflowNodes = instance.started_snapshot.nodes as WorkflowNode[];
+        connections = instance.started_snapshot.connections as WorkflowConnection[];
       } else {
-        // Get live nodes for this workflow template
+        // Fallback to live tables for older instances without snapshot
         const { data: liveNodes, error: nodesError } = await supabase
           .from('workflow_nodes')
           .select('*')
@@ -291,8 +359,8 @@ function WorkflowVisualizationInner({
       }
       setCompletedNodeIds(completed);
 
-      // Build React Flow nodes and edges
-      buildVisualization(workflowNodes, connections || [], steps || [], completed, instance);
+      // Build React Flow nodes and edges (async for ELK layout)
+      await buildVisualization(workflowNodes, connections || [], steps || [], completed, instance);
 
     } catch (error) {
       console.error('Error loading workflow visualization:', error);
@@ -301,15 +369,15 @@ function WorkflowVisualizationInner({
     }
   };
 
-  const buildVisualization = (
+  const buildVisualization = async (
     workflowNodes: WorkflowNode[],
     connections: WorkflowConnection[],
     steps: ActiveStep[],
     completed: Set<string>,
     instance: WorkflowInstance
   ) => {
-    // Calculate auto-layout positions for compact visualization
-    const autoPositions = calculateAutoLayout(workflowNodes, connections);
+    // Calculate layout positions using ELK for proper hierarchical visualization
+    const autoPositions = await calculateElkLayout(workflowNodes, connections);
 
     // Check if the entire workflow is completed
     const isWorkflowCompleted = instance.status === 'completed';
@@ -353,7 +421,7 @@ function WorkflowVisualizationInner({
         position,
         data: {
           label: node.label,
-          type: node.node_type as any,
+          type: node.node_type as VisualizationNodeData['type'],
           executionStatus,
           activeStepId: activeStep?.id,
           branchId: activeStep?.branch_id,
@@ -371,7 +439,8 @@ function WorkflowVisualizationInner({
       const sourceActive = !isWorkflowCompleted && steps.some(s => s.node_id === conn.from_node_id && s.status === 'active');
 
       // Get edge label from condition if exists
-      const label = conn.condition?.label || conn.condition?.decision || '';
+      const conditionObj = conn.condition as { label?: string; decision?: string } | null;
+      const label = conditionObj?.label || conditionObj?.decision || '';
 
       // Check if this is a backward edge (rejection loop going back)
       const sourceLevel = autoPositions.get(conn.from_node_id)?.x || 0;
@@ -456,35 +525,40 @@ function WorkflowVisualizationInner({
                 Parallel
               </Badge>
             )}
-            {workflowInstance.workflow_templates && (
+            {(workflowInstance.started_snapshot?.template_name || workflowInstance.workflow_templates?.name) && (
               <Badge variant="outline" className="font-normal">
-                {workflowInstance.workflow_templates.name}
+                {workflowInstance.started_snapshot?.template_name || workflowInstance.workflow_templates?.name?.replace(/^\[DELETED\]\s*/, '')}
               </Badge>
             )}
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* React Flow Canvas - shorter height for horizontal layout */}
-        <div className="h-[200px] w-full border-t">
+        {/* React Flow Canvas - responsive height based on workflow complexity */}
+        <div
+          className="w-full border-t"
+          style={{
+            height: Math.max(300, Math.min(500, nodes.length * 40 + 100))
+          }}
+        >
           <ReactFlow
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             onNodeClick={handleNodeClick}
             fitView
-            fitViewOptions={{ padding: 0.1, minZoom: 0.6, maxZoom: 1.2 }}
+            fitViewOptions={{ padding: 0.15, minZoom: 0.5, maxZoom: 1.5 }}
             nodesDraggable={false}
             nodesConnectable={false}
             elementsSelectable={true}
             zoomOnScroll={true}
             panOnScroll={true}
-            minZoom={0.4}
-            maxZoom={1.5}
-            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+            minZoom={0.3}
+            maxZoom={2}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
             attributionPosition="bottom-left"
           >
-            <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#e5e7eb" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>

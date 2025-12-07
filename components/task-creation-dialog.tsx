@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PlusIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { accountService } from '@/lib/account-service';
 import { createClientSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -245,19 +246,19 @@ export default function TaskCreationDialog({
     // Check permissions
     if (editMode && existingProject) {
       if (!canEditProject) {
-        alert('You do not have permission to edit this project.');
+        toast.error('You do not have permission to edit this project.');
         return;
       }
     } else {
       if (!canCreateProject) {
-        alert('You do not have permission to create projects for this account.');
+        toast.error('You do not have permission to create projects for this account.');
         return;
       }
     }
     
     // Validation
     if (!formData.name.trim()) {
-      alert('Project name is required');
+      toast.error('Project name is required');
       return;
     }
     // assigned_user_id is auto-set to session.user.id for new projects
@@ -269,9 +270,15 @@ export default function TaskCreationDialog({
       const endDate = new Date(formData.end_date);
 
       if (startDate > endDate) {
-        alert('Start date cannot be after end date');
+        toast.error('Start date cannot be after end date');
         return;
       }
+    }
+
+    // Estimated hours validation - required for new projects
+    if (!editMode && (!formData.estimated_hours || parseInt(formData.estimated_hours) <= 0)) {
+      toast.error('Please enter estimated hours for this project.');
+      return;
     }
 
     setLoading(true);
@@ -281,7 +288,7 @@ export default function TaskCreationDialog({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        alert('You must be logged in to create or edit a project.');
+        toast.error('You must be logged in to create or edit a project.');
         return;
       }
 
@@ -307,7 +314,7 @@ export default function TaskCreationDialog({
 
         if (projectError) {
           console.error('Error updating project:', projectError);
-          alert('Failed to update project: ' + projectError.message);
+          toast.error('Failed to update project: ' + projectError.message);
           return;
         }
 
@@ -335,7 +342,7 @@ export default function TaskCreationDialog({
 
         if (projectError) {
           console.error('Error creating project:', projectError);
-          alert('Failed to create project: ' + projectError.message);
+          toast.error('Failed to create project: ' + projectError.message);
           return;
         }
 
@@ -370,13 +377,13 @@ export default function TaskCreationDialog({
 
             if (!workflowResponse.ok) {
               console.error('[WORKFLOW] Failed to start workflow:', workflowData);
-              alert(`Project created, but workflow failed to start: ${workflowData.error || 'Unknown error'}`);
+              toast.error(`Project created, but workflow failed to start: ${workflowData.error || 'Unknown error'}`);
             } else {
               console.log('[WORKFLOW] Workflow started successfully!');
             }
           } catch (error) {
             console.error('[WORKFLOW] Error starting workflow:', error);
-            alert(`Project created, but workflow failed to start: ${error}`);
+            toast.error(`Project created, but workflow failed to start: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         } else {
           console.log('[WORKFLOW] Skipping workflow start - no workflow selected or project missing');
@@ -395,7 +402,7 @@ export default function TaskCreationDialog({
 
     } catch (error) {
       console.error('Error with project:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -511,7 +518,7 @@ export default function TaskCreationDialog({
           {/* Estimated Hours */}
           <div className="space-y-2">
             <Label htmlFor="estimated_hours">
-              Estimated Hours
+              Estimated Hours {!editMode && <span className="text-red-500">*</span>}
             </Label>
             <Input
               id="estimated_hours"
@@ -521,6 +528,7 @@ export default function TaskCreationDialog({
               placeholder="Enter total estimated hours"
               min="0"
               step="0.5"
+              required={!editMode}
             />
             <p className="text-xs text-muted-foreground">
               Total hours estimated for this project

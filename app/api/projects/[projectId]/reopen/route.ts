@@ -92,23 +92,35 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to reopen project' }, { status: 500 })
     }
 
-    // Re-assign the project creator as the primary assignee
-    // First, check if they have an assignment
-    const { data: existingAssignment } = await supabase
+    // Reactivate ALL previously assigned team members
+    // This preserves the team that was working on the project when it was completed
+    const { error: reactivateError } = await supabase
+      .from('project_assignments')
+      .update({ removed_at: null })
+      .eq('project_id', projectId)
+      .not('removed_at', 'is', null)
+
+    if (reactivateError) {
+      console.error('Error reactivating team assignments:', reactivateError)
+      // Continue anyway - this is not a critical failure
+    }
+
+    // Ensure project creator is assigned with 'creator' role
+    const { data: creatorAssignment } = await supabase
       .from('project_assignments')
       .select('id')
       .eq('project_id', projectId)
       .eq('user_id', project.created_by)
       .single()
 
-    if (existingAssignment) {
-      // Reactivate existing assignment
+    if (creatorAssignment) {
+      // Update role to creator if needed (and ensure not removed)
       await supabase
         .from('project_assignments')
-        .update({ removed_at: null, role_in_project: 'creator' })
-        .eq('id', existingAssignment.id)
+        .update({ role_in_project: 'creator', removed_at: null })
+        .eq('id', creatorAssignment.id)
     } else {
-      // Create new assignment
+      // Create new assignment for creator
       await supabase
         .from('project_assignments')
         .insert({

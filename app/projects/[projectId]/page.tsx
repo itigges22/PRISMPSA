@@ -27,7 +27,7 @@ import { hasPermission } from '@/lib/rbac'
 import { toast } from 'sonner'
 import { WorkflowProgressButton } from '@/components/workflow-progress-button'
 import { WorkflowTimeline } from '@/components/workflow-timeline'
-import { WorkflowVisualization } from '@/components/workflow-visualization'
+import { WorkflowProgress } from '@/components/workflow-progress'
 
 type Project = Database['public']['Tables']['projects']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -68,19 +68,33 @@ interface WorkflowFormDataEntry {
   submittedBy: string | null
   responseData: Record<string, any>
   fields: Array<{ id: string; label: string; type: string }> | null
+  approvalDecision?: 'approved' | 'rejected' | null
 }
 
 // Helper function to render simple markdown (bold text) as React elements
 function renderMarkdownContent(content: string): React.ReactNode {
   if (!content) return null
 
+  // Handle edge cases like *text** or **text* by normalizing first
+  // Replace single asterisks that should be double (common data corruption)
+  let normalizedContent = content
+    .replace(/^\*([^*]+)\*\*$/gm, '**$1**') // Fix *text** -> **text**
+    .replace(/^\*\*([^*]+)\*$/gm, '**$1**') // Fix **text* -> **text**
+
   // Split by **text** pattern and render bold parts
-  const parts = content.split(/(\*\*[^*]+\*\*)/g)
+  const parts = normalizedContent.split(/(\*\*[^*]+\*\*)/g)
 
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       // Remove the ** markers and render as bold
       return <strong key={index}>{part.slice(2, -2)}</strong>
+    }
+    // Also handle any remaining single asterisks at start/end
+    if (part.startsWith('*') && !part.startsWith('**')) {
+      return <span key={index}>{part.slice(1)}</span>
+    }
+    if (part.endsWith('*') && !part.endsWith('**')) {
+      return <span key={index}>{part.slice(0, -1)}</span>
     }
     return <span key={index}>{part}</span>
   })
@@ -622,6 +636,22 @@ export default function ProjectDetailPage() {
         // Fetch current workflow step name(s) if workflow exists
         // For parallel workflows, show ALL active steps
         if (workflowInstanceId) {
+          // First get the workflow instance to check for snapshot
+          const { data: instanceData } = await supabase
+            .from('workflow_instances')
+            .select('current_node_id, started_snapshot')
+            .eq('id', workflowInstanceId)
+            .single()
+
+          // Create a node lookup function that uses snapshot if available
+          const getNodeLabel = (nodeId: string): string | null => {
+            if (instanceData?.started_snapshot?.nodes) {
+              const node = instanceData.started_snapshot.nodes.find((n: any) => n.id === nodeId)
+              return node?.label || null
+            }
+            return null
+          }
+
           // First, check for parallel workflow active steps
           const { data: activeSteps, error: activeStepsError } = await supabase
             .from('workflow_active_steps')
@@ -638,8 +668,15 @@ export default function ProjectDetailPage() {
 
           if (!activeStepsError && activeSteps && activeSteps.length > 0) {
             // Get unique step labels (deduplicate)
+            // Try snapshot first, then FK join
             const stepLabels = activeSteps
-              .map((step: any) => step.workflow_nodes?.label)
+              .map((step: any) => {
+                // First try snapshot
+                const snapshotLabel = getNodeLabel(step.node_id)
+                if (snapshotLabel) return snapshotLabel
+                // Fallback to FK join result
+                return step.workflow_nodes?.label
+              })
               .filter(Boolean)
 
             // Remove duplicates using Set
@@ -647,24 +684,32 @@ export default function ProjectDetailPage() {
 
             setWorkflowStepNames(uniqueLabels)
             console.log('Workflow steps:', uniqueLabels)
-          } else {
+          } else if (instanceData?.current_node_id) {
             // Fallback to legacy current_node_id for older workflows
-            const { data: workflowData, error: wfError } = await supabase
-              .from('workflow_instances')
-              .select(`
-                current_node_id,
-                workflow_nodes!workflow_instances_current_node_id_fkey (
-                  label,
-                  node_type
-                )
-              `)
-              .eq('id', workflowInstanceId)
-              .single()
+            // First try snapshot
+            const snapshotLabel = getNodeLabel(instanceData.current_node_id)
+            if (snapshotLabel) {
+              setWorkflowStepNames([snapshotLabel])
+              console.log('Workflow step (from snapshot):', snapshotLabel)
+            } else {
+              // Fallback to FK join
+              const { data: workflowData, error: wfError } = await supabase
+                .from('workflow_instances')
+                .select(`
+                  current_node_id,
+                  workflow_nodes!workflow_instances_current_node_id_fkey (
+                    label,
+                    node_type
+                  )
+                `)
+                .eq('id', workflowInstanceId)
+                .single()
 
-            if (!wfError && workflowData?.workflow_nodes) {
-              const nodeData = workflowData.workflow_nodes as any
-              setWorkflowStepNames(nodeData.label ? [nodeData.label] : [])
-              console.log('Workflow step (legacy):', nodeData.label)
+              if (!wfError && workflowData?.workflow_nodes) {
+                const nodeData = workflowData.workflow_nodes as any
+                setWorkflowStepNames(nodeData.label ? [nodeData.label] : [])
+                console.log('Workflow step (legacy):', nodeData.label)
+              }
             }
           }
         }
@@ -731,11 +776,11 @@ export default function ProjectDetailPage() {
         // Reload tasks
         await loadTasks()
       } else {
-        alert('Failed to delete task')
+        toast.error('Failed to delete task')
       }
     } catch (error) {
       console.error('Error deleting task:', error)
-      alert('Error deleting task')
+      toast.error('Error deleting task')
     }
   }, [loadTasks])
 
@@ -889,59 +934,11 @@ export default function ProjectDetailPage() {
         console.error('Error refreshing updates:', updatesErr)
       }
 
-      // Refresh workflow form data (submitted form responses from workflow)
-      // This ensures the "Workflow Form Data" section updates immediately after form submission
-      // Note: loadWorkflowFormData is defined later in the component, so we call it directly
-      // rather than including it in dependencies
-      if (project?.workflow_instance_id) {
-        const supabase = createClientSupabase()
-        if (supabase) {
-          // Inline refresh of workflow form data
-          const { data: historyEntries } = await supabase
-            .from('workflow_history')
-            .select(`
-              id,
-              handed_off_at,
-              notes,
-              form_response_id,
-              to_node_id,
-              handed_off_by,
-              workflow_nodes!workflow_history_to_node_id_fkey (
-                id,
-                label
-              ),
-              user_profiles!workflow_history_handed_off_by_fkey (
-                name
-              )
-            `)
-            .eq('workflow_instance_id', project.workflow_instance_id)
-            .not('notes', 'is', null)
-            .order('handed_off_at', { ascending: false })
-
-          if (historyEntries) {
-            const formDataEntries: any[] = []
-            for (const entry of historyEntries) {
-              try {
-                const notesData = JSON.parse(entry.notes || '{}')
-                if (notesData.type === 'inline_form' && notesData.data) {
-                  formDataEntries.push({
-                    id: entry.id,
-                    formName: notesData.data.formName || null,
-                    stepName: (entry.workflow_nodes as any)?.label || null,
-                    submittedAt: entry.handed_off_at,
-                    submittedBy: (entry.user_profiles as any)?.name || null,
-                    responseData: notesData.data.responses || {},
-                    fields: notesData.data.fields || null
-                  })
-                }
-              } catch {
-                // Skip entries with invalid JSON
-              }
-            }
-            setWorkflowFormData(formDataEntries)
-          }
-        }
-      }
+      // Note: Workflow form data is now refreshed via the workflowRefreshKey mechanism
+      // which triggers loadWorkflowFormData() through the useEffect. This ensures
+      // the comprehensive loading logic (including approval_decision) is used consistently.
+      // Removing the inline refresh here prevents a race condition where incomplete
+      // data would overwrite the complete data loaded by loadWorkflowFormData().
 
     } catch (err) {
       console.error('Error refreshing workflow/project data:', err)
@@ -1627,11 +1624,11 @@ export default function ProjectDetailPage() {
         setNewUpdateContent('')
         setShowNewUpdateForm(false)
       } else {
-        alert(result.error || 'Failed to create update. Please try again.')
+        toast.error(result.error || 'Failed to create update. Please try again.')
       }
     } catch (error) {
       console.error('Error creating update:', error)
-      alert('Failed to create update. Please try again.')
+      toast.error('Failed to create update. Please try again.')
     } finally {
       setSubmittingUpdate(false)
     }
@@ -1687,6 +1684,7 @@ export default function ProjectDetailPage() {
           form_response_id,
           to_node_id,
           handed_off_by,
+          approval_decision,
           workflow_nodes!workflow_history_to_node_id_fkey(label),
           user_profiles!workflow_history_handed_off_by_fkey(name)
         `)
@@ -1699,8 +1697,25 @@ export default function ProjectDetailPage() {
       }
 
       const formDataEntries: WorkflowFormDataEntry[] = []
+      const entries = historyEntries || []
 
-      for (const entry of historyEntries || []) {
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i]
+
+        // Find the approval decision from THIS entry OR the next entry that has one
+        // This handles the case where form submission is separate from approval
+        let approvalDecision = entry.approval_decision as 'approved' | 'rejected' | null
+        if (!approvalDecision) {
+          // Look at subsequent entries for an approval decision related to this form
+          for (let j = i + 1; j < entries.length && j <= i + 3; j++) {
+            const nextEntry = entries[j]
+            if (nextEntry.approval_decision) {
+              approvalDecision = nextEntry.approval_decision as 'approved' | 'rejected'
+              break
+            }
+          }
+        }
+
         // Check for linked form response
         if (entry.form_response_id) {
           const { data: formResponse } = await supabase
@@ -1721,7 +1736,8 @@ export default function ProjectDetailPage() {
               submittedAt: formResponse.submitted_at || entry.handed_off_at,
               submittedBy: (entry.user_profiles as any)?.name || null,
               responseData: formResponse.response_data || {},
-              fields: (formResponse.form_template as any)?.fields || null
+              fields: (formResponse.form_template as any)?.fields || null,
+              approvalDecision
             })
           }
         }
@@ -1737,7 +1753,8 @@ export default function ProjectDetailPage() {
                 submittedAt: entry.handed_off_at,
                 submittedBy: (entry.user_profiles as any)?.name || null,
                 responseData: notesData.data.responses || {},
-                fields: notesData.data.fields || null
+                fields: notesData.data.fields || null,
+                approvalDecision
               })
             }
           } catch {
@@ -1754,12 +1771,12 @@ export default function ProjectDetailPage() {
     }
   }
 
-  // Load workflow form data when project is loaded
+  // Load workflow form data when project is loaded or workflow is updated
   useEffect(() => {
     if (project?.id && project?.workflow_instance_id) {
       loadWorkflowFormData()
     }
-  }, [project?.id, project?.workflow_instance_id])
+  }, [project?.id, project?.workflow_instance_id, workflowRefreshKey])
 
   // Submit new issue
   const handleSubmitIssue = async () => {
@@ -1785,11 +1802,11 @@ export default function ProjectDetailPage() {
         setNewIssueContent('')
         setShowNewIssueForm(false)
       } else {
-        alert(result.error || 'Failed to create issue. Please try again.')
+        toast.error(result.error || 'Failed to create issue. Please try again.')
       }
     } catch (error) {
       console.error('Error creating issue:', error)
-      alert('Failed to create issue. Please try again.')
+      toast.error('Failed to create issue. Please try again.')
     } finally {
       setSubmittingIssue(false)
     }
@@ -1899,9 +1916,9 @@ export default function ProjectDetailPage() {
         {/* Back Button */}
         <div className="mb-4">
           <Button variant="outline" size="sm" asChild>
-            <Link href="/projects">
+            <Link href={`/accounts/${project.account_id}`}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Projects
+              Back to Account
             </Link>
           </Button>
         </div>
@@ -2016,9 +2033,9 @@ export default function ProjectDetailPage() {
           </div>
         )}
 
-        {/* Workflow Visualization - Show workflow progress with React Flow graph */}
-        <WorkflowVisualization
-          key={`workflow-visualization-${workflowRefreshKey}`}
+        {/* Workflow Progress - Shows current step and possible next steps */}
+        <WorkflowProgress
+          key={`workflow-progress-${workflowRefreshKey}`}
           workflowInstanceId={project.workflow_instance_id || null}
           onStepClick={(stepId, nodeId) => {
             // Open the progress dialog for the clicked active step
@@ -2114,15 +2131,37 @@ export default function ProjectDetailPage() {
                       <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                     </div>
                   ) : (
-                    workflowFormData.map((entry, index) => (
+                    workflowFormData.map((entry, index) => {
+                      // Determine styling based on approval decision
+                      const isApproved = entry.approvalDecision === 'approved'
+                      const isRejected = entry.approvalDecision === 'rejected'
+                      const borderColor = isApproved ? 'border-green-200' : isRejected ? 'border-red-200' : ''
+                      const bgColor = isApproved ? 'bg-green-50' : isRejected ? 'bg-red-50' : 'bg-gray-50'
+
+                      return (
                       <div key={entry.id} className={`${index > 0 ? 'border-t pt-4' : ''}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            <Badge variant="outline" className={
+                              isApproved ? 'bg-green-50 text-green-700 border-green-200' :
+                              isRejected ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-purple-50 text-purple-700 border-purple-200'
+                            }>
                               {entry.formName || entry.stepName || 'Form'}
                             </Badge>
                             {entry.stepName && entry.formName && (
                               <span className="text-xs text-gray-500">at {entry.stepName}</span>
+                            )}
+                            {/* Approval/Rejection Badge */}
+                            {isApproved && (
+                              <Badge className="bg-green-100 text-green-700 border border-green-300 text-xs">
+                                Approved
+                              </Badge>
+                            )}
+                            {isRejected && (
+                              <Badge className="bg-red-100 text-red-700 border border-red-300 text-xs">
+                                Rejected
+                              </Badge>
                             )}
                           </div>
                           <div className="text-xs text-gray-500">
@@ -2130,7 +2169,7 @@ export default function ProjectDetailPage() {
                             {formatDistance(new Date(entry.submittedAt), new Date(), { addSuffix: true })}
                           </div>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                        <div className={`${bgColor} rounded-lg p-3 space-y-2 ${borderColor ? `border ${borderColor}` : ''}`}>
                           {entry.fields?.map((field: any) => {
                             const value = entry.responseData[field.id]
                             if (value === undefined || value === null || value === '') return null
@@ -2165,7 +2204,8 @@ export default function ProjectDetailPage() {
                           ))}
                         </div>
                       </div>
-                    ))
+                      )
+                    })
                   )}
                 </CardContent>
               </Card>

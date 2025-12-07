@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,7 +19,6 @@ import {
   AlertCircle,
   Trash2,
   GitBranch,
-  Archive,
   History,
   User
 } from 'lucide-react';
@@ -152,8 +152,7 @@ export function UnifiedProjectsSection({ userProfile }: UnifiedProjectsSectionPr
   const [sortBy, setSortBy] = useState<'name' | 'priority' | 'deadline'>('priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Filter for Past Projects tab
-  const [pastProjectsFilter, setPastProjectsFilter] = useState<'all' | 'project_completed' | 'step_completed'>('all');
+  // Past Projects - only show completed projects (step_completed filter removed)
 
   // Workflow steps for projects
   const [workflowSteps, setWorkflowSteps] = useState<{ [key: string]: string | null }>({});
@@ -266,7 +265,7 @@ export function UnifiedProjectsSection({ userProfile }: UnifiedProjectsSectionPr
       setProjectToDelete(null);
     } catch (error: any) {
       console.error('Error deleting project:', error);
-      alert(`Failed to delete project: ${error.message}`);
+      toast.error(`Failed to delete project: ${error.message}`);
     } finally {
       setDeletingProject(false);
     }
@@ -478,11 +477,11 @@ export function UnifiedProjectsSection({ userProfile }: UnifiedProjectsSectionPr
             </TabsTrigger>
             <TabsTrigger value="past" className="flex items-center gap-1 text-xs sm:text-sm">
               <History className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Past Projects</span>
-              <span className="sm:hidden">Past</span>
-              {pastProjects.length > 0 && (
+              <span className="hidden sm:inline">Completed</span>
+              <span className="sm:hidden">Done</span>
+              {pastProjects.filter(p => p.completion_reason === 'project_completed').length > 0 && (
                 <Badge variant="secondary" className="ml-1 text-[10px] px-1">
-                  {pastProjects.length}
+                  {pastProjects.filter(p => p.completion_reason === 'project_completed').length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -695,7 +694,14 @@ export function UnifiedProjectsSection({ userProfile }: UnifiedProjectsSectionPr
                               {approval.projects.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center flex-wrap gap-4 text-xs text-gray-500">
+                            {approval.assigned_user && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span className="font-medium">Assigned to:</span>
+                                {approval.assigned_user.name}
+                              </span>
+                            )}
                             {approval.workflow_nodes?.label && (
                               <span className="flex items-center gap-1">
                                 <span className="font-medium">Step:</span>
@@ -795,43 +801,29 @@ export function UnifiedProjectsSection({ userProfile }: UnifiedProjectsSectionPr
             )}
           </TabsContent>
 
-          {/* Past Projects Tab */}
+          {/* Past Projects Tab - Shows completed projects only */}
           <TabsContent value="past" className="space-y-4 mt-4">
-            {/* Filter for past projects */}
+            {/* Project count */}
             <div className="flex items-center gap-2">
-              <Select value={pastProjectsFilter} onValueChange={(value: 'all' | 'project_completed' | 'step_completed') => setPastProjectsFilter(value)}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Past Projects</SelectItem>
-                  <SelectItem value="project_completed">Completed Projects</SelectItem>
-                  <SelectItem value="step_completed">My Step Completed</SelectItem>
-                </SelectContent>
-              </Select>
               <span className="text-sm text-gray-500">
-                {pastProjects.filter(p => pastProjectsFilter === 'all' || p.completion_reason === pastProjectsFilter).length} projects
+                {pastProjects.filter(p => p.completion_reason === 'project_completed').length} completed projects
               </span>
             </div>
 
-            {pastProjects.filter(p => pastProjectsFilter === 'all' || p.completion_reason === pastProjectsFilter).length === 0 ? (
+            {pastProjects.filter(p => p.completion_reason === 'project_completed').length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm">No past projects</p>
+                <p className="text-sm">No completed projects</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {pastProjectsFilter === 'all'
-                    ? 'Projects will appear here when your workflow step is complete or the project is finished'
-                    : pastProjectsFilter === 'project_completed'
-                      ? 'No fully completed projects yet'
-                      : 'No projects where your step has been completed'}
+                  Completed projects will appear here
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {pastProjects
-                  .filter(p => pastProjectsFilter === 'all' || p.completion_reason === pastProjectsFilter)
+                  .filter(p => p.completion_reason === 'project_completed')
                   .map((project, index) => (
-                  <Card key={`${project.id}-${project.assigned_user?.id || index}`} className={`border-l-4 hover:shadow-md transition-shadow ${project.completion_reason === 'project_completed' ? 'border-l-green-400' : 'border-l-gray-400'}`}>
+                  <Card key={`${project.id}-${project.assigned_user?.id || index}`} className="border-l-4 hover:shadow-md transition-shadow border-l-green-400">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -842,17 +834,10 @@ export function UnifiedProjectsSection({ userProfile }: UnifiedProjectsSectionPr
                             >
                               {project.name}
                             </Link>
-                            {project.completion_reason === 'project_completed' ? (
-                              <Badge className="bg-green-100 text-green-800 border-green-300">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Completed
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800 border-gray-300">
-                                <Archive className="w-3 h-3 mr-1" />
-                                Step Done
-                              </Badge>
-                            )}
+                            <Badge className="bg-green-100 text-green-800 border-green-300">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Completed
+                            </Badge>
                             {project.priority && (
                               <Badge className={getPriorityColor(project.priority)}>
                                 {project.priority}

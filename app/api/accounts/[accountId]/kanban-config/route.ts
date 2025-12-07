@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
 import { requireAuthAndPermission } from '@/lib/server-guards';
 import { Permission } from '@/lib/permissions';
-import { KanbanColumn } from '@/lib/account-kanban-config';
 
 /**
  * GET /api/accounts/[accountId]/kanban-config

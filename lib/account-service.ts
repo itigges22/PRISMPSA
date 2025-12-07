@@ -81,6 +81,7 @@ export interface ProjectWithDetails {
 
 export interface AccountMetrics {
   activeProjects: number;
+  completedProjects: number;
   totalProjects: number;
   upcomingDeadlines: number;
   overdueProjects: number;
@@ -733,23 +734,33 @@ class AccountService {
       const projects = await this.getAccountProjects(accountId, undefined, supabaseClient);
       const now = new Date();
 
-      const activeProjects = projects.filter(p => 
+      const activeProjects = projects.filter(p =>
         p.status_info.name !== 'Complete' && p.status_info.name !== 'Cancelled'
+      ).length;
+
+      const completedProjects = projects.filter(p =>
+        p.status_info.name === 'Complete'
       ).length;
 
       const totalProjects = projects.length;
 
+      // Upcoming deadlines - only count non-completed projects with deadlines in next 7 days
       const upcomingDeadlines = projects.filter(p => {
         if (!p.end_date) return false;
+        // IMPORTANT: Exclude completed projects from deadline counts
+        if (p.status_info.name === 'Complete' || p.status_info.name === 'Cancelled') return false;
         const endDate = new Date(p.end_date);
         const daysUntilDeadline = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return daysUntilDeadline > 0 && daysUntilDeadline <= 7;
       }).length;
 
+      // Overdue projects - only count non-completed projects that are past due
       const overdueProjects = projects.filter(p => {
         if (!p.end_date) return false;
+        // IMPORTANT: Exclude completed projects from overdue counts
+        if (p.status_info.name === 'Complete' || p.status_info.name === 'Cancelled') return false;
         const endDate = new Date(p.end_date);
-        return endDate < now && p.status_info.name !== 'Complete';
+        return endDate < now;
       }).length;
 
       // Count actual pending approvals from workflow instances for this account's projects
@@ -786,6 +797,7 @@ class AccountService {
 
       return {
         activeProjects,
+        completedProjects,
         totalProjects,
         upcomingDeadlines,
         overdueProjects,
@@ -796,6 +808,7 @@ class AccountService {
       console.error('Error in getAccountMetrics:', error);
       return {
         activeProjects: 0,
+        completedProjects: 0,
         totalProjects: 0,
         upcomingDeadlines: 0,
         overdueProjects: 0,

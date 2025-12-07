@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import {
@@ -56,7 +57,7 @@ export default function DepartmentCreateDialog({
     e.preventDefault();
     
     if (!canCreateDepartment) {
-      alert('You do not have permission to create departments.');
+      toast.error('You do not have permission to create departments.');
       return;
     }
     
@@ -79,7 +80,7 @@ export default function DepartmentCreateDialog({
 
       if (error) {
         console.error('Error creating department:', error);
-        alert('Failed to create department. Please try again.');
+        toast.error('Failed to create department. Please try again.');
         return;
       }
 
@@ -88,7 +89,7 @@ export default function DepartmentCreateDialog({
       setFormData({ name: '', description: '' });
     } catch (error) {
       console.error('Error creating department:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

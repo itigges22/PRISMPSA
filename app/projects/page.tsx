@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -366,7 +367,7 @@ export default function ProjectsPage() {
       // Double-check permissions
       const canDelete = await canDeleteProject(projectToDelete)
       if (!canDelete) {
-        alert('You do not have permission to delete this project')
+        toast.error('You do not have permission to delete this project')
         return
       }
 
@@ -394,7 +395,7 @@ export default function ProjectsPage() {
       setProjectToDelete(null)
     } catch (error: any) {
       console.error('Error deleting project:', error)
-      alert(`Failed to delete project: ${error.message}`)
+      toast.error(`Failed to delete project: ${error.message}`)
     } finally {
       setDeletingProject(false)
     }
@@ -506,7 +507,7 @@ export default function ProjectsPage() {
                   <div className="text-center py-12 text-gray-500">
                     <FolderOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Projects Found</h3>
-                    <p className="text-sm">You don't have access to any projects yet, or no projects have been created.</p>
+                    <p className="text-sm">You don&apos;t have access to any projects yet, or no projects have been created.</p>
                   </div>
                 ) : (
                   <>

@@ -28,17 +28,17 @@ export const createServerSupabase = async () => {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: Record<string, unknown>) {
         try {
           cookieStore.set(name, value, options);
-        } catch (error) {
+        } catch {
           // Ignore errors in API routes where cookies can't be set
         }
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: Record<string, unknown>) {
         try {
           cookieStore.set(name, '', { ...options, maxAge: 0 });
-        } catch (error) {
+        } catch {
           // Ignore errors in API routes where cookies can't be removed
         }
       },

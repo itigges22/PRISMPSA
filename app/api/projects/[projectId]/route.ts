@@ -180,6 +180,32 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update project' }, { status: 500 });
     }
 
+    // Add user as project collaborator if they made a meaningful update (notes, description)
+    if (body.notes !== undefined || body.description !== undefined) {
+      const { data: existingAssignment } = await supabase
+        .from('project_assignments')
+        .select('id, removed_at')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingAssignment) {
+        // Insert new assignment
+        await supabase.from('project_assignments').insert({
+          project_id: projectId,
+          user_id: user.id,
+          role_in_project: 'collaborator',
+          assigned_by: user.id
+        });
+      } else if (existingAssignment.removed_at) {
+        // Reactivate removed assignment
+        await supabase
+          .from('project_assignments')
+          .update({ removed_at: null, role_in_project: 'collaborator' })
+          .eq('id', existingAssignment.id);
+      }
+    }
+
     return NextResponse.json({ success: true, project: updatedProject });
   } catch (error) {
     console.error('Error in PUT /api/projects/[projectId]:', error);

@@ -70,7 +70,7 @@ export default function WorkflowsPage() {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/workflows/templates');
+      const response = await fetch('/api/admin/workflows/templates?include_inactive=true');
       const data = await response.json();
 
       if (data.success) {

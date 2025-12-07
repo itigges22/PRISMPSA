@@ -1,6 +1,12 @@
 /**
  * Workflow Validation Module
  * Validates workflow templates before saving to prevent invalid configurations
+ *
+ * IMPORTANT: This version enforces SINGLE-PATHWAY workflows.
+ * - No parallel execution
+ * - Approval nodes can have approve/reject paths (reject can loop back)
+ * - Conditional nodes route to ONE path based on conditions (not parallel)
+ * - Sync nodes are deprecated/not allowed
  */
 
 import type { Node, Edge } from '@xyflow/react';
@@ -27,15 +33,31 @@ export interface ValidationWarning {
   nodeLabel?: string;
 }
 
+export interface RoleWithUserCount {
+  id: string;
+  name: string;
+  department_id: string;
+  user_count: number;
+}
+
+// Node types that are allowed to have multiple outgoing edges (for branching, not parallel execution)
+const BRANCHING_NODE_TYPES = ['approval', 'conditional'];
+
+export interface ValidateWorkflowOptions {
+  roles?: RoleWithUserCount[];
+}
+
 /**
  * Validate a workflow template
  * @param nodes - React Flow nodes
  * @param edges - React Flow edges
+ * @param options - Optional validation options (includes roles for user count validation)
  * @returns ValidationResult with errors and warnings
  */
 export function validateWorkflow(
   nodes: Node[],
-  edges: Edge[]
+  edges: Edge[],
+  options?: ValidateWorkflowOptions
 ): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
@@ -76,6 +98,10 @@ export function validateWorkflow(
     });
   }
 
+  // Check for deprecated sync nodes (parallel workflows are disabled)
+  const syncErrors = validateNoSyncNodes(nodes);
+  errors.push(...syncErrors);
+
   // Check for orphaned nodes (nodes with no incoming or outgoing edges, except start/end)
   const orphanedNodes = findOrphanedNodes(nodes, edges);
   for (const node of orphanedNodes) {
@@ -88,11 +114,12 @@ export function validateWorkflow(
     });
   }
 
-  // Check for parallel branches without sync
-  const parallelErrors = validateParallelBranches(nodes, edges);
-  errors.push(...parallelErrors);
+  // Enforce single pathway - nodes should only have ONE outgoing edge
+  // (except approval/conditional which can branch)
+  const singlePathErrors = validateSinglePathway(nodes, edges);
+  errors.push(...singlePathErrors);
 
-  // Check for cycles
+  // Check for cycles (allowing rejection loops)
   const cycleErrors = detectCycles(nodes, edges);
   errors.push(...cycleErrors);
 
@@ -100,19 +127,81 @@ export function validateWorkflow(
   const approvalErrors = validateApprovalNodes(nodes, edges);
   errors.push(...approvalErrors);
 
-  // Check sync nodes have enough incoming branches
-  const syncWarnings = validateSyncNodes(nodes, edges);
-  warnings.push(...syncWarnings);
-
   // Check conditional nodes have proper paths
   const conditionalWarnings = validateConditionalNodes(nodes, edges);
   warnings.push(...conditionalWarnings);
+
+  // Check for roles with no users assigned (if roles data provided)
+  if (options?.roles) {
+    const roleErrors = validateRoleAssignments(nodes, options.roles);
+    errors.push(...roleErrors);
+  }
 
   return {
     valid: errors.length === 0,
     errors,
     warnings
   };
+}
+
+/**
+ * Validate that sync nodes are not used (parallel workflows disabled)
+ */
+function validateNoSyncNodes(nodes: Node[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  const syncNodes = nodes.filter(n => n.data?.type === 'sync');
+
+  for (const node of syncNodes) {
+    errors.push({
+      type: 'error',
+      code: 'SYNC_NOT_ALLOWED',
+      message: `Sync node "${node.data?.label || 'node'}" is not allowed. Parallel workflows have been disabled. Please remove sync nodes and use a single pathway.`,
+      nodeId: node.id,
+      nodeLabel: node.data?.label as string
+    });
+  }
+
+  return errors;
+}
+
+/**
+ * Validate single pathway - most nodes can only have one outgoing edge
+ * Exceptions:
+ * - approval: can have approved/rejected paths
+ * - conditional: can have multiple condition-based paths (only ONE is taken at runtime)
+ */
+function validateSinglePathway(nodes: Node[], edges: Edge[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  for (const node of nodes) {
+    const nodeType = node.data?.type as string;
+
+    // Skip nodes that can have multiple outgoing edges
+    if (BRANCHING_NODE_TYPES.includes(nodeType)) {
+      continue;
+    }
+
+    // Skip end nodes (they have no outgoing edges)
+    if (nodeType === 'end') {
+      continue;
+    }
+
+    const outgoingEdges = edges.filter(e => e.source === node.id);
+
+    // Non-branching nodes should have at most ONE outgoing edge
+    if (outgoingEdges.length > 1) {
+      errors.push({
+        type: 'error',
+        code: 'PARALLEL_NOT_ALLOWED',
+        message: `Node "${node.data?.label || 'node'}" has ${outgoingEdges.length} outgoing connections. Only ONE is allowed. Parallel workflows are disabled.`,
+        nodeId: node.id,
+        nodeLabel: node.data?.label as string
+      });
+    }
+  }
+
+  return errors;
 }
 
 /**
@@ -198,139 +287,8 @@ function findOrphanedNodes(nodes: Node[], edges: Edge[]): Node[] {
 }
 
 /**
- * Validate parallel branches merge at sync nodes
- */
-function validateParallelBranches(nodes: Node[], edges: Edge[]): ValidationError[] {
-  const errors: ValidationError[] = [];
-
-  // Find fork points (nodes with multiple outgoing edges that aren't conditional/approval routing)
-  const forkPoints: Node[] = [];
-
-  for (const node of nodes) {
-    const outgoingEdges = edges.filter(e => e.source === node.id);
-
-    // Check for parallel forks (multiple outgoing edges without conditions)
-    const parallelEdges = outgoingEdges.filter(e => {
-      const edgeData = e.data as any;
-      // Edges with decision conditions are not parallel forks
-      return !edgeData?.decision && !edgeData?.conditionValue;
-    });
-
-    if (parallelEdges.length > 1) {
-      forkPoints.push(node);
-    }
-  }
-
-  // For each fork point, verify branches merge at a sync node
-  for (const forkNode of forkPoints) {
-    const result = checkBranchesMergeAtSync(forkNode, nodes, edges);
-    if (!result.merges) {
-      errors.push({
-        type: 'error',
-        code: 'PARALLEL_WITHOUT_SYNC',
-        message: `Parallel branches from "${forkNode.data?.label || 'node'}" must merge at a Sync node. ${result.reason}`,
-        nodeId: forkNode.id,
-        nodeLabel: forkNode.data?.label as string
-      });
-    }
-  }
-
-  return errors;
-}
-
-/**
- * Check if all branches from a fork point merge at a sync node
- */
-function checkBranchesMergeAtSync(
-  forkNode: Node,
-  nodes: Node[],
-  edges: Edge[]
-): { merges: boolean; reason: string } {
-  const outgoingEdges = edges.filter(e => e.source === forkNode.id);
-  const parallelEdges = outgoingEdges.filter(e => {
-    const edgeData = e.data as any;
-    return !edgeData?.decision && !edgeData?.conditionValue;
-  });
-
-  if (parallelEdges.length < 2) {
-    return { merges: true, reason: '' };
-  }
-
-  // Get the target nodes of parallel branches
-  const branchTargetIds = parallelEdges.map(e => e.target);
-
-  // For each branch, follow it until we hit a sync node or end
-  const branchSyncNodes = new Map<string, string | null>();
-
-  for (const targetId of branchTargetIds) {
-    const syncNode = findFirstSyncOnPath(targetId, nodes, edges, new Set());
-    branchSyncNodes.set(targetId, syncNode);
-  }
-
-  // Check if all branches reach the SAME sync node
-  const syncNodeIds = new Set(Array.from(branchSyncNodes.values()).filter(Boolean));
-
-  if (syncNodeIds.size === 0) {
-    return { merges: false, reason: 'No Sync node found on any branch.' };
-  }
-
-  if (syncNodeIds.size > 1) {
-    return { merges: false, reason: 'Branches merge at different Sync nodes.' };
-  }
-
-  // Check if any branch doesn't reach a sync
-  const noSyncBranches = Array.from(branchSyncNodes.entries())
-    .filter(([_, syncId]) => !syncId)
-    .map(([branchId]) => {
-      const node = nodes.find(n => n.id === branchId);
-      return node?.data?.label || branchId;
-    });
-
-  if (noSyncBranches.length > 0) {
-    return {
-      merges: false,
-      reason: `Branch starting at "${noSyncBranches.join(', ')}" does not reach a Sync node.`
-    };
-  }
-
-  return { merges: true, reason: '' };
-}
-
-/**
- * Find the first sync node on a path from a starting node
- */
-function findFirstSyncOnPath(
-  nodeId: string,
-  nodes: Node[],
-  edges: Edge[],
-  visited: Set<string>
-): string | null {
-  if (visited.has(nodeId)) return null;
-  visited.add(nodeId);
-
-  const node = nodes.find(n => n.id === nodeId);
-  if (!node) return null;
-
-  if (node.data?.type === 'sync') {
-    return node.id;
-  }
-
-  if (node.data?.type === 'end') {
-    return null;
-  }
-
-  // Follow all outgoing edges
-  const outgoing = edges.filter(e => e.source === nodeId);
-  for (const edge of outgoing) {
-    const result = findFirstSyncOnPath(edge.target, nodes, edges, visited);
-    if (result) return result;
-  }
-
-  return null;
-}
-
-/**
  * Detect cycles in the workflow
+ * Allows intentional rejection loops (edges marked with decision === 'rejected')
  */
 function detectCycles(nodes: Node[], edges: Edge[]): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -416,14 +374,9 @@ function validateApprovalNodes(nodes: Node[], edges: Edge[]): ValidationError[] 
       return data?.decision === 'approved' || data?.conditionValue === 'approved';
     });
 
-    const hasRejectedPath = outgoingEdges.some(e => {
-      const data = e.data as any;
-      return data?.decision === 'rejected' || data?.conditionValue === 'rejected';
-    });
-
-    // Only warn if no approved path (rejected path is optional for some workflows)
+    // Only warn if no approved path and multiple edges exist
     if (!hasApprovedPath && outgoingEdges.length === 1) {
-      // Single edge without condition is the default path
+      // Single edge without condition is the default path (treated as approved)
       // This is ok for simple workflows
     } else if (!hasApprovedPath && outgoingEdges.length > 1) {
       errors.push({
@@ -440,38 +393,48 @@ function validateApprovalNodes(nodes: Node[], edges: Edge[]): ValidationError[] 
 }
 
 /**
- * Validate sync nodes have enough incoming branches
+ * Validate that roles used in workflow nodes have users assigned
+ * This catches issues like "No users have the 'Director of Graphics' role"
+ * before they become runtime errors during project execution
  */
-function validateSyncNodes(nodes: Node[], edges: Edge[]): ValidationWarning[] {
-  const warnings: ValidationWarning[] = [];
+function validateRoleAssignments(nodes: Node[], roles: RoleWithUserCount[]): ValidationError[] {
+  const errors: ValidationError[] = [];
 
-  const syncNodes = nodes.filter(n => n.data?.type === 'sync');
+  // Create a map for quick role lookup
+  const roleMap = new Map(roles.map(r => [r.id, r]));
 
-  for (const node of syncNodes) {
-    const incomingEdges = edges.filter(e => e.target === node.id);
+  for (const node of nodes) {
+    const nodeType = node.data?.type as string;
+    const config = node.data?.config as any;
 
-    if (incomingEdges.length < 2) {
-      warnings.push({
-        type: 'warning',
-        code: 'SYNC_SINGLE_BRANCH',
-        message: `Sync node "${node.data?.label || 'node'}" has only ${incomingEdges.length} incoming branch(es). Sync nodes are typically used to merge 2+ parallel branches.`,
-        nodeId: node.id,
-        nodeLabel: node.data?.label as string
-      });
+    // Check role nodes
+    if (nodeType === 'role' && config?.roleId) {
+      const role = roleMap.get(config.roleId);
+      if (role && role.user_count === 0) {
+        errors.push({
+          type: 'error',
+          code: 'ROLE_NO_USERS',
+          message: `Cannot proceed to "${node.data?.label || 'Role'}": No users have the "${role.name}" role. Please assign at least one user to this role.`,
+          nodeId: node.id,
+          nodeLabel: node.data?.label as string
+        });
+      }
     }
 
-    // Check if sync has an outgoing edge
-    const outgoingEdges = edges.filter(e => e.source === node.id);
-    if (outgoingEdges.length === 0) {
-      warnings.push({
-        type: 'warning',
-        code: 'SYNC_NO_OUTPUT',
-        message: `Sync node "${node.data?.label || 'node'}" has no outgoing connection. The workflow cannot continue after this point.`,
-        nodeId: node.id,
-        nodeLabel: node.data?.label as string
-      });
+    // Check approval nodes (they use approverRoleId)
+    if (nodeType === 'approval' && config?.approverRoleId) {
+      const role = roleMap.get(config.approverRoleId);
+      if (role && role.user_count === 0) {
+        errors.push({
+          type: 'error',
+          code: 'APPROVAL_ROLE_NO_USERS',
+          message: `Cannot proceed to "${node.data?.label || 'Approval'}": No users have the "${role.name}" role to perform approvals. Please assign at least one user to this role.`,
+          nodeId: node.id,
+          nodeLabel: node.data?.label as string
+        });
+      }
     }
   }
 
-  return warnings;
+  return errors;
 }

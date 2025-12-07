@@ -56,6 +56,11 @@ interface WorkflowInstance {
     id: string;
     name: string;
   };
+  started_snapshot?: {
+    nodes?: any[];
+    connections?: any[];
+    template_name?: string;
+  } | null;
 }
 
 interface NextNodePreview {
@@ -96,6 +101,27 @@ interface FormTemplate {
   name: string;
   description: string | null;
   fields: FormField[];
+}
+
+// Helper function to render simple markdown (bold text) as React elements
+function renderMarkdownContent(content: string): React.ReactNode {
+  if (!content) return null;
+
+  // Handle edge cases like *text** or **text* by normalizing first
+  let normalizedContent = content
+    .replace(/^\*([^*]+)\*\*$/gm, '**$1**') // Fix *text** -> **text**
+    .replace(/^\*\*([^*]+)\*$/gm, '**$1**'); // Fix **text* -> **text**
+
+  // Split by **text** pattern and render bold parts
+  const parts = normalizedContent.split(/(\*\*[^*]+\*\*)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      // Remove the ** markers and render as bold
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={index}>{part}</span>;
+  });
 }
 
 export function WorkflowProgressButton({
@@ -285,12 +311,12 @@ export function WorkflowProgressButton({
         const supabase = createClientSupabase();
         if (!supabase) return;
 
-        // Get workflow instance with current node and project_id
+        // Get workflow instance with snapshot (don't rely on FK join which fails when template is deleted)
         const { data: instance, error } = await supabase
           .from('workflow_instances')
           .select(`
             *,
-            workflow_nodes!workflow_instances_current_node_id_fkey(id, entity_id, node_type)
+            started_snapshot
           `)
           .eq('id', workflowInstanceId)
           .single();
@@ -307,6 +333,21 @@ export function WorkflowProgressButton({
           return;
         }
 
+        // Get current node from snapshot (preferred) or live table (fallback)
+        const snapshotNodes = instance.started_snapshot?.nodes || [];
+        const hasSnapshot = snapshotNodes.length > 0;
+
+        let currentNodeFromSnapshot = null;
+        if (hasSnapshot && instance.current_node_id) {
+          currentNodeFromSnapshot = snapshotNodes.find((n: any) => n.id === instance.current_node_id);
+        }
+
+        // Attach the node info to instance for later use
+        const instanceWithNode = {
+          ...instance,
+          workflow_nodes: currentNodeFromSnapshot
+        };
+
         // Check if user is superadmin (bypasses all checks)
         const userIsSuperadmin = userProfile.is_superadmin ||
           userProfile.user_roles?.some((ur: any) => ur.roles?.name?.toLowerCase() === 'superadmin');
@@ -320,13 +361,16 @@ export function WorkflowProgressButton({
         }
 
         // Get the node_id to check for node assignments
-        // If we have an active step, get its node_id; otherwise use current_node_id
+        // ALWAYS check for active steps first - this handles cases where:
+        // 1. externalActiveStepId is provided
+        // 2. current_node_id is null (template was modified/deleted)
+        // 3. workflow is using snapshot-based execution
         let nodeIdToCheck: string | null = instance.current_node_id;
         let hasNodeAssignment = false;
         let isAssignedToActiveStep = false;
 
         if (externalActiveStepId) {
-          // Get the node_id and assigned_user_id from the active step
+          // Get the node_id and assigned_user_id from the provided active step
           const { data: activeStep } = await supabase
             .from('workflow_active_steps')
             .select('node_id, assigned_user_id')
@@ -339,6 +383,30 @@ export function WorkflowProgressButton({
             if (activeStep.assigned_user_id === userProfile.id) {
               isAssignedToActiveStep = true;
             }
+          }
+        } else if (!nodeIdToCheck) {
+          // No current_node_id - try to find from active steps
+          const { data: activeSteps } = await supabase
+            .from('workflow_active_steps')
+            .select('node_id, assigned_user_id')
+            .eq('workflow_instance_id', workflowInstanceId)
+            .eq('status', 'active')
+            .order('activated_at', { ascending: false })
+            .limit(1);
+
+          if (activeSteps && activeSteps.length > 0) {
+            nodeIdToCheck = activeSteps[0].node_id;
+            if (activeSteps[0].assigned_user_id === userProfile.id) {
+              isAssignedToActiveStep = true;
+            }
+          }
+        }
+
+        // Update the node in instanceWithNode using snapshot if available
+        if (nodeIdToCheck && hasSnapshot) {
+          const nodeFromSnapshot = snapshotNodes.find((n: any) => n.id === nodeIdToCheck);
+          if (nodeFromSnapshot) {
+            instanceWithNode.workflow_nodes = nodeFromSnapshot;
           }
         }
 
@@ -390,7 +458,7 @@ export function WorkflowProgressButton({
         }
 
         // 2. CHECK ENTITY REQUIREMENT based on node type
-        const currentNode = instance.workflow_nodes;
+        const currentNode = instanceWithNode.workflow_nodes;
 
         // If the node has no entity_id, anyone assigned can progress
         if (!currentNode?.entity_id) {
@@ -453,20 +521,23 @@ export function WorkflowProgressButton({
 
           if (!hasRole) {
             // User can't act on current step - check if they're assigned to a future node
+            // Query just the node_id (don't join with workflow_nodes which may fail if template deleted)
             const { data: futureAssignments } = await supabase
               .from('workflow_node_assignments')
-              .select(`
-                node_id,
-                workflow_nodes!inner(id, label)
-              `)
+              .select('node_id')
               .eq('workflow_instance_id', workflowInstanceId)
               .eq('user_id', userProfile.id)
               .neq('node_id', nodeIdToCheck || '');
 
             if (futureAssignments && futureAssignments.length > 0) {
-              // User is assigned to a future step
+              // User is assigned to a future step - get label from snapshot
+              const futureNodeId = futureAssignments[0].node_id;
+              const futureNode = hasSnapshot
+                ? snapshotNodes.find((n: any) => n.id === futureNodeId)
+                : null;
+
               setIsPipelineProject(true);
-              setAssignedFutureStepName((futureAssignments[0].workflow_nodes as any)?.label || 'a future step');
+              setAssignedFutureStepName(futureNode?.label || 'a future step');
               setCurrentStepName(currentNode?.label || 'the current step');
             } else {
               setIsPipelineProject(false);
@@ -511,11 +582,12 @@ export function WorkflowProgressButton({
       const supabase = createClientSupabase();
       if (!supabase) return;
 
-      // First, get the workflow instance
+      // First, get the workflow instance (including snapshot)
       const { data: instance, error: instanceError } = await supabase
         .from('workflow_instances')
         .select(`
           *,
+          started_snapshot,
           workflow_templates(*)
         `)
         .eq('id', workflowInstanceId)
@@ -525,6 +597,18 @@ export function WorkflowProgressButton({
         console.error('Error loading workflow instance:', instanceError);
         return;
       }
+
+      // Extract snapshot data for use throughout the function
+      // This ensures we use the workflow configuration from when the project started
+      const snapshotNodes = instance.started_snapshot?.nodes || [];
+      const snapshotConnections = instance.started_snapshot?.connections || [];
+      const hasSnapshot = snapshotNodes.length > 0 && snapshotConnections.length > 0;
+
+      console.log('[WorkflowProgressButton] Snapshot status:', {
+        hasSnapshot,
+        snapshotNodesCount: snapshotNodes.length,
+        snapshotConnectionsCount: snapshotConnections.length
+      });
 
       // Check for stale data - if workflow was updated since we last loaded
       const currentUpdatedAt = instance.updated_at;
@@ -538,7 +622,8 @@ export function WorkflowProgressButton({
 
       // Determine which node to load:
       // 1. If externalActiveStepId is provided, use that step's node
-      // 2. Otherwise, check for active steps in workflow_active_steps table
+      // 2. Otherwise, ALWAYS check for active steps in workflow_active_steps table
+      //    (this is critical when current_node_id is null or template was deleted)
       // 3. Fall back to current_node_id for legacy workflows
       let nodeIdToLoad = instance.current_node_id;
       let activeStepIdToUse: string | null = externalActiveStepId || null;
@@ -555,36 +640,58 @@ export function WorkflowProgressButton({
           nodeIdToLoad = activeStep.node_id;
           setBranchId(activeStep.branch_id);
         }
-      } else if (instance.has_parallel_paths) {
-        // For parallel workflows without a specific step, get the first active step
+      } else {
+        // ALWAYS check for active steps - this handles:
+        // 1. Parallel workflows (has_parallel_paths = true)
+        // 2. Workflows where current_node_id is null
+        // 3. Workflows where the template was modified/deleted (snapshot-based)
         const { data: activeSteps } = await supabase
           .from('workflow_active_steps')
           .select('id, node_id, branch_id')
           .eq('workflow_instance_id', workflowInstanceId)
           .eq('status', 'active')
+          .order('activated_at', { ascending: false })
           .limit(1);
 
         if (activeSteps && activeSteps.length > 0) {
           nodeIdToLoad = activeSteps[0].node_id;
           activeStepIdToUse = activeSteps[0].id;
           setBranchId(activeSteps[0].branch_id);
+          console.log('[WorkflowProgressButton] Using active step:', {
+            nodeId: nodeIdToLoad,
+            stepId: activeStepIdToUse,
+            branchId: activeSteps[0].branch_id
+          });
+        } else if (instance.current_node_id) {
+          // Fallback to current_node_id if no active steps found
+          setBranchId(null);
+        } else {
+          // No active steps and no current_node_id - workflow may be stuck
+          console.warn('[WorkflowProgressButton] No active step or current_node_id found');
+          setBranchId(null);
         }
-      } else {
-        setBranchId(null);
       }
 
       setCurrentActiveStepId(activeStepIdToUse);
 
-      // Now get the node data
+      // Now get the node data - prefer snapshot over live tables
+      // This ensures deleted/modified templates don't break in-progress workflows
       let currentNodeData = null;
       if (nodeIdToLoad) {
-        const { data: nodeData } = await supabase
-          .from('workflow_nodes')
-          .select('*')
-          .eq('id', nodeIdToLoad)
-          .single();
-
-        currentNodeData = nodeData;
+        if (hasSnapshot) {
+          // Use snapshot data (protects against template deletion/modification)
+          currentNodeData = snapshotNodes.find((n: any) => n.id === nodeIdToLoad) || null;
+          console.log('[WorkflowProgressButton] Using snapshot for current node:', currentNodeData?.label);
+        } else {
+          // Fallback to live table for older instances without snapshot
+          console.log('[WorkflowProgressButton] No snapshot, querying live table for node');
+          const { data: nodeData } = await supabase
+            .from('workflow_nodes')
+            .select('*')
+            .eq('id', nodeIdToLoad)
+            .single();
+          currentNodeData = nodeData;
+        }
       }
 
       // Construct the instance with node data in the expected format
@@ -827,15 +934,28 @@ export function WorkflowProgressButton({
       }
 
       // Get next node(s) preview - handle both single and parallel branches
+      // Use snapshot data for connections and nodes to ensure template changes don't break workflows
       const nodeIdForConnections = nodeIdToLoad || instance.current_node_id;
       if (nodeIdForConnections) {
-        const { data: connections } = await supabase
-          .from('workflow_connections')
-          .select('to_node_id, condition')
-          .eq('workflow_template_id', instance.workflow_template_id)
-          .eq('from_node_id', nodeIdForConnections);
+        // Get connections - prefer snapshot over live tables
+        let connections: any[] = [];
+        if (hasSnapshot) {
+          // Use snapshot connections
+          connections = snapshotConnections.filter(
+            (c: any) => c.from_node_id === nodeIdForConnections
+          );
+          console.log('[WorkflowProgressButton] Using snapshot connections:', connections.length);
+        } else {
+          // Fallback to live table
+          const { data: liveConnections } = await supabase
+            .from('workflow_connections')
+            .select('to_node_id, condition')
+            .eq('workflow_template_id', instance.workflow_template_id)
+            .eq('from_node_id', nodeIdForConnections);
+          connections = liveConnections || [];
+        }
 
-        if (connections && connections.length > 0) {
+        if (connections.length > 0) {
           // Filter out decision-based connections (those are for approval routing, not parallel branches)
           const parallelConnections = connections.filter(
             (c: any) => !c.condition?.decision && !c.condition?.conditionValue
@@ -844,13 +964,22 @@ export function WorkflowProgressButton({
           // Get all next node IDs
           const nextNodeIds = parallelConnections.map((c: any) => c.to_node_id);
 
-          // Fetch all next nodes
-          const { data: allNextNodes } = await supabase
-            .from('workflow_nodes')
-            .select('*')
-            .in('id', nextNodeIds);
+          // Get all next nodes - prefer snapshot over live tables
+          let allNextNodes: any[] = [];
+          if (hasSnapshot) {
+            // Use snapshot nodes
+            allNextNodes = snapshotNodes.filter((n: any) => nextNodeIds.includes(n.id));
+            console.log('[WorkflowProgressButton] Using snapshot for next nodes:', allNextNodes.map((n: any) => n.label));
+          } else {
+            // Fallback to live table
+            const { data: liveNextNodes } = await supabase
+              .from('workflow_nodes')
+              .select('*')
+              .in('id', nextNodeIds);
+            allNextNodes = liveNextNodes || [];
+          }
 
-          if (allNextNodes && allNextNodes.length > 0) {
+          if (allNextNodes.length > 0) {
             // Set legacy single node for backward compatibility
             setNextNode(allNextNodes[0]);
             // Set all next nodes for parallel support
@@ -1371,7 +1500,7 @@ export function WorkflowProgressButton({
                         {projectIssues.map((issue) => (
                           <li key={issue.id} className="text-xs text-red-700 flex items-start gap-1">
                             <span className="text-red-400 mt-0.5">•</span>
-                            <span className="line-clamp-2">{issue.content}</span>
+                            <span className="line-clamp-2">{renderMarkdownContent(issue.content)}</span>
                           </li>
                         ))}
                       </ul>
@@ -1399,9 +1528,9 @@ export function WorkflowProgressButton({
                     All parallel branches have merged. Please assign someone to continue the workflow.
                   </p>
                 )}
-                {workflowInstance?.workflow_templates && (
+                {(workflowInstance?.started_snapshot?.template_name || workflowInstance?.workflow_templates?.name) && (
                   <p className={`text-xs mt-1 ${isSyncNode ? 'text-amber-700' : 'text-blue-700'}`}>
-                    Workflow: {workflowInstance.workflow_templates.name}
+                    Workflow: {workflowInstance.started_snapshot?.template_name || workflowInstance.workflow_templates?.name?.replace(/^\[DELETED\]\s*/, '')}
                   </p>
                 )}
               </div>
@@ -1826,22 +1955,6 @@ export function WorkflowProgressButton({
             >
               Cancel
             </Button>
-            {/* Skip Form button for superadmins when there's a form to fill */}
-            {isSuperadmin && formTemplate && !existingFormData && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  // Clear form data and progress without form
-                  setFormData({});
-                  handleProgressWorkflow();
-                }}
-                disabled={submitting || (isApprovalNode && !decision)}
-                className="border-orange-200 text-orange-700 hover:bg-orange-50"
-              >
-                Skip Form
-              </Button>
-            )}
             <Button
               onClick={handleProgressWorkflow}
               disabled={submitting || loading || (isApprovalNode && !decision) || (isSyncNode && availableUsers.length > 0 && !selectedUserId)}

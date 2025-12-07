@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -191,14 +192,14 @@ export default function DepartmentAdminTabs({ departmentId }: DepartmentAdminTab
 
       if (error) {
         console.error('Error saving settings:', error);
-        alert('Failed to save settings. Please try again.');
+        toast.error('Failed to save settings. Please try again.');
         return;
       }
 
-      alert('Settings saved successfully!');
+      toast.error('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     }
   };
 

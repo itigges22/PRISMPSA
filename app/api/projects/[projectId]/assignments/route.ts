@@ -75,9 +75,10 @@ export async function GET(
     }
 
     // Get workflow instance for this project to find node assignments
+    // Include started_snapshot for node labels (FK to workflow_nodes may not exist)
     const { data: workflowInstance } = await supabase
       .from('workflow_instances')
-      .select('id, status, workflow_template_id')
+      .select('id, status, workflow_template_id, started_snapshot')
       .eq('project_id', projectId)
       .in('status', ['active', 'completed'])
       .order('started_at', { ascending: false })
@@ -85,17 +86,23 @@ export async function GET(
       .single()
 
     // If there's a workflow, get node assignments (supporting multiple per user)
-    let nodeAssignmentsMap: Record<string, Array<{ stepId: string; stepName: string }>> = {}
+    let nodeAssignmentsMap: Record<string, Array<{ stepId: string; stepName: string; isActive?: boolean }>> = {}
+    // Track users from active steps who may not be in project_assignments
+    let activeStepUsers: Array<{ userId: string; stepId: string; stepName: string }> = []
 
     if (workflowInstance) {
-      // Get all node assignments for this workflow instance with node labels
+      // Helper to get node label from snapshot
+      const getNodeLabel = (nodeId: string): string => {
+        const snapshot = (workflowInstance as any).started_snapshot;
+        const node = snapshot?.nodes?.find((n: any) => n.id === nodeId);
+        return node?.label || 'Unknown Step';
+      };
+
+      // Get all node assignments for this workflow instance
+      // NOTE: We don't join workflow_nodes because FK may not exist after template modifications
       const { data: nodeAssignments } = await supabase
         .from('workflow_node_assignments')
-        .select(`
-          node_id,
-          user_id,
-          workflow_nodes!inner(label)
-        `)
+        .select('node_id, user_id')
         .eq('workflow_instance_id', workflowInstance.id)
 
       // Build a map of user_id -> array of { stepId, stepName }
@@ -106,7 +113,46 @@ export async function GET(
           }
           nodeAssignmentsMap[na.user_id].push({
             stepId: na.node_id,
-            stepName: (na.workflow_nodes as any)?.label || 'Unknown Step'
+            stepName: getNodeLabel(na.node_id)
+          })
+        }
+      }
+
+      // Also get users assigned directly to active workflow steps (via assigned_user_id)
+      // These users may not be in workflow_node_assignments but are actively working on steps
+      const { data: activeSteps } = await supabase
+        .from('workflow_active_steps')
+        .select('node_id, assigned_user_id, status')
+        .eq('workflow_instance_id', workflowInstance.id)
+        .not('assigned_user_id', 'is', null)
+
+      if (activeSteps) {
+        for (const step of activeSteps) {
+          const userId = step.assigned_user_id
+          if (!userId) continue
+
+          const stepInfo = {
+            stepId: step.node_id,
+            stepName: getNodeLabel(step.node_id),
+            isActive: step.status === 'active'
+          }
+
+          // Add to node assignments map
+          if (!nodeAssignmentsMap[userId]) {
+            nodeAssignmentsMap[userId] = []
+          }
+
+          // Only add if not already present for this node
+          const existingSteps = nodeAssignmentsMap[userId]
+          if (!existingSteps.some(s => s.stepId === stepInfo.stepId)) {
+            nodeAssignmentsMap[userId].push(stepInfo)
+          }
+
+          // Track for adding to team if not already in project_assignments
+          activeStepUsers.push({
+            userId,
+            stepId: stepInfo.stepId,
+            stepName: stepInfo.stepName
           })
         }
       }
@@ -128,8 +174,63 @@ export async function GET(
       }
     })
 
+    // Find users from active workflow steps who are NOT in project_assignments
+    // These users should appear in the Team Members section with their step assignments
+    const existingUserIds = new Set((assignments || []).map((a: any) => a.user_id))
+    const missingStepUserIds = [...new Set(activeStepUsers.map(u => u.userId))]
+      .filter(userId => !existingUserIds.has(userId))
+
+    // Fetch user profiles for missing users
+    let virtualTeamMembers: any[] = []
+    if (missingStepUserIds.length > 0) {
+      const { data: missingUserProfiles } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, image')
+        .in('id', missingStepUserIds)
+
+      // Get roles for these users
+      const { data: missingUserRoles } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          roles (name)
+        `)
+        .in('user_id', missingStepUserIds)
+
+      const missingRolesMap: Record<string, string> = {}
+      if (missingUserRoles) {
+        for (const ur of missingUserRoles) {
+          if (!missingRolesMap[ur.user_id] && (ur.roles as any)?.name) {
+            missingRolesMap[ur.user_id] = (ur.roles as any).name
+          }
+        }
+      }
+
+      // Create virtual team members from workflow step assignments
+      if (missingUserProfiles) {
+        for (const profile of missingUserProfiles) {
+          const nodeAssignments = nodeAssignmentsMap[profile.id] || []
+          virtualTeamMembers.push({
+            id: `virtual-${profile.id}`, // Virtual ID to distinguish from real assignments
+            user_id: profile.id,
+            role_in_project: 'workflow_step', // Special role indicating they're here via workflow
+            assigned_at: null,
+            assigned_by: null,
+            user_profiles: profile,
+            workflow_step: nodeAssignments.length > 0 ? nodeAssignments[0] : null,
+            workflow_steps: nodeAssignments,
+            primary_role: missingRolesMap[profile.id] || null,
+            is_virtual: true // Flag to indicate this is a workflow-only assignment
+          })
+        }
+      }
+    }
+
+    // Combine regular assignments with virtual team members from workflow steps
+    const allAssignments = [...enrichedAssignments, ...virtualTeamMembers]
+
     return NextResponse.json({
-      assignments: enrichedAssignments,
+      assignments: allAssignments,
       has_active_workflow: workflowInstance?.status === 'active'
     })
 

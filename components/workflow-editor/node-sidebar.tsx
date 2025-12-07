@@ -1,6 +1,6 @@
 'use client';
 
-import { GitBranch, Users, UserCheck, Play, Flag, FileText, GitMerge, Combine } from 'lucide-react';
+import { Users, UserCheck, Play, Flag, FileText, GitMerge } from 'lucide-react';
 import { WorkflowNodeType } from './workflow-node';
 
 interface NodeTypeConfig {
@@ -12,6 +12,9 @@ interface NodeTypeConfig {
   borderColor: string;
 }
 
+// Note: Sync node removed - parallel workflows are disabled for simplicity
+// Note: Department node removed - roles already have departments attached
+// Workflows now follow a single pathway with approval branching and conditional routing
 const nodeTypes: NodeTypeConfig[] = [
   {
     type: 'start',
@@ -22,18 +25,10 @@ const nodeTypes: NodeTypeConfig[] = [
     borderColor: 'border-green-500',
   },
   {
-    type: 'department',
-    label: 'Department',
-    icon: GitBranch,
-    description: 'Route work to an entire department. All members can see it.',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
-  },
-  {
     type: 'role',
     label: 'Role',
     icon: Users,
-    description: 'Assign to specific role (e.g., Video Editor, Designer). Requires selecting a team member.',
+    description: 'Assign to specific role (e.g., Video Editor, Designer). Department is auto-assigned from role.',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-500',
   },
@@ -41,7 +36,7 @@ const nodeTypes: NodeTypeConfig[] = [
     type: 'approval',
     label: 'Approval',
     icon: UserCheck,
-    description: 'Approval gate: Requires Approve/Reject/Needs Changes decision before proceeding.',
+    description: 'Approval gate: Requires Approve/Reject decision. Approved continues forward, rejected can loop back.',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-500',
   },
@@ -57,17 +52,9 @@ const nodeTypes: NodeTypeConfig[] = [
     type: 'conditional',
     label: 'Conditional',
     icon: GitMerge,
-    description: 'Branch workflow based on form responses. Connect to a Form node and create up to 5 output paths.',
+    description: 'Smart routing: Takes ONE path based on conditions (e.g., form responses, approval decisions).',
     bgColor: 'bg-pink-50',
     borderColor: 'border-pink-500',
-  },
-  {
-    type: 'sync',
-    label: 'Sync',
-    icon: Combine,
-    description: 'Wait point: Pauses until all incoming parallel paths complete before continuing.',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-500',
   },
   {
     type: 'end',
@@ -128,38 +115,28 @@ export function NodeSidebar() {
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-xs font-semibold text-amber-900 mb-2">Common Patterns</p>
           <ul className="text-xs text-amber-800 space-y-1">
-            <li><strong>Review Loop:</strong> Role → Approval (approved → End, rejected → Role)</li>
-            <li><strong>Sequential Steps:</strong> Role → Role → Role → End</li>
+            <li><strong>Review Loop:</strong> Role → Approval (approved → End, rejected → back to Role)</li>
+            <li><strong>Sequential:</strong> Role → Role → Role → End</li>
             <li><strong>Quality Gate:</strong> Role → Approval → End</li>
-            <li><strong>Parallel Work:</strong> Fork from node → Multiple paths → Sync → End</li>
-          </ul>
-        </div>
-
-        <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-          <p className="text-xs font-semibold text-indigo-900 mb-2">Parallel Workflows</p>
-          <ul className="text-xs text-indigo-800 space-y-1">
-            <li>✓ Connect one node to multiple targets to create parallel paths</li>
-            <li>✓ Use <strong>Sync</strong> node to wait for all paths before continuing</li>
-            <li>✓ All parallel paths execute simultaneously</li>
-            <li>✓ Workflow completes when ALL paths reach End or Sync</li>
+            <li><strong>Smart Routing:</strong> Form → Conditional → different End paths</li>
           </ul>
         </div>
 
         <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-xs font-semibold text-green-900 mb-2">Best Practices</p>
+          <p className="text-xs font-semibold text-green-900 mb-2">Workflow Rules</p>
           <ul className="text-xs text-green-800 space-y-1">
+            <li>✓ Workflows follow ONE main path</li>
+            <li>✓ Approval nodes: approved goes forward, rejected can loop back</li>
+            <li>✓ Conditional nodes route to ONE path based on logic</li>
             <li>✓ Every workflow needs Start + End</li>
             <li>✓ All nodes must be connected</li>
-            <li>✓ Configure nodes after adding them</li>
-            <li>✓ Approval nodes can have multiple paths (approved/rejected)</li>
-            <li>✗ Avoid circular loops without exit paths</li>
           </ul>
         </div>
 
         <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
           <p className="text-xs font-semibold text-purple-900 mb-2">Example: Video Project</p>
           <p className="text-xs text-purple-800">
-            Start → Pre-Production (Role: Creative Director) → Approval (PM) → Production (Role: Producer) → Post-Production (Role: Editor) → Review (Approval: Creative Director) → End
+            Start → Pre-Production (Role) → Budget Approval → Production (Role) → Post-Production (Role) → Creative Review (Approval: if rejected → back to Post, if approved → End)
           </p>
         </div>
       </div>

@@ -180,6 +180,30 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create issue' }, { status: 500 });
     }
 
+    // Add user as project collaborator if not already assigned
+    const { data: existingAssignment } = await supabase
+      .from('project_assignments')
+      .select('id, removed_at')
+      .eq('project_id', projectId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!existingAssignment) {
+      // Insert new assignment
+      await supabase.from('project_assignments').insert({
+        project_id: projectId,
+        user_id: user.id,
+        role_in_project: 'collaborator',
+        assigned_by: user.id
+      });
+    } else if (existingAssignment.removed_at) {
+      // Reactivate removed assignment
+      await supabase
+        .from('project_assignments')
+        .update({ removed_at: null, role_in_project: 'collaborator' })
+        .eq('id', existingAssignment.id);
+    }
+
     return NextResponse.json({ success: true, issue }, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/projects/[projectId]/issues:', error);

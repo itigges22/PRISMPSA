@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 import { taskServiceDB, Task, CreateTaskData, UpdateTaskData } from '@/lib/task-service-db';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -174,12 +175,12 @@ export default function TaskCreateEditDialog({
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      alert('Task name is required');
+      toast.error('Task name is required');
       return;
     }
 
     if (!userProfile?.id) {
-      alert('You must be logged in to create/edit tasks');
+      toast.error('You must be logged in to create/edit tasks');
       return;
     }
 
@@ -189,7 +190,7 @@ export default function TaskCreateEditDialog({
       const dueDate = new Date(formData.due_date);
 
       if (startDate > dueDate) {
-        alert('Start date cannot be after due date');
+        toast.error('Start date cannot be after due date');
         return;
       }
     }
@@ -202,7 +203,7 @@ export default function TaskCreateEditDialog({
 
         if (taskStart < projectStart) {
           const formattedProjectStart = new Date(project.start_date).toLocaleDateString();
-          alert(`Task start date cannot be before project start date (${formattedProjectStart})`);
+          toast.error(`Task start date cannot be before project start date (${formattedProjectStart})`);
           return;
         }
       }
@@ -213,7 +214,7 @@ export default function TaskCreateEditDialog({
 
         if (taskDue > projectEnd) {
           const formattedProjectEnd = new Date(project.end_date).toLocaleDateString();
-          alert(`Task due date cannot be after project end date (${formattedProjectEnd})`);
+          toast.error(`Task due date cannot be after project end date (${formattedProjectEnd})`);
           return;
         }
       }
@@ -249,7 +250,7 @@ export default function TaskCreateEditDialog({
           onTaskSaved();
           onOpenChange(false);
         } else {
-          alert(result.error || 'Failed to update task');
+          toast.error(result.error || 'Failed to update task');
         }
       } else {
         // Create new task via API
@@ -279,7 +280,7 @@ export default function TaskCreateEditDialog({
           onOpenChange(false);
         } else {
           console.error('Task creation returned null');
-          alert('Failed to create task. Please check the console for details.');
+          toast.error('Failed to create task. Please check the console for details.');
         }
       }
     } catch (error: any) {
@@ -290,7 +291,7 @@ export default function TaskCreateEditDialog({
         hint: error?.hint,
         code: error?.code
       });
-      alert(`An error occurred while saving the task: ${error?.message || 'Unknown error'}`);
+      toast.error(`An error occurred while saving the task: ${error?.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }

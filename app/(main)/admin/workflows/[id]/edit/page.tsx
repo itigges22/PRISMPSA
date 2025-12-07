@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Node, Edge } from '@xyflow/react';
 import type { WorkflowNodeData } from '@/components/workflow-editor/workflow-node';
@@ -40,6 +42,7 @@ interface WorkflowTemplate {
   id: string;
   name: string;
   description: string | null;
+  is_active: boolean;
 }
 
 export default function WorkflowEditorPage() {
@@ -53,6 +56,9 @@ export default function WorkflowEditorPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [initialNodes, setInitialNodes] = useState<Node<WorkflowNodeData>[]>([]);
   const [initialEdges, setInitialEdges] = useState<Edge[]>([]);
+  const [isActive, setIsActive] = useState(true);
+  const [togglingActive, setTogglingActive] = useState(false);
+  const [hasNodes, setHasNodes] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -62,12 +68,13 @@ export default function WorkflowEditorPage() {
     try {
       setLoading(true);
 
-      // Load template details
-      const templateRes = await fetch(`/api/admin/workflows/templates`);
+      // Load template details (including inactive ones)
+      const templateRes = await fetch(`/api/admin/workflows/templates?include_inactive=true`);
       const templateData = await templateRes.json();
       if (templateData.success) {
         const foundTemplate = templateData.templates.find((t: WorkflowTemplate) => t.id === templateId);
         setTemplate(foundTemplate || null);
+        setIsActive(foundTemplate?.is_active ?? true);
       }
 
       // Load departments
@@ -93,6 +100,7 @@ export default function WorkflowEditorPage() {
       const workflowData = await workflowRes.json();
 
       if (workflowData.success && workflowData.template?.nodes && workflowData.template.nodes.length > 0) {
+        setHasNodes(true);
         // Convert workflow_nodes to React Flow nodes
         const nodes: Node<WorkflowNodeData>[] = workflowData.template.nodes.map((node: any) => {
           const config: any = {};
@@ -130,8 +138,11 @@ export default function WorkflowEditorPage() {
 
           // Handle conditional nodes
           if (node.node_type === 'conditional') {
-            config.conditionType = node.settings?.condition_type || 'approval_decision';
+            config.conditionType = node.settings?.condition_type || 'form_value';
             config.conditions = node.settings?.conditions || [];
+            // Critical: Load sourceFormFieldId for form-based conditional routing
+            config.sourceFormFieldId = node.settings?.sourceFormFieldId;
+            config.sourceFormNodeId = node.settings?.sourceFormNodeId;
           }
 
           return {
@@ -149,10 +160,13 @@ export default function WorkflowEditorPage() {
         // Convert workflow_connections to React Flow edges
         const edges: Edge[] = (workflowData.template.connections || []).map((conn: any) => {
           const edge: Edge = {
-            id: `${conn.from_node_id}-${conn.to_node_id}`,
+            // Use the connection's actual UUID if available, otherwise create a composite ID
+            id: conn.id || `${conn.from_node_id}-${conn.to_node_id}`,
             source: conn.from_node_id,
             target: conn.to_node_id,
-            type: conn.condition ? 'labeled' : 'smoothstep',
+            type: conn.condition ? 'labeled' : 'labeled', // Use labeled for all edges for consistent styling
+            // Restore sourceHandle for conditional branch edges
+            sourceHandle: conn.condition?.sourceHandle || undefined,
           };
 
           // Add condition data if present (for decision-based routing)
@@ -162,6 +176,10 @@ export default function WorkflowEditorPage() {
               conditionValue: conn.condition.conditionValue,
               conditionType: conn.condition.conditionType,
               decision: conn.condition.decision,  // For approval node routing
+              // Critical: Load form-based conditional routing fields
+              sourceFormFieldId: conn.condition.sourceFormFieldId,
+              value: conn.condition.value,
+              value2: conn.condition.value2,
             };
           }
 
@@ -189,12 +207,62 @@ export default function WorkflowEditorPage() {
 
       const data = await response.json();
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to save workflow');
+      if (!response.ok || !data.success) {
+        // Build a detailed error message
+        let errorMessage = data.error || 'Failed to save workflow';
+        if (data.details) {
+          errorMessage += `\n${data.details}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Log success info
+      console.log('Workflow saved:', {
+        nodeCount: data.nodeCount,
+        edgeCount: data.edgeCount
+      });
+
+      // Update hasNodes based on saved count
+      setHasNodes(data.nodeCount > 0);
+
+      // If nodes were saved and is_active was auto-set, refresh the template status
+      if (data.is_active !== undefined) {
+        setIsActive(data.is_active);
       }
     } catch (error) {
       console.error('Error saving workflow:', error);
       throw error;
+    }
+  };
+
+  const handleToggleActive = async (newIsActive: boolean) => {
+    // Prevent activating if workflow has no nodes
+    if (newIsActive && !hasNodes) {
+      toast.error('Cannot activate workflow: No nodes configured. Please add at least a Start and End node.');
+      return;
+    }
+
+    setTogglingActive(true);
+    try {
+      const response = await fetch(`/api/admin/workflows/templates/${templateId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: newIsActive }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update workflow status');
+      }
+
+      setIsActive(newIsActive);
+      toast.success(newIsActive ? 'Workflow activated' : 'Workflow deactivated');
+    } catch (error) {
+      console.error('Error toggling workflow status:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update workflow status');
+    } finally {
+      setTogglingActive(false);
     }
   };
 
@@ -245,10 +313,41 @@ export default function WorkflowEditorPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{template.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold">{template.name}</h1>
+                {!isActive && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                    Inactive
+                  </span>
+                )}
+              </div>
               {template.description && (
                 <p className="text-sm text-gray-600 mt-1">{template.description}</p>
               )}
+            </div>
+          </div>
+
+          {/* Activation Toggle */}
+          <div className="flex items-center gap-4">
+            {!hasNodes && (
+              <div className="flex items-center gap-2 text-amber-600 text-sm">
+                <AlertTriangle className="w-4 h-4" />
+                <span>No nodes configured</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Switch
+                id="workflow-active"
+                checked={isActive}
+                onCheckedChange={handleToggleActive}
+                disabled={togglingActive || (!hasNodes && !isActive)}
+              />
+              <Label
+                htmlFor="workflow-active"
+                className={`text-sm cursor-pointer ${togglingActive ? 'opacity-50' : ''}`}
+              >
+                {togglingActive ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
+              </Label>
             </div>
           </div>
         </div>

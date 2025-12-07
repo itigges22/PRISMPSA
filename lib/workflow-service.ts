@@ -113,6 +113,28 @@ export async function getWorkflowTemplates(): Promise<WorkflowTemplate[]> {
 }
 
 /**
+ * Get all workflow templates (including inactive) - for admin views
+ * Excludes workflows marked as [DELETED] (soft-deleted due to FK constraints)
+ */
+export async function getAllWorkflowTemplates(): Promise<WorkflowTemplate[]> {
+  const supabase = await getSupabase();
+
+  const { data, error } = await supabase
+    .from('workflow_templates')
+    .select('*')
+    .not('name', 'like', '[DELETED]%') // Exclude soft-deleted workflows
+    .order('is_active', { ascending: false }) // Active first
+    .order('name');
+
+  if (error) {
+    logger.error('Error fetching all workflow templates', { action: 'getAllWorkflowTemplates' }, error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
  * Get workflow template by ID with nodes and connections
  */
 export async function getWorkflowTemplateById(templateId: string): Promise<WorkflowTemplateWithDetails | null> {
@@ -179,7 +201,7 @@ export async function createWorkflowTemplate(
       name,
       description,
       created_by: createdBy,
-      is_active: true,
+      is_active: false, // New workflows start as inactive until configured
     })
     .select()
     .single();
@@ -219,22 +241,137 @@ export async function updateWorkflowTemplate(
 }
 
 /**
- * Delete workflow template (soft delete by setting is_active = false)
+ * Delete workflow template (permanently deletes the template and all associated nodes/connections)
+ *
+ * NOTE: Workflow instances have their own snapshot of the workflow, so deleting a template
+ * does NOT affect any in-progress or completed workflows. They will continue to use their
+ * snapshot data. Only NEW projects will be unable to use this workflow.
  */
 export async function deleteWorkflowTemplate(templateId: string): Promise<void> {
   const supabase = await getSupabase();
 
+  // Get template name for logging
+  const { data: template } = await supabase
+    .from('workflow_templates')
+    .select('name')
+    .eq('id', templateId)
+    .single();
+
+  const templateName = template?.name || templateId;
+
+  // Check if there are any workflow instances using this template
+  const { data: instances } = await supabase
+    .from('workflow_instances')
+    .select('id, status')
+    .eq('workflow_template_id', templateId);
+
+  if (instances && instances.length > 0) {
+    // There are instances - we need to ensure they have snapshots before proceeding
+    // For instances without snapshots, we need to capture one now
+    for (const instance of instances) {
+      // Check if instance has a snapshot
+      const { data: instanceData } = await supabase
+        .from('workflow_instances')
+        .select('started_snapshot')
+        .eq('id', instance.id)
+        .single();
+
+      if (!instanceData?.started_snapshot) {
+        // Capture snapshot now before deleting template
+        const { data: nodes } = await supabase
+          .from('workflow_nodes')
+          .select('*')
+          .eq('workflow_template_id', templateId);
+
+        const { data: connections } = await supabase
+          .from('workflow_connections')
+          .select('*')
+          .eq('workflow_template_id', templateId);
+
+        const snapshot = {
+          nodes: nodes || [],
+          connections: connections || [],
+          template_name: templateName,
+          captured_at: new Date().toISOString(),
+          captured_reason: 'template_deleted'
+        };
+
+        await supabase
+          .from('workflow_instances')
+          .update({ started_snapshot: snapshot })
+          .eq('id', instance.id);
+
+        logger.info('Captured snapshot for instance before template deletion', {
+          instanceId: instance.id,
+          templateId
+        });
+      }
+    }
+  }
+
+  // Delete connections first (they reference nodes)
+  const { error: connectionsError } = await supabase
+    .from('workflow_connections')
+    .delete()
+    .eq('workflow_template_id', templateId);
+
+  if (connectionsError) {
+    logger.error('Error deleting workflow connections', { action: 'deleteWorkflowTemplate', templateId }, connectionsError);
+    throw connectionsError;
+  }
+
+  // Delete nodes
+  const { error: nodesError } = await supabase
+    .from('workflow_nodes')
+    .delete()
+    .eq('workflow_template_id', templateId);
+
+  if (nodesError) {
+    logger.error('Error deleting workflow nodes', { action: 'deleteWorkflowTemplate', templateId }, nodesError);
+    throw nodesError;
+  }
+
+  // Now try to delete the template
+  // If there's a foreign key constraint, we'll get an error
   const { error } = await supabase
     .from('workflow_templates')
-    .update({ is_active: false })
+    .delete()
     .eq('id', templateId);
 
   if (error) {
+    // Check if this is a foreign key constraint error
+    if (error.code === '23503') {
+      // Foreign key violation - instances still reference this template
+      // This means the DB has a strict FK constraint
+      // We need to deactivate instead of delete
+      logger.warn('Cannot delete template due to FK constraint, deactivating instead', {
+        action: 'deleteWorkflowTemplate',
+        templateId
+      });
+
+      const { error: deactivateError } = await supabase
+        .from('workflow_templates')
+        .update({
+          is_active: false,
+          name: `[DELETED] ${templateName}`,
+          description: `This workflow was deleted on ${new Date().toISOString()}. Existing projects continue to use their workflow snapshots.`
+        })
+        .eq('id', templateId);
+
+      if (deactivateError) {
+        logger.error('Error deactivating workflow template', { action: 'deleteWorkflowTemplate', templateId }, deactivateError);
+        throw deactivateError;
+      }
+
+      logger.info('Workflow template marked as deleted (deactivated due to FK constraint)', { templateId, templateName });
+      return;
+    }
+
     logger.error('Error deleting workflow template', { action: 'deleteWorkflowTemplate', templateId }, error);
     throw error;
   }
 
-  logger.info('Workflow template deleted', { templateId });
+  logger.info('Workflow template permanently deleted', { templateId, templateName });
 }
 
 // =====================================================
@@ -396,6 +533,52 @@ export async function startWorkflowInstance(params: {
     throw new Error('Must provide either projectId or taskId, but not both');
   }
 
+  // Validate that the workflow template exists, is active, and has nodes
+  const { data: template, error: templateError } = await supabase
+    .from('workflow_templates')
+    .select('id, name, is_active')
+    .eq('id', workflowTemplateId)
+    .single();
+
+  if (templateError || !template) {
+    logger.error('Workflow template not found', { action: 'startWorkflowInstance', workflowTemplateId }, templateError);
+    throw new Error('Workflow template not found');
+  }
+
+  if (!template.is_active) {
+    logger.error('Workflow template is not active', { action: 'startWorkflowInstance', workflowTemplateId });
+    throw new Error(`Workflow "${template.name}" is not active. Please activate it in the workflow editor before using.`);
+  }
+
+  // Check if the workflow has nodes
+  const { count: nodeCount, error: nodeCountError } = await supabase
+    .from('workflow_nodes')
+    .select('id', { count: 'exact', head: true })
+    .eq('workflow_template_id', workflowTemplateId);
+
+  if (nodeCountError) {
+    logger.error('Error checking workflow nodes', { action: 'startWorkflowInstance', workflowTemplateId }, nodeCountError);
+    throw new Error('Failed to validate workflow configuration');
+  }
+
+  if (!nodeCount || nodeCount === 0) {
+    logger.error('Workflow has no nodes', { action: 'startWorkflowInstance', workflowTemplateId });
+    throw new Error(`Workflow "${template.name}" has no nodes configured. Please add at least Start and End nodes in the workflow editor.`);
+  }
+
+  // Validate the start node exists
+  const { data: startNode, error: startNodeError } = await supabase
+    .from('workflow_nodes')
+    .select('id')
+    .eq('id', startNodeId)
+    .eq('workflow_template_id', workflowTemplateId)
+    .single();
+
+  if (startNodeError || !startNode) {
+    logger.error('Start node not found in workflow', { action: 'startWorkflowInstance', workflowTemplateId, startNodeId }, startNodeError);
+    throw new Error('Invalid start node for this workflow');
+  }
+
   const { data, error } = await supabase
     .from('workflow_instances')
     .insert({
@@ -477,14 +660,15 @@ export async function getWorkflowInstanceForEntity(
 
 /**
  * Get next available nodes in workflow
+ * Uses snapshot data if available, falls back to live tables for backwards compatibility
  */
 export async function getNextAvailableNodes(instanceId: string): Promise<WorkflowNode[]> {
   const supabase = await getSupabase();
 
-  // Get current node
+  // Get workflow instance including snapshot
   const { data: instance, error: instanceError } = await supabase
     .from('workflow_instances')
-    .select('current_node_id')
+    .select('current_node_id, workflow_template_id, started_snapshot')
     .eq('id', instanceId)
     .single();
 
@@ -493,35 +677,59 @@ export async function getNextAvailableNodes(instanceId: string): Promise<Workflo
     throw instanceError || new Error('No current node found');
   }
 
-  // Get connected nodes
-  const { data: connections, error: connectionsError } = await supabase
-    .from('workflow_connections')
-    .select('to_node_id')
-    .eq('from_node_id', instance.current_node_id);
+  // Use snapshot data if available (for workflow independence from template changes)
+  let connections: any[];
+  let allNodes: any[];
 
-  if (connectionsError) {
-    logger.error('Error fetching workflow connections', { action: 'getNextAvailableNodes', instanceId }, new Error(connectionsError.message));
-    throw connectionsError;
+  if (instance.started_snapshot?.nodes && instance.started_snapshot?.connections) {
+    // Use the snapshot - this ensures template changes don't affect in-progress workflows
+    connections = instance.started_snapshot.connections.filter(
+      (c: any) => c.from_node_id === instance.current_node_id
+    );
+    allNodes = instance.started_snapshot.nodes;
+    logger.info('Using snapshot data for getNextAvailableNodes', { instanceId });
+  } else {
+    // Fallback for older instances without snapshot - query live tables
+    logger.info('No snapshot found, querying live tables', { instanceId });
+
+    const { data: liveConnections, error: connectionsError } = await supabase
+      .from('workflow_connections')
+      .select('to_node_id')
+      .eq('from_node_id', instance.current_node_id);
+
+    if (connectionsError) {
+      logger.error('Error fetching workflow connections', { action: 'getNextAvailableNodes', instanceId }, new Error(connectionsError.message));
+      throw connectionsError;
+    }
+
+    if (!liveConnections || liveConnections.length === 0) {
+      return []; // No next nodes (end of workflow)
+    }
+
+    const nodeIds = liveConnections.map(c => c.to_node_id);
+
+    const { data: liveNodes, error: nodesError } = await supabase
+      .from('workflow_nodes')
+      .select('*')
+      .in('id', nodeIds);
+
+    if (nodesError) {
+      logger.error('Error fetching workflow nodes', { action: 'getNextAvailableNodes', instanceId }, nodesError);
+      throw nodesError;
+    }
+
+    return liveNodes || [];
   }
 
+  // Using snapshot data - filter nodes based on connections
   if (!connections || connections.length === 0) {
     return []; // No next nodes (end of workflow)
   }
 
-  const nodeIds = connections.map(c => c.to_node_id);
+  const nodeIds = connections.map((c: any) => c.to_node_id);
+  const nextNodes = allNodes.filter((n: any) => nodeIds.includes(n.id));
 
-  // Fetch node details
-  const { data: nodes, error: nodesError } = await supabase
-    .from('workflow_nodes')
-    .select('*')
-    .in('id', nodeIds);
-
-  if (nodesError) {
-    logger.error('Error fetching workflow nodes', { action: 'getNextAvailableNodes', instanceId }, nodesError);
-    throw nodesError;
-  }
-
-  return nodes || [];
+  return nextNodes;
 }
 
 /**

@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import {
@@ -110,7 +111,7 @@ export default function DepartmentRoleDialog({
       
       if (userError) {
         console.error('Error getting user:', userError);
-        alert('Authentication error. Please log in again.');
+        toast.error('Authentication error. Please log in again.');
         return;
       }
 
@@ -137,7 +138,7 @@ export default function DepartmentRoleDialog({
             code: error.code,
             fullError: error
           });
-          alert(`Failed to create role: ${error.message || 'Unknown error'}`);
+          toast.error(`Failed to create role: ${error.message || 'Unknown error'}`);
           return;
         }
 
@@ -166,7 +167,7 @@ export default function DepartmentRoleDialog({
             code: error.code,
             fullError: error
           });
-          alert(`Failed to update role: ${error.message || 'Unknown error'}`);
+          toast.error(`Failed to update role: ${error.message || 'Unknown error'}`);
           return;
         }
 
@@ -180,7 +181,7 @@ export default function DepartmentRoleDialog({
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
-      alert(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
