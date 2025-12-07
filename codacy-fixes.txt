@@ -1,0 +1,1821 @@
+diff --git a/app/dashboard/page.tsx b/app/dashboard/page.tsx
+--- a/app/dashboard/page.tsx
++++ b/app/dashboard/page.tsx
+@@ -39,1 +39,1 @@
+-const ProfileCard = memo(({ userProfile }: { userProfile: any }) => (
++const ProfileCard = memo(({ userProfile }: { userProfile: unknown }) => (
+@@ -49,1 +49,1 @@
+-        <p><strong>Roles:</strong> {userProfile?.user_roles?.map((ur: any) => ur.roles.name).join(', ') || 'None assigned'}</p>
++        <p><strong>Roles:</strong> {userProfile?.user_roles?.map((ur: unknown) => ur.roles.name).join(', ') || 'None assigned'}</p>
+@@ -50,1 +50,1 @@
+-        <p><strong>Departments:</strong> {userProfile?.user_roles?.map((ur: any) => ur.roles.departments?.name).filter((name: any): name is string => Boolean(name)).join(', ') || 'None assigned'}</p>
++        <p><strong>Departments:</strong> {userProfile?.user_roles?.map((ur: unknown) => ur.roles.departments?.name).filter((name: any): name is string => Boolean(name)).join(', ') || 'None assigned'}</p>
+@@ -79,1 +79,1 @@
+-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/accounts')}>
++          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/accounts'); }}>
+@@ -84,1 +84,1 @@
+-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/departments')}>
++          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/departments'); }}>
+@@ -89,1 +89,1 @@
+-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/admin')}>
++          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/admin'); }}>
+@@ -94,1 +94,1 @@
+-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/analytics')}>
++          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/analytics'); }}>
+@@ -185,1 +185,1 @@
+-    checkPermissions();
++    void checkPermissions();
+@@ -210,1 +210,1 @@
+-                onOpenAvailability={() => setShowAvailabilityDialog(true)}
++                onOpenAvailability={() => { setShowAvailabilityDialog(true); }}
+@@ -247,1 +247,1 @@
+-            onNavigate={(path) => router.push(path)}
++            onNavigate={(path) => { router.push(path); }}
+diff --git a/components/clock-widget.tsx b/components/clock-widget.tsx
+--- a/components/clock-widget.tsx
++++ b/components/clock-widget.tsx
+@@ -66,1 +66,1 @@
+-    return () => clearInterval(interval)
++    return () => { clearInterval(interval); }
+@@ -118,1 +118,1 @@
+-              onClick={() => setIsMinimized(false)}
++              onClick={() => { setIsMinimized(false); }}
+@@ -139,1 +139,1 @@
+-                  onClick={() => setIsMinimized(true)}
++                  onClick={() => { setIsMinimized(true); }}
+@@ -158,1 +158,1 @@
+-                    onClick={() => setShowClockOutDialog(true)}
++                    onClick={() => { setShowClockOutDialog(true); }}
+diff --git a/app/api/projects/route.ts b/app/api/projects/route.ts
+--- a/app/api/projects/route.ts
++++ b/app/api/projects/route.ts
+@@ -234,1 +234,1 @@
+-      const assignedProjectIds = assignedProjects?.map((p: any) => p.project_id) || []
++      const assignedProjectIds = assignedProjects?.map((p: unknown) => p.project_id) || []
+@@ -235,1 +235,1 @@
+-      const taskProjectIds = taskProjects?.map((t: any) => t.project_id) || []
++      const taskProjectIds = taskProjects?.map((t: unknown) => t.project_id) || []
+@@ -261,1 +261,1 @@
+-    const projectIds = (projects || []).map((p: any) => p.id)
++    const projectIds = (projects || []).map((p: unknown) => p.id)
+@@ -262,1 +262,1 @@
+-    const departmentsByProject: { [key: string]: any[] } = {}
++    const departmentsByProject: { [key: string]: unknown[] } = {}
+@@ -282,1 +282,1 @@
+-        const userIds = Array.from(new Set(assignments.map((a: any) => a.user_id)))
++        const userIds = Array.from(new Set(assignments.map((a: unknown) => a.user_id)))
+@@ -300,1 +300,1 @@
+-        const userDepartments: { [key: string]: any[] } = {}
++        const userDepartments: { [key: string]: unknown[] } = {}
+@@ -302,1 +302,1 @@
+-          userRoles.forEach((ur: any) => {
++          userRoles.forEach((ur: unknown) => {
+@@ -307,1 +307,1 @@
+-            if (role && role.departments) {
++            if (role?.departments) {
+@@ -309,1 +309,1 @@
+-              const exists = userDepartments[ur.user_id].some((d: any) => d.id === dept.id)
++              const exists = userDepartments[ur.user_id].some((d: unknown) => d.id === dept.id)
+@@ -318,1 +318,1 @@
+-        assignments.forEach((assignment: any) => {
++        assignments.forEach((assignment: unknown) => {
+@@ -327,1 +327,1 @@
+-          depts.forEach((dept: any) => {
++          depts.forEach((dept: unknown) => {
+@@ -328,1 +328,1 @@
+-            const exists = departmentsByProject[projectId].some((d: any) => d.id === dept.id)
++            const exists = departmentsByProject[projectId].some((d: unknown) => d.id === dept.id)
+@@ -340,1 +340,1 @@
+-        tasksData.forEach((task: any) => {
++        tasksData.forEach((task: unknown) => {
+@@ -353,1 +353,1 @@
+-      const projectsWithDetails = (projects || []).map((project: any) => ({
++      const projectsWithDetails = (projects || []).map((project: unknown) => ({
+diff --git a/app/api/roles/[roleId]/route.ts b/app/api/roles/[roleId]/route.ts
+--- a/app/api/roles/[roleId]/route.ts
++++ b/app/api/roles/[roleId]/route.ts
+@@ -33,1 +33,1 @@
+-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
++    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+@@ -227,1 +227,1 @@
+-              otherRoles: otherRoles.map((or: any) => or.roles.name)
++              otherRoles: otherRoles.map((or: unknown) => or.roles.name)
+diff --git a/components/admin/permission-manager.tsx b/components/admin/permission-manager.tsx
+--- a/components/admin/permission-manager.tsx
++++ b/components/admin/permission-manager.tsx
+@@ -192,1 +192,1 @@
+-                  <div className="flex-1 cursor-pointer" onClick={() => toggleCategory(category)}>
++                  <div className="flex-1 cursor-pointer" onClick={() => { toggleCategory(category); }}>
+@@ -209,1 +209,1 @@
+-                      onCheckedChange={(checked) => toggleAllInCategory(category, checked as boolean)}
++                      onCheckedChange={(checked) => { toggleAllInCategory(category, checked as boolean); }}
+@@ -238,1 +238,1 @@
+-                            onCheckedChange={(checked) => handlePermissionChange(permission, checked as boolean)}
++                            onCheckedChange={(checked) => { handlePermissionChange(permission, checked as boolean); }}
+diff --git a/app/api/projects/[projectId]/updates/[updateId]/route.ts b/app/api/projects/[projectId]/updates/[updateId]/route.ts
+--- a/app/api/projects/[projectId]/updates/[updateId]/route.ts
++++ b/app/api/projects/[projectId]/updates/[updateId]/route.ts
+@@ -57,1 +57,1 @@
+-    if (!content || !content.trim()) {
++    if (!content?.trim()) {
+diff --git a/app/api/capacity/organization/route.ts b/app/api/capacity/organization/route.ts
+--- a/app/api/capacity/organization/route.ts
++++ b/app/api/capacity/organization/route.ts
+@@ -45,1 +45,1 @@
+-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
++    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
+@@ -56,1 +56,1 @@
+-    const userIds = (allUsers || []).map((u: any) => u.id);
++    const userIds = (allUsers || []).map((u: unknown) => u.id);
+@@ -97,1 +97,1 @@
+-    const projectIds = Array.from(new Set((projectAssignmentsData.data || []).map((pa: any) => pa.project_id)));
++    const projectIds = Array.from(new Set((projectAssignmentsData.data || []).map((pa: unknown) => pa.project_id)));
+@@ -110,1 +110,1 @@
+-      availabilityData.data.forEach((a: any) => {
++      availabilityData.data.forEach((a: unknown) => {
+@@ -114,1 +114,1 @@
+-        availabilityMap.get(a.user_id)!.set(a.week_start_date, a.available_hours);
++        availabilityMap.get(a.user_id)?.set(a.week_start_date, a.available_hours);
+@@ -126,1 +126,1 @@
+-        const userAvailability = availabilityMap.get(userId) || new Map();
++        const userAvailability = availabilityMap.get(userId) ?? new Map();
+@@ -154,1 +154,1 @@
+-        ...(projectTasksData || [])
++        ...(projectTasksData ?? [])
+@@ -159,1 +159,1 @@
+-        .filter((task: any) => {
++        .filter((task: unknown) => {
+@@ -165,1 +165,1 @@
+-        .reduce((sum, task: any) => {
++        .reduce((sum, task: unknown) => {
+@@ -187,1 +187,1 @@
+-          if (!project || (project as any).status === 'complete') continue;
++          if (!project || (project as unknown).status === 'complete') continue;
+@@ -189,1 +189,1 @@
+-          const projectHasTasks = (projectTasksData || []).some((t: any) => t.project_id === (project as any).id);
++          const projectHasTasks = (projectTasksData ?? []).some((t: any) => t.project_id === (project as any).id);
+@@ -191,1 +191,1 @@
+-          if (!projectHasTasks && (project as any).estimated_hours) {
++          if (!projectHasTasks && (project as unknown).estimated_hours) {
+@@ -192,1 +192,1 @@
+-            const projectStart = (project as any).start_date ? new Date((project as any).start_date) : new Date();
++            const projectStart = (project as unknown).start_date ? new Date((project as any).start_date) : new Date();
+@@ -193,1 +193,1 @@
+-            const projectEnd = (project as any).end_date ? new Date((project as any).end_date) : new Date('2099-12-31');
++            const projectEnd = (project as unknown).end_date ? new Date((project as any).end_date) : new Date('2099-12-31');
+@@ -198,1 +198,1 @@
+-              const dailyRate = (project as any).estimated_hours / projectDurationDays;
++              const dailyRate = (project as unknown).estimated_hours / projectDurationDays;
+@@ -213,1 +213,1 @@
+-        .filter((entry: any) => {
++        .filter((entry: unknown) => {
+@@ -217,1 +217,1 @@
+-        .reduce((sum: number, entry: any) => sum + (entry.hours_logged || 0), 0);
++        .reduce((sum: number, entry: unknown) => sum + (entry.hours_logged || 0), 0);
+@@ -242,1 +242,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/app/api/capacity/account/route.ts b/app/api/capacity/account/route.ts
+--- a/app/api/capacity/account/route.ts
++++ b/app/api/capacity/account/route.ts
+@@ -42,1 +42,1 @@
+-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
++    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
+@@ -61,1 +61,1 @@
+-    const projectIds = (accountProjects || []).map((p: any) => p.id);
++    const projectIds = (accountProjects || []).map((p: unknown) => p.id);
+@@ -86,1 +86,1 @@
+-    const userIds = Array.from(new Set((projectAssignmentsData || []).map((pa: any) => pa.user_id)));
++    const userIds = Array.from(new Set((projectAssignmentsData || []).map((pa: unknown) => pa.user_id)));
+@@ -142,1 +142,1 @@
+-      availabilityData.data.forEach((a: any) => {
++      availabilityData.data.forEach((a: unknown) => {
+@@ -146,1 +146,1 @@
+-        availabilityMap.get(a.user_id)!.set(a.week_start_date, a.available_hours);
++        availabilityMap.get(a.user_id)?.set(a.week_start_date, a.available_hours);
+@@ -153,1 +153,1 @@
+-      allUserProjectsData.data.forEach((assignment: any) => {
++      allUserProjectsData.data.forEach((assignment: unknown) => {
+@@ -157,1 +157,1 @@
+-        userAccountsMap.get(assignment.user_id)!.add(assignment.projects.account_id);
++        userAccountsMap.get(assignment.user_id)?.add(assignment.projects.account_id);
+@@ -169,1 +169,1 @@
+-        const userAvailability = availabilityMap.get(userId) || new Map();
++        const userAvailability = availabilityMap.get(userId) ?? new Map();
+@@ -210,1 +210,1 @@
+-        .filter((task: any) => {
++        .filter((task: unknown) => {
+@@ -222,1 +222,1 @@
+-        .reduce((sum, task: any) => {
++        .reduce((sum, task: unknown) => {
+@@ -245,1 +245,1 @@
+-          const projectHasTasks = (tasksData.data || []).some((t: any) => t.project_id === project.id);
++          const projectHasTasks = (tasksData.data || []).some((t: unknown) => t.project_id === project.id);
+@@ -269,1 +269,1 @@
+-        .filter((entry: any) => {
++        .filter((entry: unknown) => {
+@@ -293,1 +293,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/org-chart/org-chart-canvas.tsx b/components/org-chart/org-chart-canvas.tsx
+--- a/components/org-chart/org-chart-canvas.tsx
++++ b/components/org-chart/org-chart-canvas.tsx
+@@ -106,1 +106,1 @@
+-        const levelWidth = levelWidths.get(level) || 0;
++        const levelWidth = levelWidths.get(level) ?? 0;
+@@ -107,1 +107,1 @@
+-        const levelHeight = levelHeights.get(level) || 0;
++        const levelHeight = levelHeights.get(level) ?? 0;
+@@ -110,1 +110,1 @@
+-        let x = parentX || 0;
++        let x = parentX ?? 0;
+@@ -112,1 +112,1 @@
+-          x = parentX || 0;
++          x = parentX ?? 0;
+@@ -241,1 +241,1 @@
+-          onSelect: () => setSelectedNode(deptNode),
++          onSelect: () => { setSelectedNode(deptNode); },
+@@ -272,1 +272,1 @@
+-            onSelect: () => setSelectedNode(roleNode),
++            onSelect: () => { setSelectedNode(roleNode); },
+@@ -342,1 +342,1 @@
+-        const roleId = (targetNode.data as any)?.role?.id;
++        const roleId = (targetNode.data as unknown)?.role?.id;
+@@ -483,1 +483,1 @@
+-          onClose={() => setSelectedNode(null)}
++          onClose={() => { setSelectedNode(null); }}
+diff --git a/app/api/roles/[roleId]/users/route.ts b/app/api/roles/[roleId]/users/route.ts
+--- a/app/api/roles/[roleId]/users/route.ts
++++ b/app/api/roles/[roleId]/users/route.ts
+@@ -41,1 +41,1 @@
+-    const users = data?.map((item: any) => item.user_profiles).filter(Boolean) || [];
++    const users = data?.map((item: unknown) => item.user_profiles).filter(Boolean) || [];
+diff --git a/components/department-list.tsx b/components/department-list.tsx
+--- a/components/department-list.tsx
++++ b/components/department-list.tsx
+@@ -68,1 +68,1 @@
+-    filterDepartments();
++    void filterDepartments();
+diff --git a/app/api/workflows/my-past-projects/route.ts b/app/api/workflows/my-past-projects/route.ts
+--- a/app/api/workflows/my-past-projects/route.ts
++++ b/app/api/workflows/my-past-projects/route.ts
+@@ -33,1 +33,1 @@
+-    const pastProjects: any[] = [];
++    const pastProjects: unknown[] = [];
+@@ -75,1 +75,1 @@
+-        const project = assignment.projects as any;
++        const project = assignment.projects as unknown;
+@@ -76,1 +76,1 @@
+-        const assignedUser = (assignment as any).user_profiles;
++        const assignedUser = (assignment as unknown).user_profiles;
+@@ -197,1 +197,1 @@
+-        const instance = assignment.workflow_instances as any;
++        const instance = assignment.workflow_instances as unknown;
+@@ -232,1 +232,1 @@
+-              nodeName: (assignment.workflow_nodes as any)?.label || 'Unknown Step',
++              nodeName: (assignment.workflow_nodes as unknown)?.label || 'Unknown Step',
+@@ -233,1 +233,1 @@
+-              nodeType: (assignment.workflow_nodes as any)?.node_type || 'role'
++              nodeType: (assignment.workflow_nodes as unknown)?.node_type || 'role'
+diff --git a/app/capacity/page.tsx b/app/capacity/page.tsx
+--- a/app/capacity/page.tsx
++++ b/app/capacity/page.tsx
+@@ -41,1 +41,1 @@
+-      checkAccess()
++      void checkAccess()
+diff --git a/app/reset-password/page.tsx b/app/reset-password/page.tsx
+--- a/app/reset-password/page.tsx
++++ b/app/reset-password/page.tsx
+@@ -57,1 +57,1 @@
+-    } catch (error: any) {
++    } catch (error: unknown) {
+@@ -85,1 +85,1 @@
+-                    onChange={(e) => setPassword(e.target.value)}
++                    onChange={(e) => { setPassword(e.target.value); }}
+@@ -99,1 +99,1 @@
+-                    onChange={(e) => setConfirmPassword(e.target.value)}
++                    onChange={(e) => { setConfirmPassword(e.target.value); }}
+diff --git a/app/api/auth/permissions/route.ts b/app/api/auth/permissions/route.ts
+--- a/app/api/auth/permissions/route.ts
++++ b/app/api/auth/permissions/route.ts
+@@ -26,1 +26,1 @@
+-    const roleNames = userProfile.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
++    const roleNames = userProfile.user_roles?.map((ur: unknown) => ur.roles?.name).filter(Boolean) || [];
+diff --git a/app/api/workflows/steps/assignments/route.ts b/app/api/workflows/steps/assignments/route.ts
+--- a/app/api/workflows/steps/assignments/route.ts
++++ b/app/api/workflows/steps/assignments/route.ts
+@@ -103,1 +103,1 @@
+-          .map(ur => (ur.roles as any)?.department_id)
++          .map(ur => (ur.roles as unknown)?.department_id)
+@@ -131,1 +131,1 @@
+-    const assignmentsByNode: Record<string, any[]> = {};
++    const assignmentsByNode: Record<string, unknown[]> = {};
+@@ -237,1 +237,1 @@
+-      const projectCreatedBy = (instance.projects as any)?.created_by;
++      const projectCreatedBy = (instance.projects as unknown)?.created_by;
+diff --git a/components/ui/tooltip.tsx b/components/ui/tooltip.tsx
+--- a/components/ui/tooltip.tsx
++++ b/components/ui/tooltip.tsx
+@@ -119,1 +119,1 @@
+-      const handleScroll = () => updatePosition();
++      const handleScroll = () => { updatePosition(); };
+@@ -120,1 +120,1 @@
+-      const handleResize = () => updatePosition();
++      const handleResize = () => { updatePosition(); };
+diff --git a/components/org-chart/user-assignment-dialog.tsx b/components/org-chart/user-assignment-dialog.tsx
+--- a/components/org-chart/user-assignment-dialog.tsx
++++ b/components/org-chart/user-assignment-dialog.tsx
+@@ -46,1 +46,1 @@
+-      loadUsers();
++      void loadUsers();
+@@ -47,1 +47,1 @@
+-      loadAssignedUsers();
++      void loadAssignedUsers();
+@@ -122,1 +122,1 @@
+-    } catch (error: any) {
++    } catch (error: unknown) {
+@@ -188,1 +188,1 @@
+-              onChange={(e) => setSearchQuery(e.target.value)}
++              onChange={(e) => { setSearchQuery(e.target.value); }}
+@@ -299,1 +299,1 @@
+-          <Button variant="outline" onClick={() => onOpenChange(false)}>
++          <Button variant="outline" onClick={() => { onOpenChange(false); }}>
+diff --git a/app/api/tasks/[taskId]/route.ts b/app/api/tasks/[taskId]/route.ts
+--- a/app/api/tasks/[taskId]/route.ts
++++ b/app/api/tasks/[taskId]/route.ts
+@@ -8,1 +8,1 @@
+-async function userHasProjectAccess(supabase: any, userId: string, projectId: string, userProfile: any): Promise<boolean> {
++async function userHasProjectAccess(supabase: unknown, userId: string, projectId: string, userProfile: any): Promise<boolean> {
+@@ -48,1 +48,1 @@
+-async function getTaskProject(supabase: any, taskId: string): Promise<{ project_id: string; status: string } | null> {
++async function getTaskProject(supabase: unknown, taskId: string): Promise<{ project_id: string; status: string } | null> {
+@@ -58,1 +58,1 @@
+-    status: (task.projects as any)?.status || 'unknown'
++    status: (task.projects as unknown)?.status || 'unknown'
+@@ -206,1 +206,1 @@
+-    const updateFields: Record<string, any> = {}
++    const updateFields: Record<string, unknown> = {}
+diff --git a/components/org-chart/account-view.tsx b/components/org-chart/account-view.tsx
+--- a/components/org-chart/account-view.tsx
++++ b/components/org-chart/account-view.tsx
+@@ -65,1 +65,1 @@
+-  onAccountSelect?: (account: any) => void;
++  onAccountSelect?: (account: unknown) => void;
+@@ -145,1 +145,1 @@
+-    checkPermissions();
++    void checkPermissions();
+@@ -158,1 +158,1 @@
+-      loadAllUsers();
++      void loadAllUsers();
+@@ -212,1 +212,1 @@
+-    } catch (error: any) {
++    } catch (error: unknown) {
+@@ -301,1 +301,1 @@
+-        <CardDescription>{account.description || 'No description'}</CardDescription>
++        <CardDescription>{account.description ?? 'No description'}</CardDescription>
+@@ -322,1 +322,1 @@
+-                value={account.account_manager_id || 'none'}
++                value={account.account_manager_id ?? 'none'}
+@@ -332,1 +332,1 @@
+-                    const roles = user.user_roles?.map(ur => ur.roles?.name).filter(Boolean).join(', ') || 'No Role';
++                    const roles = user.user_roles?.map(ur => ur.roles?.name).filter(Boolean).join(', ') ?? 'No Role';
+@@ -344,1 +344,1 @@
+-                    <AvatarImage src={account.account_manager.image || undefined} />
++                    <AvatarImage src={account.account_manager.image ?? undefined} />
+@@ -346,1 +346,1 @@
+-                      {account.account_manager.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
++                      {account.account_manager.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+@@ -393,1 +393,1 @@
+-                          <AvatarImage src={member.user?.image || undefined} />
++                          <AvatarImage src={member.user?.image ?? undefined} />
+@@ -395,1 +395,1 @@
+-                            {member.user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
++                            {member.user?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+@@ -452,1 +452,1 @@
+-                            .filter((r: any) => r !== null) || [];
++                            .filter((r: unknown) => r !== null) || [];
+@@ -461,1 +461,1 @@
+-                                  <AvatarImage src={user.image || undefined} />
++                                  <AvatarImage src={user.image ?? undefined} />
+@@ -463,1 +463,1 @@
+-                                    {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
++                                    {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+@@ -472,1 +472,1 @@
+-                                      {roles.map((role: any) => (
++                                      {roles.map((role: unknown) => (
+@@ -527,1 +527,1 @@
+-    loadAccounts();
++    void loadAccounts();
+diff --git a/app/api/project-updates/route.ts b/app/api/project-updates/route.ts
+--- a/app/api/project-updates/route.ts
++++ b/app/api/project-updates/route.ts
+@@ -115,1 +115,1 @@
+-      userProjects?.forEach((p: any) => {
++      userProjects?.forEach((p: unknown) => {
+@@ -120,1 +120,1 @@
+-      projectAssignments?.forEach((pa: any) => {
++      projectAssignments?.forEach((pa: unknown) => {
+@@ -131,1 +131,1 @@
+-        const projectIds = accountProjects?.map((p: any) => p.id) || [];
++        const projectIds = accountProjects?.map((p: unknown) => p.id) || [];
+@@ -160,1 +160,1 @@
+-        const roleIds = departmentRoles?.map((r: any) => r.id) || [];
++        const roleIds = departmentRoles?.map((r: unknown) => r.id) || [];
+@@ -169,1 +169,1 @@
+-          const deptUserIds = Array.from(new Set(deptUsers?.map((ur: any) => ur.user_id) || []));
++          const deptUserIds = Array.from(new Set(deptUsers?.map((ur: unknown) => ur.user_id) || []));
+@@ -179,1 +179,1 @@
+-            const projectIds = Array.from(new Set(projectAssignments?.map((pa: any) => pa.project_id) || []));
++            const projectIds = Array.from(new Set(projectAssignments?.map((pa: unknown) => pa.project_id) || []));
+@@ -223,1 +223,1 @@
+-      directProjects?.forEach((p: any) => projectIds.add(p.id));
++      directProjects?.forEach((p: unknown) => projectIds.add(p.id));
+diff --git a/components/ui/shadcn-io/kanban/index.tsx b/components/ui/shadcn-io/kanban/index.tsx
+--- a/components/ui/shadcn-io/kanban/index.tsx
++++ b/components/ui/shadcn-io/kanban/index.tsx
+@@ -256,1 +256,1 @@
+-  const customCollisionDetection = (args: any) => {
++  const customCollisionDetection = (args: unknown) => {
+@@ -268,1 +268,1 @@
+-      droppableContainers: args.droppableContainers.filter((container: any) => 
++      droppableContainers: args.droppableContainers.filter((container: unknown) => 
+@@ -343,1 +343,1 @@
+-    const overColumn = overItem?.column || columns.find((col) => col.id === over.id)?.id;
++    const overColumn = overItem?.column ?? columns.find((col) => col.id === over.id)?.id;
+diff --git a/components/clock-out-dialog.tsx b/components/clock-out-dialog.tsx
+--- a/components/clock-out-dialog.tsx
++++ b/components/clock-out-dialog.tsx
+@@ -76,1 +76,1 @@
+-      loadProjects()
++      void loadProjects()
+@@ -124,1 +124,1 @@
+-        assignments.forEach((a: any) => {
++        assignments.forEach((a: unknown) => {
+@@ -154,1 +154,1 @@
+-        contributions.forEach((c: any) => {
++        contributions.forEach((c: unknown) => {
+@@ -234,1 +234,1 @@
+-  const updateAllocation = (id: string, field: keyof TimeAllocation, value: any) => {
++  const updateAllocation = (id: string, field: keyof TimeAllocation, value: unknown) => {
+@@ -350,1 +350,1 @@
+-                  onClick={() => removeAllocation(allocation.id)}
++                  onClick={() => { removeAllocation(allocation.id); }}
+@@ -363,1 +363,1 @@
+-                    onValueChange={(value) => updateAllocation(allocation.id, 'projectId', value)}
++                    onValueChange={(value) => { updateAllocation(allocation.id, 'projectId', value); }}
+@@ -383,1 +383,1 @@
+-                    onValueChange={(value) => updateAllocation(allocation.id, 'taskId', value)}
++                    onValueChange={(value) => { updateAllocation(allocation.id, 'taskId', value); }}
+@@ -410,1 +410,1 @@
+-                    onChange={(e) => updateAllocation(allocation.id, 'hours', parseFloat(e.target.value) || 0)}
++                    onChange={(e) => { updateAllocation(allocation.id, 'hours', parseFloat(e.target.value) || 0); }}
+@@ -422,1 +422,1 @@
+-                    onChange={(e) => updateAllocation(allocation.id, 'description', e.target.value)}
++                    onChange={(e) => { updateAllocation(allocation.id, 'description', e.target.value); }}
+@@ -446,1 +446,1 @@
+-              onChange={(e) => setNotes(e.target.value)}
++              onChange={(e) => { setNotes(e.target.value); }}
+@@ -470,1 +470,1 @@
+-            <Button variant="outline" onClick={() => onOpenChange(false)}>
++            <Button variant="outline" onClick={() => { onOpenChange(false); }}>
+diff --git a/components/org-chart/org-chart-toolbar.tsx b/components/org-chart/org-chart-toolbar.tsx
+--- a/components/org-chart/org-chart-toolbar.tsx
++++ b/components/org-chart/org-chart-toolbar.tsx
+@@ -40,1 +40,1 @@
+-  onRoleCreated?: (role: any) => void;
++  onRoleCreated?: (role: unknown) => void;
+@@ -81,1 +81,1 @@
+-    loadDepartments();
++    void loadDepartments();
+@@ -133,1 +133,1 @@
+-                onClick={() => handleViewTypeChange('hierarchy')}
++                onClick={() => { handleViewTypeChange('hierarchy'); }}
+@@ -142,1 +142,1 @@
+-                onClick={() => handleViewTypeChange('department')}
++                onClick={() => { handleViewTypeChange('department'); }}
+@@ -156,1 +156,1 @@
+-              onClick={() => setShowFilters(!showFilters)}
++              onClick={() => { setShowFilters(!showFilters); }}
+@@ -210,1 +210,1 @@
+-                  value={selectedDepartment || 'all'}
++                  value={selectedDepartment ?? 'all'}
+@@ -219,1 +219,1 @@
+-                      .filter((dept) => dept && dept.id && dept.id !== '')
++                      .filter((dept) => dept?.id && dept.id !== '')
+diff --git a/components/project-updates-card.tsx b/components/project-updates-card.tsx
+--- a/components/project-updates-card.tsx
++++ b/components/project-updates-card.tsx
+@@ -39,1 +39,1 @@
+-    loadUpdates()
++    void loadUpdates()
+@@ -144,1 +144,1 @@
+-    <Card className={`w-full ${className || ''}`}>
++    <Card className={`w-full ${className ?? ''}`}>
+@@ -191,1 +191,1 @@
+-                        {(update as any).workflow_history?.workflow_nodes?.label ? (
++                        {(update as unknown).workflow_history?.workflow_nodes?.label ? (
+@@ -193,1 +193,1 @@
+-                            {(update as any).workflow_history.workflow_nodes.label}
++                            {(update as unknown).workflow_history.workflow_nodes.label}
+@@ -194,1 +194,1 @@
+-                            {(update as any).workflow_history.approval_decision && (
++                            {(update as unknown).workflow_history.approval_decision && (
+@@ -196,1 +196,1 @@
+-                                ({(update as any).workflow_history.approval_decision})
++                                ({(update as unknown).workflow_history.approval_decision})
+diff --git a/components/newsletter-card.tsx b/components/newsletter-card.tsx
+--- a/components/newsletter-card.tsx
++++ b/components/newsletter-card.tsx
+@@ -55,1 +55,1 @@
+-    loadNewsletters()
++    void loadNewsletters()
+@@ -59,1 +59,1 @@
+-    checkPermissions()
++    void checkPermissions()
+@@ -82,1 +82,1 @@
+-    loadNewsletters() // Refresh the list
++    void loadNewsletters() // Refresh the list
+@@ -110,1 +110,1 @@
+-      <Card className={`w-full ${className || ''}`}>
++      <Card className={`w-full ${className ?? ''}`}>
+@@ -211,1 +211,1 @@
+-                              onClick={() => handleEdit(newsletter)}
++                              onClick={() => { handleEdit(newsletter); }}
+@@ -221,1 +221,1 @@
+-                              onClick={() => handleDelete(newsletter)}
++                              onClick={() => { handleDelete(newsletter); }}
+diff --git a/app/(main)/admin/client-feedback/page.tsx b/app/(main)/admin/client-feedback/page.tsx
+--- a/app/(main)/admin/client-feedback/page.tsx
++++ b/app/(main)/admin/client-feedback/page.tsx
+@@ -66,1 +66,1 @@
+-    loadAccounts();
++    void loadAccounts();
+@@ -72,1 +72,1 @@
+-      loadFeedback(selectedAccount.id);
++      void loadFeedback(selectedAccount.id);
+@@ -229,1 +229,1 @@
+-                    onClick={() => setSelectedAccount(account)}
++                    onClick={() => { setSelectedAccount(account); }}
+@@ -342,1 +342,1 @@
+-                            onClick={() => viewDetails(item)}
++                            onClick={() => { viewDetails(item); }}
+diff --git a/app/api/capacity/department/route.ts b/app/api/capacity/department/route.ts
+--- a/app/api/capacity/department/route.ts
++++ b/app/api/capacity/department/route.ts
+@@ -42,1 +42,1 @@
+-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
++    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
+@@ -61,1 +61,1 @@
+-    const roleIds = (departmentRoles || []).map((r: any) => r.id);
++    const roleIds = (departmentRoles || []).map((r: unknown) => r.id);
+@@ -86,1 +86,1 @@
+-    const userIds = Array.from(new Set((userRolesData || []).map((ur: any) => ur.user_id)));
++    const userIds = Array.from(new Set((userRolesData || []).map((ur: unknown) => ur.user_id)));
+@@ -142,1 +142,1 @@
+-    const projectIds = Array.from(new Set((projectAssignmentsData.data || []).map((pa: any) => pa.project_id)));
++    const projectIds = Array.from(new Set((projectAssignmentsData.data || []).map((pa: unknown) => pa.project_id)));
+@@ -154,1 +154,1 @@
+-      availabilityData.data.forEach((a: any) => {
++      availabilityData.data.forEach((a: unknown) => {
+@@ -168,1 +168,1 @@
+-        const userAvailability = availabilityMap.get(userId) || new Map();
++        const userAvailability = availabilityMap.get(userId) ?? new Map();
+@@ -194,1 +194,1 @@
+-        ...(projectTasksData || [])
++        ...(projectTasksData ?? [])
+@@ -199,1 +199,1 @@
+-        .filter((task: any) => {
++        .filter((task: unknown) => {
+@@ -205,1 +205,1 @@
+-        .reduce((sum, task: any) => {
++        .reduce((sum, task: unknown) => {
+@@ -226,1 +226,1 @@
+-          if (!project || (project as any).status === 'complete') continue;
++          if (!project || (project as unknown).status === 'complete') continue;
+@@ -228,1 +228,1 @@
+-          const projectHasTasks = (projectTasksData || []).some((t: any) => t.project_id === (project as any).id);
++          const projectHasTasks = (projectTasksData || []).some((t: unknown) => t.project_id === (project as any).id);
+@@ -230,1 +230,1 @@
+-          if (!projectHasTasks && (project as any).estimated_hours) {
++          if (!projectHasTasks && (project as unknown).estimated_hours) {
+@@ -231,1 +231,1 @@
+-            const projectStart = (project as any).start_date ? new Date((project as any).start_date) : new Date();
++            const projectStart = (project as unknown).start_date ? new Date((project as any).start_date) : new Date();
+@@ -232,1 +232,1 @@
+-            const projectEnd = (project as any).end_date ? new Date((project as any).end_date) : new Date('2099-12-31');
++            const projectEnd = (project as unknown).end_date ? new Date((project as any).end_date) : new Date('2099-12-31');
+@@ -237,1 +237,1 @@
+-              const dailyRate = (project as any).estimated_hours / projectDurationDays;
++              const dailyRate = (project as unknown).estimated_hours / projectDurationDays;
+@@ -251,1 +251,1 @@
+-        .filter((entry: any) => {
++        .filter((entry: unknown) => {
+@@ -255,1 +255,1 @@
+-        .reduce((sum: number, entry: any) => sum + (entry.hours_logged || 0), 0);
++        .reduce((sum: number, entry: unknown) => sum + (entry.hours_logged || 0), 0);
+@@ -275,1 +275,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/capacity-trend-chart.tsx b/components/capacity-trend-chart.tsx
+--- a/components/capacity-trend-chart.tsx
++++ b/components/capacity-trend-chart.tsx
+@@ -113,1 +113,1 @@
+-              onClick={() => onPeriodChange(period)}
++              onClick={() => { onPeriodChange(period); }}
+diff --git a/app/api/roles/[roleId]/assign-user/route.ts b/app/api/roles/[roleId]/assign-user/route.ts
+--- a/app/api/roles/[roleId]/assign-user/route.ts
++++ b/app/api/roles/[roleId]/assign-user/route.ts
+@@ -94,1 +94,1 @@
+-    const noAssignedRole = currentRoles?.find((cr: any) => isUnassignedRole(cr.roles?.name));
++    const noAssignedRole = currentRoles?.find((cr: unknown) => isUnassignedRole(cr.roles?.name));
+@@ -95,1 +95,1 @@
+-    const hasOtherRoles = currentRoles?.some((cr: any) => !isUnassignedRole(cr.roles?.name));
++    const hasOtherRoles = currentRoles?.some((cr: unknown) => !isUnassignedRole(cr.roles?.name));
+diff --git a/app/api/accounts/members/route.ts b/app/api/accounts/members/route.ts
+--- a/app/api/accounts/members/route.ts
++++ b/app/api/accounts/members/route.ts
+@@ -73,1 +73,1 @@
+-    const accountsWithMembers = (accounts || []).map((account: any) => {
++    const accountsWithMembers = (accounts || []).map((account: unknown) => {
+@@ -88,1 +88,1 @@
+-      const members = (allMembers || []).filter((m: any) => m.account_id === account.id);
++      const members = (allMembers || []).filter((m: unknown) => m.account_id === account.id);
+@@ -90,1 +90,1 @@
+-      const formattedMembers = members.map((member: any) => {
++      const formattedMembers = members.map((member: unknown) => {
+@@ -104,1 +104,1 @@
+-            roles: userRoles.map((ur: any) => {
++            roles: userRoles.map((ur: unknown) => {
+@@ -115,1 +115,1 @@
+-            }).filter((r: any) => r.id) // Filter out any invalid roles
++            }).filter((r: unknown) => r.id) // Filter out any invalid roles
+@@ -128,1 +128,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/drag-availability-calendar.tsx b/components/drag-availability-calendar.tsx
+--- a/components/drag-availability-calendar.tsx
++++ b/components/drag-availability-calendar.tsx
+@@ -30,1 +30,1 @@
+-  const targetUserId = userId || userProfile.id
++  const targetUserId = userId ?? userProfile.id
+@@ -230,1 +230,1 @@
+-    checkPermissions()
++    void checkPermissions()
+@@ -250,1 +250,1 @@
+-        if (data.success && data.availability && data.availability.schedule_data) {
++        if (data.success && data.availability?.schedule_data) {
+@@ -306,1 +306,1 @@
+-    loadAvailability()
++    void loadAvailability()
+@@ -388,1 +388,1 @@
+-            onClick={() => navigateWeek('prev')}
++            onClick={() => { navigateWeek('prev'); }}
+@@ -405,1 +405,1 @@
+-            onClick={() => navigateWeek('next')}
++            onClick={() => { navigateWeek('next'); }}
+@@ -461,1 +461,1 @@
+-                      onMouseDown={() => handleMouseDown(day, hour)}
++                      onMouseDown={() => { handleMouseDown(day, hour); }}
+@@ -462,1 +462,1 @@
+-                      onMouseMove={() => handleMouseMove(day, hour)}
++                      onMouseMove={() => { handleMouseMove(day, hour); }}
+diff --git a/components/org-chart/reporting-role-dialog.tsx b/components/org-chart/reporting-role-dialog.tsx
+--- a/components/org-chart/reporting-role-dialog.tsx
++++ b/components/org-chart/reporting-role-dialog.tsx
+@@ -35,1 +35,1 @@
+-      setSelectedReportingRoleId(role.reporting_role_id || 'none');
++      setSelectedReportingRoleId(role.reporting_role_id ?? 'none');
+@@ -45,1 +45,1 @@
+-      await onSave(role.id, reportingRoleId);
++       onSave(role.id, reportingRoleId);
+@@ -89,1 +89,1 @@
+-                  .filter((r) => r && r.id && r.id !== '')
++                  .filter((r) => r?.id && r.id !== '')
+@@ -102,1 +102,1 @@
+-              {(allRoles.find(r => r.id === selectedReportingRoleId)?.hierarchy_level || 0) - 1}
++              {(allRoles.find(r => r.id === selectedReportingRoleId)?.hierarchy_level ?? 0) - 1}
+@@ -114,1 +114,1 @@
+-          <Button variant="outline" onClick={() => onOpenChange(false)}>
++          <Button variant="outline" onClick={() => { onOpenChange(false); }}>
+diff --git a/app/api/accounts/[accountId]/members/route.ts b/app/api/accounts/[accountId]/members/route.ts
+--- a/app/api/accounts/[accountId]/members/route.ts
++++ b/app/api/accounts/[accountId]/members/route.ts
+@@ -79,1 +79,1 @@
+-    } catch (authError: any) {
++    } catch (authError: unknown) {
+@@ -136,1 +136,1 @@
+-    const userIds = (accountMembers || []).map((m: any) => m.user_id);
++    const userIds = (accountMembers || []).map((m: unknown) => m.user_id);
+@@ -174,1 +174,1 @@
+-      const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
++      const profilesMap = new Map((profiles || []).map((p: unknown) => [p.id, p]));
+@@ -175,1 +175,1 @@
+-      const rolesMap = new Map<string, any[]>();
++      const rolesMap = new Map<string, unknown[]>();
+@@ -176,1 +176,1 @@
+-      (userRolesData || []).forEach((ur: any) => {
++      (userRolesData || []).forEach((ur: unknown) => {
+@@ -180,1 +180,1 @@
+-        rolesMap.get(ur.user_id)!.push(ur);
++        rolesMap.get(ur.user_id)?.push(ur);
+@@ -183,1 +183,1 @@
+-      members = (accountMembers || []).map((member: any) => {
++      members = (accountMembers || []).map((member: unknown) => {
+@@ -185,1 +185,1 @@
+-        const userRoles = rolesMap.get(member.user_id) || [];
++        const userRoles = rolesMap.get(member.user_id) ?? [];
+@@ -200,1 +200,1 @@
+-    const formattedMembers = (members || []).map((member: any) => {
++    const formattedMembers = (members || []).map((member: unknown) => {
+@@ -214,1 +214,1 @@
+-          roles: userRoles.map((ur: any) => {
++          roles: userRoles.map((ur: unknown) => {
+@@ -225,1 +225,1 @@
+-          }).filter((r: any) => r.id) // Filter out any invalid roles
++          }).filter((r: unknown) => r.id) // Filter out any invalid roles
+@@ -232,1 +232,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/availability-calendar.tsx b/components/availability-calendar.tsx
+--- a/components/availability-calendar.tsx
++++ b/components/availability-calendar.tsx
+@@ -36,1 +36,1 @@
+-  const targetUserId = userId || userProfile.id
++  const targetUserId = userId ?? userProfile.id
+@@ -104,1 +104,1 @@
+-    checkPermissions()
++    void checkPermissions()
+@@ -157,1 +157,1 @@
+-    loadAvailability()
++    void loadAvailability()
+@@ -272,1 +272,1 @@
+-            onClick={() => navigateWeek('prev')}
++            onClick={() => { navigateWeek('prev'); }}
+@@ -289,1 +289,1 @@
+-            onClick={() => navigateWeek('next')}
++            onClick={() => { navigateWeek('next'); }}
+@@ -311,1 +311,1 @@
+-                onChange={(e) => handleDayChange(key, e.target.value)}
++                onChange={(e) => { handleDayChange(key, e.target.value); }}
+@@ -327,1 +327,1 @@
+-            onChange={(e) => setNotes(e.target.value)}
++            onChange={(e) => { setNotes(e.target.value); }}
+diff --git a/components/ui/field.tsx b/components/ui/field.tsx
+--- a/components/ui/field.tsx
++++ b/components/ui/field.tsx
+@@ -203,1 +203,1 @@
+-    if (errors?.length === 1 && errors[0]?.message) {
++    if (errors.length === 1 && errors[0]?.message) {
+diff --git a/app/api/capacity/route.ts b/app/api/capacity/route.ts
+--- a/app/api/capacity/route.ts
++++ b/app/api/capacity/route.ts
+@@ -37,1 +37,1 @@
+-    const type = searchParams.get('type') || 'user';
++    const type = searchParams.get('type') ?? 'user';
+@@ -49,1 +49,1 @@
+-    const weekStartDate = searchParams.get('weekStartDate') || getWeekStartDate();
++    const weekStartDate = searchParams.get('weekStartDate') ?? getWeekStartDate();
+@@ -55,1 +55,1 @@
+-        const userId = id || userProfile.id;
++        const userId = id ?? userProfile.id;
+@@ -151,1 +151,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/app/api/availability/route.ts b/app/api/availability/route.ts
+--- a/app/api/availability/route.ts
++++ b/app/api/availability/route.ts
+@@ -37,1 +37,1 @@
+-    const userId = searchParams.get('userId') || userProfile.id;
++    const userId = searchParams.get('userId') ?? userProfile.id;
+@@ -38,1 +38,1 @@
+-    const weekStartDate = searchParams.get('weekStartDate') || availabilityService.getWeekStartDate();
++    const weekStartDate = searchParams.get('weekStartDate') ?? availabilityService.getWeekStartDate();
+@@ -60,1 +60,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/scripts/workflow-database-report.ts b/scripts/workflow-database-report.ts
+--- a/scripts/workflow-database-report.ts
++++ b/scripts/workflow-database-report.ts
+@@ -57,1 +57,1 @@
+-    const exists = !error || !error.message.includes('does not exist');
++    const exists = !error?.message.includes('does not exist');
+diff --git a/components/org-chart/role-edit-dialog.tsx b/components/org-chart/role-edit-dialog.tsx
+--- a/components/org-chart/role-edit-dialog.tsx
++++ b/components/org-chart/role-edit-dialog.tsx
+@@ -52,1 +52,1 @@
+-  const [departments, setDepartments] = useState<Department[]>(externalDepartments || []);
++  const [departments, setDepartments] = useState<Department[]>(externalDepartments ?? []);
+@@ -61,1 +61,1 @@
+-      initialPermissions[permission] = (role?.permissions && role.permissions[permission]) || false;
++      initialPermissions[permission] = (role?.permissions?.[permission]) || false;
+@@ -185,1 +185,1 @@
+-                onChange={(e) => handleInputChange('name', e.target.value)}
++                onChange={(e) => { handleInputChange('name', e.target.value); }}
+@@ -216,1 +216,1 @@
+-              onChange={(e) => handleInputChange('description', e.target.value)}
++              onChange={(e) => { handleInputChange('description', e.target.value); }}
+@@ -253,1 +253,1 @@
+-              onClick={() => onOpenChange(false)}
++              onClick={() => { onOpenChange(false); }}
+diff --git a/scripts/final-workflow-audit.ts b/scripts/final-workflow-audit.ts
+--- a/scripts/final-workflow-audit.ts
++++ b/scripts/final-workflow-audit.ts
+@@ -25,1 +25,1 @@
+-    const testData: any = {
++    const testData: unknown = {
+@@ -44,1 +44,1 @@
+-  } catch (err: any) {
++  } catch (err: unknown) {
+@@ -69,1 +69,1 @@
+-  templates?.forEach((t: any) => {
++  templates?.forEach((t: unknown) => {
+@@ -148,1 +148,1 @@
+-    instances.forEach((i: any) => {
++    instances.forEach((i: unknown) => {
+@@ -185,1 +185,1 @@
+-  formTemplates?.forEach((ft: any) => {
++  formTemplates?.forEach((ft: unknown) => {
+@@ -245,1 +245,1 @@
+-    rawAssignments.forEach((a: any) => {
++    rawAssignments.forEach((a: unknown) => {
+@@ -304,1 +304,1 @@
+-    issues.forEach(issue => console.log(`  ${issue}`));
++    issues.forEach(issue => { console.log(`  ${issue}`); });
+diff --git a/app/api/workflows/my-pipeline/route.ts b/app/api/workflows/my-pipeline/route.ts
+--- a/app/api/workflows/my-pipeline/route.ts
++++ b/app/api/workflows/my-pipeline/route.ts
+@@ -111,1 +111,1 @@
+-      const instance = assignment.workflow_instances as any;
++      const instance = assignment.workflow_instances as unknown;
+@@ -132,1 +132,1 @@
+-        const assignedUser = (assignment as any).user_profiles;
++        const assignedUser = (assignment as unknown).user_profiles;
+@@ -143,1 +143,1 @@
+-            nodeName: (assignment.workflow_nodes as any)?.label || 'Unknown Step',
++            nodeName: (assignment.workflow_nodes as unknown)?.label || 'Unknown Step',
+@@ -144,1 +144,1 @@
+-            nodeType: (assignment.workflow_nodes as any)?.node_type || 'role'
++            nodeType: (assignment.workflow_nodes as unknown)?.node_type || 'role'
+diff --git a/components/gantt-chart.tsx b/components/gantt-chart.tsx
+--- a/components/gantt-chart.tsx
++++ b/components/gantt-chart.tsx
+@@ -61,1 +61,1 @@
+-              onClick={() => onEdit(task)}
++              onClick={() => { onEdit(task); }}
+@@ -68,1 +68,1 @@
+-              onClick={() => onRemove(task.id)}
++              onClick={() => { onRemove(task.id); }}
+@@ -216,1 +216,1 @@
+-    loadData();
++    void loadData();
+@@ -238,1 +238,1 @@
+-  }, {} as Record<string, GanttFeature[]>);
++  }, {});
+@@ -269,1 +269,1 @@
+-    navigator.clipboard.writeText(`${window.location.origin}/gantt#${id}`);
++    void navigator.clipboard.writeText(`${window.location.origin}/gantt#${id}`);
+@@ -353,1 +353,1 @@
+-    loadTasks();
++    void loadTasks();
+@@ -397,1 +397,1 @@
+-      return () => clearTimeout(timer);
++      return () => { clearTimeout(timer); };
+@@ -438,1 +438,1 @@
+-                    onMouseEnter={() => handleTaskHover(feature.id)}
++                    onMouseEnter={() => { handleTaskHover(feature.id); }}
+@@ -439,1 +439,1 @@
+-                    onMouseLeave={() => handleTaskHover(null)}
++                    onMouseLeave={() => { handleTaskHover(null); }}
+@@ -482,1 +482,1 @@
+-                            onClick={() => handleViewFeature(feature.id)}
++                            onClick={() => { handleViewFeature(feature.id); }}
+@@ -519,1 +519,1 @@
+-                            onClick={() => handleCopyLink(feature.id)}
++                            onClick={() => { handleCopyLink(feature.id); }}
+diff --git a/components/task-edit-dialog.tsx b/components/task-edit-dialog.tsx
+--- a/components/task-edit-dialog.tsx
++++ b/components/task-edit-dialog.tsx
+@@ -45,1 +45,1 @@
+-      loadData();
++      void loadData();
+@@ -144,1 +144,1 @@
+-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
++                onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); }}
+@@ -154,1 +154,1 @@
+-                  setFormData(prev => ({ ...prev, priority: value }))
++                  { setFormData(prev => ({ ...prev, priority: value })); }
+@@ -174,1 +174,1 @@
+-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
++              onChange={(e) => { setFormData(prev => ({ ...prev, description: e.target.value })); }}
+@@ -186,1 +186,1 @@
+-                onChange={(e) => setFormData(prev => ({ ...prev, startAt: e.target.value }))}
++                onChange={(e) => { setFormData(prev => ({ ...prev, startAt: e.target.value })); }}
+@@ -197,1 +197,1 @@
+-                onChange={(e) => setFormData(prev => ({ ...prev, endAt: e.target.value }))}
++                onChange={(e) => { setFormData(prev => ({ ...prev, endAt: e.target.value })); }}
+@@ -208,1 +208,1 @@
+-                onValueChange={(value) => setFormData(prev => ({ ...prev, statusId: value }))}
++                onValueChange={(value) => { setFormData(prev => ({ ...prev, statusId: value })); }}
+@@ -215,1 +215,1 @@
+-                    .filter(status => status && status.id && status.id !== '')
++                    .filter(status => status?.id && status.id !== '')
+@@ -229,1 +229,1 @@
+-                onValueChange={(value) => setFormData(prev => ({ ...prev, groupId: value }))}
++                onValueChange={(value) => { setFormData(prev => ({ ...prev, groupId: value })); }}
+@@ -236,1 +236,1 @@
+-                    .filter(group => group && group.id && group.id !== '')
++                    .filter(group => group?.id && group.id !== '')
+@@ -250,1 +250,1 @@
+-                onValueChange={(value) => setFormData(prev => ({ ...prev, ownerId: value }))}
++                onValueChange={(value) => { setFormData(prev => ({ ...prev, ownerId: value })); }}
+@@ -257,1 +257,1 @@
+-                    .filter(user => user && user.id && user.id !== '')
++                    .filter(user => user?.id && user.id !== '')
+@@ -273,1 +273,1 @@
+-                onChange={(e) => setTagInput(e.target.value)}
++                onChange={(e) => { setTagInput(e.target.value); }}
+@@ -291,1 +291,1 @@
+-                      onClick={() => removeTag(tag)}
++                      onClick={() => { removeTag(tag); }}
+@@ -303,1 +303,1 @@
+-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
++            <Button type="button" variant="outline" onClick={() => { onOpenChange(false); }}>
+diff --git a/scripts/audit-workflow-state.ts b/scripts/audit-workflow-state.ts
+--- a/scripts/audit-workflow-state.ts
++++ b/scripts/audit-workflow-state.ts
+@@ -131,1 +131,1 @@
+-    const nodesByTemplate = (nodes || []).reduce((acc: any, node: any) => {
++    const nodesByTemplate = (nodes || []).reduce((acc: unknown, node: any) => {
+@@ -140,1 +140,1 @@
+-    Object.entries(nodesByTemplate).forEach(([templateName, templateNodes]: [string, any]) => {
++    Object.entries(nodesByTemplate).forEach(([templateName, templateNodes]: [string, unknown]) => {
+@@ -142,1 +142,1 @@
+-      templateNodes.forEach((node: any) => {
++      templateNodes.forEach((node: unknown) => {
+@@ -169,1 +169,1 @@
+-  let enrichedInstances: any[] = [];
++  let enrichedInstances: unknown[] = [];
+@@ -196,1 +196,1 @@
+-    console.log(`Total instances: ${enrichedInstances?.length || 0}\n`);
++    console.log(`Total instances: ${enrichedInstances.length || 0}\n`);
+@@ -199,1 +199,1 @@
+-    const statusCounts = (enrichedInstances || []).reduce((acc: any, inst: any) => {
++    const statusCounts = (enrichedInstances || []).reduce((acc: unknown, inst: any) => {
+@@ -212,1 +212,1 @@
+-      enrichedInstances.slice(0, 10).forEach((inst: any) => {
++      enrichedInstances.slice(0, 10).forEach((inst: unknown) => {
+@@ -244,1 +244,1 @@
+-  let enrichedHistory: any[] = [];
++  let enrichedHistory: unknown[] = [];
+@@ -278,1 +278,1 @@
+-    console.log(`Total history entries (last 20): ${enrichedHistory?.length || 0}\n`);
++    console.log(`Total history entries (last 20): ${enrichedHistory.length || 0}\n`);
+@@ -281,1 +281,1 @@
+-      enrichedHistory.forEach((h: any) => {
++      enrichedHistory.forEach((h: unknown) => {
+@@ -318,1 +318,1 @@
+-  let enrichedAssignments: any[] = [];
++  let enrichedAssignments: unknown[] = [];
+@@ -346,1 +346,1 @@
+-    console.log(`Active assignments (last 20): ${enrichedAssignments?.length || 0}\n`);
++    console.log(`Active assignments (last 20): ${enrichedAssignments.length || 0}\n`);
+@@ -349,1 +349,1 @@
+-      enrichedAssignments.forEach((a: any) => {
++      enrichedAssignments.forEach((a: unknown) => {
+@@ -397,1 +397,1 @@
+-    const nodeIds = new Set(nodes.map((n: any) => n.id));
++    const nodeIds = new Set(nodes.map((n: unknown) => n.id));
+@@ -398,1 +398,1 @@
+-    const badHistory = allHistory.filter((h: any) => {
++    const badHistory = allHistory.filter((h: unknown) => {
+@@ -411,1 +411,1 @@
+-    const badInstances = instances.filter((inst: any) =>
++    const badInstances = instances.filter((inst: unknown) =>
+@@ -424,1 +424,1 @@
+-    issues.forEach(issue => console.log(`  ${issue}`));
++    issues.forEach(issue => { console.log(`  ${issue}`); });
+@@ -436,1 +436,1 @@
+-  console.log(`History Entries:        ${enrichedHistory?.length || 0} (showing last 20)`);
++  console.log(`History Entries:        ${enrichedHistory.length || 0} (showing last 20)`);
+@@ -437,1 +437,1 @@
+-  console.log(`Active Assignments:     ${enrichedAssignments?.length || 0} (showing last 20)`);
++  console.log(`Active Assignments:     ${enrichedAssignments.length || 0} (showing last 20)`);
+diff --git a/scripts/check-workflow-tables.ts b/scripts/check-workflow-tables.ts
+--- a/scripts/check-workflow-tables.ts
++++ b/scripts/check-workflow-tables.ts
+@@ -55,1 +55,1 @@
+-          .from('information_schema.columns' as any)
++          .from('information_schema.columns' as unknown)
+@@ -62,1 +62,1 @@
+-          schemaData.forEach((col: any) => {
++          schemaData.forEach((col: unknown) => {
+@@ -69,1 +69,1 @@
+-      data?.forEach((col: any) => {
++      data?.forEach((col: unknown) => {
+diff --git a/app/api/clock/discard/route.ts b/app/api/clock/discard/route.ts
+--- a/app/api/clock/discard/route.ts
++++ b/app/api/clock/discard/route.ts
+@@ -76,1 +76,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/org-chart/role-detail-panel.tsx b/components/org-chart/role-detail-panel.tsx
+--- a/components/org-chart/role-detail-panel.tsx
++++ b/components/org-chart/role-detail-panel.tsx
+@@ -58,1 +58,1 @@
+-  const [roleUsers, setRoleUsers] = useState<any[]>([]);
++  const [roleUsers, setRoleUsers] = useState<unknown[]>([]);
+@@ -70,1 +70,1 @@
+-      loadRoleDetails();
++      void loadRoleDetails();
+@@ -201,1 +201,1 @@
+-                    <AvatarImage src={nodeData.user?.image || undefined} />
++                    <AvatarImage src={nodeData.user?.image ?? undefined} />
+diff --git a/components/database-status.tsx b/components/database-status.tsx
+--- a/components/database-status.tsx
++++ b/components/database-status.tsx
+@@ -9,1 +9,1 @@
+-  const [status, setStatus] = useState<any>(null)
++  const [status, setStatus] = useState<unknown>(null)
+@@ -11,1 +11,1 @@
+-  const [testResult, setTestResult] = useState<any>(null)
++  const [testResult, setTestResult] = useState<unknown>(null)
+@@ -49,1 +49,1 @@
+-    checkDatabase()
++    void checkDatabase()
+@@ -84,1 +84,1 @@
+-                    {status.details.map((detail: any, index: number) => (
++                    {status.details.map((detail: unknown, index: number) => (
+diff --git a/components/org-chart/role-hierarchy-dnd.tsx b/components/org-chart/role-hierarchy-dnd.tsx
+--- a/components/org-chart/role-hierarchy-dnd.tsx
++++ b/components/org-chart/role-hierarchy-dnd.tsx
+@@ -185,1 +185,1 @@
+-            title={`Reports to: ${role.reporting_role?.name || 'Unknown'}`}
++            title={`Reports to: ${role.reporting_role?.name ?? 'Unknown'}`}
+@@ -187,1 +187,1 @@
+-            Reports to: {role.reporting_role?.name || 'Unknown'}
++            Reports to: {role.reporting_role?.name ?? 'Unknown'}
+@@ -204,1 +204,1 @@
+-            onClick={() => onAssignUser(role)}
++            onClick={() => { onAssignUser(role); }}
+@@ -214,1 +214,1 @@
+-            onClick={() => onSetReportingRole(role)}
++            onClick={() => { onSetReportingRole(role); }}
+@@ -225,1 +225,1 @@
+-              onClick={() => onEdit(role)}
++              onClick={() => { onEdit(role); }}
+@@ -237,1 +237,1 @@
+-              onClick={() => onDelete(role.id)}
++              onClick={() => { onDelete(role.id); }}
+@@ -276,1 +276,1 @@
+-  pendingRoleEdits?: Map<string, any>; // NEW: Role edits queued in parent
++  pendingRoleEdits?: Map<string, unknown>; // NEW: Role edits queued in parent
+@@ -418,1 +418,1 @@
+-        saveDisplayOrderChanges(rolesToMove);
++        void saveDisplayOrderChanges(rolesToMove);
+@@ -434,1 +434,1 @@
+-        saveDisplayOrderChanges(newItems);
++        void saveDisplayOrderChanges(newItems);
+@@ -456,1 +456,1 @@
+-      saveDisplayOrderChanges(sameLevelRoles);
++      void saveDisplayOrderChanges(sameLevelRoles);
+@@ -482,1 +482,1 @@
+-      await onRoleUpdate();
++       onRoleUpdate();
+@@ -493,1 +493,1 @@
+-    console.log('ð³ Building hierarchy tree with roles:', roles.map(r => `${r.name} (Level ${r.hierarchy_level}, Reports to: ${r.reporting_role?.name || r.reporting_role_id || 'none'})`));
++    console.log('ð³ Building hierarchy tree with roles:', roles.map(r => `${r.name} (Level ${r.hierarchy_level}, Reports to: ${(r.reporting_role?.name ?? r.reporting_role_id) || 'none'})`));
+@@ -557,1 +557,1 @@
+-      console.log('ð³ Orphaned roles (missing parent):', orphanedRoles.map(r => `${r.name} (reports to: ${r.reporting_role?.name || r.reporting_role_id})`));
++      console.log('ð³ Orphaned roles (missing parent):', orphanedRoles.map(r => `${r.name} (reports to: ${r.reporting_role?.name ?? r.reporting_role_id})`));
+@@ -568,1 +568,1 @@
+-    console.log('ð³ Final hierarchy tree:', result.map(r => `${'  '.repeat(r.depth || 0)}${r.name} (Level ${r.hierarchy_level})`));
++    console.log('ð³ Final hierarchy tree:', result.map(r => `${'  '.repeat(r.depth ?? 0)}${r.name} (Level ${r.hierarchy_level})`));
+@@ -592,1 +592,1 @@
+-                depth={role.depth || 0}
++                depth={role.depth ?? 0}
+@@ -594,1 +594,1 @@
+-                onToggle={() => toggleExpanded(role.id)}
++                onToggle={() => { toggleExpanded(role.id); }}
+diff --git a/app/admin/superadmin-setup/page.tsx b/app/admin/superadmin-setup/page.tsx
+--- a/app/admin/superadmin-setup/page.tsx
++++ b/app/admin/superadmin-setup/page.tsx
+@@ -188,1 +188,1 @@
+-          <Button onClick={() => router.back()}>
++          <Button onClick={() => { router.back(); }}>
+@@ -214,1 +214,1 @@
+-              onChange={(e) => setEmail(e.target.value)}
++              onChange={(e) => { setEmail(e.target.value); }}
+diff --git a/app/api/admin/time-entries/route.ts b/app/api/admin/time-entries/route.ts
+--- a/app/api/admin/time-entries/route.ts
++++ b/app/api/admin/time-entries/route.ts
+@@ -115,1 +115,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/app/api/accounts/[accountId]/route.ts b/app/api/accounts/[accountId]/route.ts
+--- a/app/api/accounts/[accountId]/route.ts
++++ b/app/api/accounts/[accountId]/route.ts
+@@ -35,1 +35,1 @@
+-    const allowedUpdates: any = {};
++    const allowedUpdates: unknown = {};
+@@ -79,1 +79,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/app/(main)/admin/forms/page.tsx b/app/(main)/admin/forms/page.tsx
+--- a/app/(main)/admin/forms/page.tsx
++++ b/app/(main)/admin/forms/page.tsx
+@@ -52,1 +52,1 @@
+-  defaultValue?: any;
++  defaultValue?: unknown;
+@@ -61,1 +61,1 @@
+-    equals: any;
++    equals: unknown;
+@@ -137,1 +137,1 @@
+-    setFormDescription(template.description || '');
++    setFormDescription(template.description ?? '');
+@@ -368,1 +368,1 @@
+-                      onClick={() => openEditFormEditor(template)}
++                      onClick={() => { openEditFormEditor(template); }}
+@@ -376,1 +376,1 @@
+-                      onClick={() => confirmDeleteTemplate(template)}
++                      onClick={() => { confirmDeleteTemplate(template); }}
+@@ -411,1 +411,1 @@
+-                      onChange={(e) => setFormName(e.target.value)}
++                      onChange={(e) => { setFormName(e.target.value); }}
+@@ -420,1 +420,1 @@
+-                      onChange={(e) => setFormDescription(e.target.value)}
++                      onChange={(e) => { setFormDescription(e.target.value); }}
+@@ -436,1 +436,1 @@
+-                        onClick={() => addField(fieldType.value)}
++                        onClick={() => { addField(fieldType.value); }}
+@@ -465,1 +465,1 @@
+-                          onClick={() => setSelectedFieldIndex(index)}
++                          onClick={() => { setSelectedFieldIndex(index); }}
+@@ -537,1 +537,1 @@
+-                              updateField(selectedFieldIndex!, { label: e.target.value })
++                              { updateField(selectedFieldIndex!, { label: e.target.value }); }
+@@ -545,1 +545,1 @@
+-                            value={selectedField.placeholder || ''}
++                            value={selectedField.placeholder ?? ''}
+@@ -547,1 +547,1 @@
+-                              updateField(selectedFieldIndex!, { placeholder: e.target.value })
++                              { updateField(selectedFieldIndex!, { placeholder: e.target.value }); }
+@@ -568,1 +568,1 @@
+-                              value={(selectedField.options || []).join('\n')}
++                              value={(selectedField.options ?? []).join('\n')}
+diff --git a/app/forgot-password/page.tsx b/app/forgot-password/page.tsx
+--- a/app/forgot-password/page.tsx
++++ b/app/forgot-password/page.tsx
+@@ -36,1 +36,1 @@
+-    } catch (error: any) {
++    } catch (error: unknown) {
+@@ -109,1 +109,1 @@
+-                    onChange={(e) => setEmail(e.target.value)}
++                    onChange={(e) => { setEmail(e.target.value); }}
+diff --git a/app/api/accounts/[accountId]/members/[userId]/route.ts b/app/api/accounts/[accountId]/members/[userId]/route.ts
+--- a/app/api/accounts/[accountId]/members/[userId]/route.ts
++++ b/app/api/accounts/[accountId]/members/[userId]/route.ts
+@@ -38,1 +38,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/newsletter-creation-dialog.tsx b/components/newsletter-creation-dialog.tsx
+--- a/components/newsletter-creation-dialog.tsx
++++ b/components/newsletter-creation-dialog.tsx
+@@ -55,1 +55,1 @@
+-        {children || (
++        {children ?? (
+@@ -79,1 +79,1 @@
+-              onChange={(e) => handleInputChange('title', e.target.value)}
++              onChange={(e) => { handleInputChange('title', e.target.value); }}
+@@ -90,1 +90,1 @@
+-              onChange={(e) => handleInputChange('content', e.target.value)}
++              onChange={(e) => { handleInputChange('content', e.target.value); }}
+@@ -101,1 +101,1 @@
+-              onClick={() => setOpen(false)}
++              onClick={() => { setOpen(false); }}
+diff --git a/components/workflow-editor/labeled-edge.tsx b/components/workflow-editor/labeled-edge.tsx
+--- a/components/workflow-editor/labeled-edge.tsx
++++ b/components/workflow-editor/labeled-edge.tsx
+@@ -63,1 +63,1 @@
+-  const decision = edgeData?.decision || edgeData?.conditionValue;
++  const decision = edgeData?.decision ?? edgeData?.conditionValue;
+@@ -144,1 +144,1 @@
+-  const label = edgeData?.label || edgeData?.conditionValue;
++  const label = edgeData?.label ?? edgeData?.conditionValue;
+@@ -158,1 +158,1 @@
+-        onMouseEnter={() => setIsHovered(true)}
++        onMouseEnter={() => { setIsHovered(true); }}
+@@ -159,1 +159,1 @@
+-        onMouseLeave={() => setIsHovered(false)}
++        onMouseLeave={() => { setIsHovered(false); }}
+diff --git a/app/api/clock/route.ts b/app/api/clock/route.ts
+--- a/app/api/clock/route.ts
++++ b/app/api/clock/route.ts
+@@ -82,1 +82,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/navigation.tsx b/components/navigation.tsx
+--- a/components/navigation.tsx
++++ b/components/navigation.tsx
+@@ -306,1 +306,1 @@
+-    filterItems().catch(err => {
++    filterItems().catch((err: unknown) => {
+@@ -573,1 +573,1 @@
+-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
++              onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); }}
+@@ -598,1 +598,1 @@
+-                    onClick={() => setIsMobileMenuOpen(false)}
++                    onClick={() => { setIsMobileMenuOpen(false); }}
+diff --git a/components/org-chart/hierarchy-view.tsx b/components/org-chart/hierarchy-view.tsx
+--- a/components/org-chart/hierarchy-view.tsx
++++ b/components/org-chart/hierarchy-view.tsx
+@@ -50,1 +50,1 @@
+-  const [roleUsers, setRoleUsers] = useState<any[]>([]);
++  const [roleUsers, setRoleUsers] = useState<unknown[]>([]);
+@@ -65,1 +65,1 @@
+-      loadRoleUsers();
++      void loadRoleUsers();
+@@ -252,1 +252,1 @@
+-                  onClick={() => handleUserAssign(user.id)}
++                  onClick={() => { handleUserAssign(user.id); }}
+@@ -297,1 +297,1 @@
+-    loadHierarchy();
++    void loadHierarchy();
+diff --git a/components/milestone-creation-dialog.tsx b/components/milestone-creation-dialog.tsx
+--- a/components/milestone-creation-dialog.tsx
++++ b/components/milestone-creation-dialog.tsx
+@@ -107,1 +107,1 @@
+-                onChange={(e) => handleInputChange('name', e.target.value)}
++                onChange={(e) => { handleInputChange('name', e.target.value); }}
+@@ -118,1 +118,1 @@
+-                onChange={(e) => handleInputChange('description', e.target.value)}
++                onChange={(e) => { handleInputChange('description', e.target.value); }}
+@@ -137,1 +137,1 @@
+-                    onClick={() => handleInputChange('color', color.value)}
++                    onClick={() => { handleInputChange('color', color.value); }}
+@@ -145,1 +145,1 @@
+-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
++            <Button type="button" variant="outline" onClick={() => { onOpenChange(false); }}>
+diff --git a/app/api/time-entries/route.ts b/app/api/time-entries/route.ts
+--- a/app/api/time-entries/route.ts
++++ b/app/api/time-entries/route.ts
+@@ -40,1 +40,1 @@
+-    const startDate = searchParams.get('startDate') || undefined;
++    const startDate = searchParams.get('startDate') ?? undefined;
+@@ -41,1 +41,1 @@
+-    const endDate = searchParams.get('endDate') || undefined;
++    const endDate = searchParams.get('endDate') ?? undefined;
+@@ -53,1 +53,1 @@
+-      const targetUserId = userId || userProfile.id;
++      const targetUserId = userId ?? userProfile.id;
+@@ -73,1 +73,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/ui/shadcn-io/gantt/index.tsx b/components/ui/shadcn-io/gantt/index.tsx
+--- a/components/ui/shadcn-io/gantt/index.tsx
++++ b/components/ui/shadcn-io/gantt/index.tsx
+@@ -156,1 +156,1 @@
+-      return new Date(d.getFullYear(), 0, 1) as any;
++      return new Date(d.getFullYear(), 0, 1) as unknown;
+@@ -171,1 +171,1 @@
+-      return new Date(d.getFullYear(), 11, 31) as any;
++      return new Date(d.getFullYear(), 11, 31) as unknown;
+@@ -186,1 +186,1 @@
+-      return new Date(d.getFullYear() + amount, d.getMonth(), d.getDate()) as any;
++      return new Date(d.getFullYear() + amount, d.getMonth(), d.getDate()) as unknown;
+@@ -700,1 +700,1 @@
+-  const handleMouseEnter = () => setHovering(true);
++  const handleMouseEnter = () => { setHovering(true); };
+@@ -701,1 +701,1 @@
+-  const handleMouseLeave = () => setHovering(false);
++  const handleMouseLeave = () => { setHovering(false); };
+@@ -783,1 +783,1 @@
+-  const handleClick = () => onCreateMarker(date);
++  const handleClick = () => { onCreateMarker(date); };
+@@ -1421,1 +1421,1 @@
+-    const handleScrollToToday = (event: any) => {
++    const handleScrollToToday = (event: unknown) => {
+diff --git a/app/api/capacity/history/route.ts b/app/api/capacity/history/route.ts
+--- a/app/api/capacity/history/route.ts
++++ b/app/api/capacity/history/route.ts
+@@ -61,1 +61,1 @@
+-    const userId = searchParams.get('userId') || userProfile.id;
++    const userId = searchParams.get('userId') ?? userProfile.id;
+@@ -62,1 +62,1 @@
+-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
++    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
+@@ -120,1 +120,1 @@
+-      const projectIds = projectAssignmentsData.data.map((pa: any) => pa.project_id);
++      const projectIds = projectAssignmentsData.data.map((pa: unknown) => pa.project_id);
+@@ -131,1 +131,1 @@
+-      availabilityData.data.forEach((a: any) => {
++      availabilityData.data.forEach((a: unknown) => {
+@@ -139,1 +139,1 @@
+-      ...(projectTasksData || [])
++      ...(projectTasksData ?? [])
+@@ -244,1 +244,1 @@
+-          if (!project || (project as any).status === 'complete') continue;
++          if (!project || (project as unknown).status === 'complete') continue;
+@@ -247,1 +247,1 @@
+-          const projectHasTasks = (projectTasksData || []).some((t: any) => t.project_id === (project as any).id);
++          const projectHasTasks = (projectTasksData ?? []).some((t: any) => t.project_id === (project as any).id);
+@@ -250,1 +250,1 @@
+-          if (!projectHasTasks && (project as any).estimated_hours) {
++          if (!projectHasTasks && (project as unknown).estimated_hours) {
+@@ -252,1 +252,1 @@
+-            const projectStart = (project as any).start_date ? new Date((project as any).start_date) : new Date();
++            const projectStart = (project as unknown).start_date ? new Date((project as any).start_date) : new Date();
+@@ -253,1 +253,1 @@
+-            const projectEnd = (project as any).end_date ? new Date((project as any).end_date) : new Date('2099-12-31');
++            const projectEnd = (project as unknown).end_date ? new Date((project as any).end_date) : new Date('2099-12-31');
+@@ -261,1 +261,1 @@
+-              const dailyRate = (project as any).estimated_hours / projectDurationDays;
++              const dailyRate = (project as unknown).estimated_hours / projectDurationDays;
+@@ -277,1 +277,1 @@
+-        .filter((entry: any) => {
++        .filter((entry: unknown) => {
+@@ -283,1 +283,1 @@
+-        .reduce((sum: number, entry: any) => {
++        .reduce((sum: number, entry: unknown) => {
+@@ -319,1 +319,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/client-navigation.tsx b/components/client-navigation.tsx
+--- a/components/client-navigation.tsx
++++ b/components/client-navigation.tsx
+@@ -120,1 +120,1 @@
+-        if (dept && dept.id && !deptMap.has(dept.id)) {
++        if (dept?.id && !deptMap.has(dept.id)) {
+@@ -227,1 +227,1 @@
+-    filterItems().catch(err => {
++    filterItems().catch((err: unknown) => {
+@@ -542,1 +542,1 @@
+-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
++              onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); }}
+@@ -567,1 +567,1 @@
+-                            onClick={() => setIsMobileMenuOpen(false)}
++                            onClick={() => { setIsMobileMenuOpen(false); }}
+diff --git a/components/login-form.tsx b/components/login-form.tsx
+--- a/components/login-form.tsx
++++ b/components/login-form.tsx
+@@ -42,1 +42,1 @@
+-  const redirectTo = searchParams.get('redirectTo') || '/'
++  const redirectTo = searchParams.get('redirectTo') ?? '/'
+@@ -73,1 +73,1 @@
+-    } catch (error: any) {
++    } catch (error: unknown) {
+@@ -132,1 +132,1 @@
+-                    onChange={(e) => setName(e.target.value)}
++                    onChange={(e) => { setName(e.target.value); }}
+@@ -146,1 +146,1 @@
+-                  onChange={(e) => setEmail(e.target.value)}
++                  onChange={(e) => { setEmail(e.target.value); }}
+@@ -168,1 +168,1 @@
+-                  onChange={(e) => setPassword(e.target.value)}
++                  onChange={(e) => { setPassword(e.target.value); }}
+@@ -197,1 +197,1 @@
+-                        onClick={() => setIsSignUp(false)}
++                        onClick={() => { setIsSignUp(false); }}
+@@ -209,1 +209,1 @@
+-                        onClick={() => setIsSignUp(true)}
++                        onClick={() => { setIsSignUp(true); }}
+diff --git a/app/api/clock/out/route.ts b/app/api/clock/out/route.ts
+--- a/app/api/clock/out/route.ts
++++ b/app/api/clock/out/route.ts
+@@ -114,1 +114,1 @@
+-      task_id: allocation.taskId || null,
++      task_id: allocation.taskId ?? null,
+@@ -120,1 +120,1 @@
+-      description: allocation.description || notes || null,
++      description: (allocation.description ?? notes) || null,
+@@ -147,1 +147,1 @@
+-        notes: notes || null,
++        notes: notes ?? null,
+@@ -172,1 +172,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/components/inline-form-builder.tsx b/components/inline-form-builder.tsx
+--- a/components/inline-form-builder.tsx
++++ b/components/inline-form-builder.tsx
+@@ -52,1 +52,1 @@
+-  defaultValue?: any;
++  defaultValue?: unknown;
+@@ -61,1 +61,1 @@
+-    equals: any;
++    equals: unknown;
+@@ -253,1 +253,1 @@
+-                  onClick={() => addField(fieldType.value)}
++                  onClick={() => { addField(fieldType.value); }}
+@@ -283,1 +283,1 @@
+-                    onClick={() => toggleExpanded(index)}
++                    onClick={() => { toggleExpanded(index); }}
+@@ -301,1 +301,1 @@
+-                      onClick={(e) => e.stopPropagation()}
++                      onClick={(e) => { e.stopPropagation(); }}
+@@ -306,1 +306,1 @@
+-                        onClick={() => moveFieldUp(index)}
++                        onClick={() => { moveFieldUp(index); }}
+@@ -315,1 +315,1 @@
+-                        onClick={() => moveFieldDown(index)}
++                        onClick={() => { moveFieldDown(index); }}
+@@ -324,1 +324,1 @@
+-                        onClick={() => removeField(index)}
++                        onClick={() => { removeField(index); }}
+@@ -346,1 +346,1 @@
+-                            updateField(index, { label: e.target.value })
++                            { updateField(index, { label: e.target.value }); }
+@@ -367,1 +367,1 @@
+-                              updates.options = field.options || [
++                              updates.options = field.options ?? [
+@@ -405,1 +405,1 @@
+-                            value={field.placeholder || ""}
++                            value={field.placeholder ?? ""}
+@@ -442,1 +442,1 @@
+-                                : (field.options || []).join(", ")
++                                : (field.options ?? []).join(", ")
+@@ -477,1 +477,1 @@
+-                            updateField(index, { required: checked })
++                            { updateField(index, { required: checked }); }
+@@ -528,1 +528,1 @@
+-                                    value={field.validation?.max || ""}
++                                    value={field.validation?.max ?? ""}
+@@ -645,1 +645,1 @@
+-                      placeholder={field.placeholder || "Enter text"}
++                      placeholder={field.placeholder ?? "Enter text"}
+@@ -663,1 +663,1 @@
+-                      placeholder={field.placeholder || "Enter email"}
++                      placeholder={field.placeholder ?? "Enter email"}
+@@ -672,1 +672,1 @@
+-                      placeholder={field.placeholder || "Enter number"}
++                      placeholder={field.placeholder ?? "Enter number"}
+@@ -685,1 +685,1 @@
+-                      placeholder={field.placeholder || "https://example.com"}
++                      placeholder={field.placeholder ?? "https://example.com"}
+@@ -695,1 +695,1 @@
+-                          placeholder={field.placeholder || "Select an option"}
++                          placeholder={field.placeholder ?? "Select an option"}
+@@ -699,1 +699,1 @@
+-                        {(field.options || []).map((option, idx) => (
++                        {(field.options ?? []).map((option, idx) => (
+@@ -723,1 +723,1 @@
+-                        {field.placeholder || "Check this box"}
++                        {field.placeholder ?? "Check this box"}
+diff --git a/components/role-guard.tsx b/components/role-guard.tsx
+--- a/components/role-guard.tsx
++++ b/components/role-guard.tsx
+@@ -112,1 +112,1 @@
+-    checkAccess();
++    void checkAccess();
+@@ -166,1 +166,1 @@
+-    check();
++    void check();
+diff --git a/components/department-overview.tsx b/components/department-overview.tsx
+--- a/components/department-overview.tsx
++++ b/components/department-overview.tsx
+@@ -86,1 +86,1 @@
+-        tasksData.forEach((task: any) => {
++        tasksData.forEach((task: unknown) => {
+@@ -100,1 +100,1 @@
+-    fetchTaskHours();
++    void fetchTaskHours();
+@@ -118,1 +118,1 @@
+-    loadActiveIssues();
++    void loadActiveIssues();
+@@ -147,1 +147,1 @@
+-        workflowData.forEach((instance: any) => {
++        workflowData.forEach((instance: unknown) => {
+@@ -156,1 +156,1 @@
+-    fetchWorkflowSteps();
++    void fetchWorkflowSteps();
+@@ -192,1 +192,1 @@
+-      workflow_step: workflowSteps[project.id] || null
++      workflow_step: workflowSteps[project.id] ?? null
+@@ -324,1 +324,1 @@
+-                      formatter={(value: any, name: any) => {
++                      formatter={(value: unknown, name: any) => {
+@@ -529,1 +529,1 @@
+-                <Select value={sortBy} onValueChange={(value: 'name' | 'priority' | 'deadline') => setSortBy(value)}>
++                <Select value={sortBy} onValueChange={(value: 'name' | 'priority' | 'deadline') => { setSortBy(value); }}>
+@@ -543,1 +543,1 @@
+-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
++                  onClick={() => { setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+diff --git a/components/user-inbox.tsx b/components/user-inbox.tsx
+--- a/components/user-inbox.tsx
++++ b/components/user-inbox.tsx
+@@ -52,1 +52,1 @@
+-    loadInboxData();
++    void loadInboxData();
+@@ -81,1 +81,1 @@
+-        workflowData.forEach((instance: any) => {
++        workflowData.forEach((instance: unknown) => {
+@@ -90,1 +90,1 @@
+-    fetchWorkflowSteps();
++    void fetchWorkflowSteps();
+@@ -185,1 +185,1 @@
+-                {myProjects.map((project: any) => (
++                {myProjects.map((project: unknown) => (
+@@ -256,1 +256,1 @@
+-                {pendingApprovals.map((approval: any) => (
++                {pendingApprovals.map((approval: unknown) => (
+diff --git a/app/api/admin/rbac-diagnostics/route.ts b/app/api/admin/rbac-diagnostics/route.ts
+--- a/app/api/admin/rbac-diagnostics/route.ts
++++ b/app/api/admin/rbac-diagnostics/route.ts
+@@ -95,1 +95,1 @@
+-      (roles || []).map(async (role: any) => {
++      (roles || []).map(async (role: unknown) => {
+@@ -116,1 +116,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/app/(main)/admin/client-portal/page.tsx b/app/(main)/admin/client-portal/page.tsx
+--- a/app/(main)/admin/client-portal/page.tsx
++++ b/app/(main)/admin/client-portal/page.tsx
+@@ -97,1 +97,1 @@
+-    loadAccounts();
++    void loadAccounts();
+@@ -104,1 +104,1 @@
+-        loadInvitations(selectedAccount.id);
++        void loadInvitations(selectedAccount.id);
+@@ -106,1 +106,1 @@
+-        loadFeedback(selectedAccount.id);
++        void loadFeedback(selectedAccount.id);
+@@ -204,1 +204,1 @@
+-    if (!inviteEmail || !inviteEmail.includes('@')) {
++    if (!inviteEmail?.includes('@')) {
+@@ -358,1 +358,1 @@
+-                    onClick={() => setSelectedAccount(account)}
++                    onClick={() => { setSelectedAccount(account); }}
+@@ -393,1 +393,1 @@
+-                  onClick={() => setInviteDialogOpen(true)}
++                  onClick={() => { setInviteDialogOpen(true); }}
+@@ -565,1 +565,1 @@
+-                                onClick={() => viewDetails(item)}
++                                onClick={() => { viewDetails(item); }}
+@@ -600,1 +600,1 @@
+-                onChange={(e) => setInviteEmail(e.target.value)}
++                onChange={(e) => { setInviteEmail(e.target.value); }}
+@@ -611,1 +611,1 @@
+-                onChange={(e) => setInviteExpiryDays(e.target.value)}
++                onChange={(e) => { setInviteExpiryDays(e.target.value); }}
+@@ -619,1 +619,1 @@
+-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)} disabled={sending}>
++            <Button variant="outline" onClick={() => { setInviteDialogOpen(false); }} disabled={sending}>
+diff --git a/app/api/workflows/my-projects/route.ts b/app/api/workflows/my-projects/route.ts
+--- a/app/api/workflows/my-projects/route.ts
++++ b/app/api/workflows/my-projects/route.ts
+@@ -32,1 +32,1 @@
+-    let projects: any[] = [];
++    let projects: unknown[] = [];
+@@ -60,1 +60,1 @@
+-        .filter((p: any) => p.projects && p.projects.status !== 'complete')
++        .filter((p: unknown) => p.projects && p.projects.status !== 'complete')
+@@ -61,1 +61,1 @@
+-        .map((p: any) => ({
++        .map((p: unknown) => ({
+diff --git a/app/departments/[departmentId]/admin/page.tsx b/app/departments/[departmentId]/admin/page.tsx
+--- a/app/departments/[departmentId]/admin/page.tsx
++++ b/app/departments/[departmentId]/admin/page.tsx
+@@ -58,1 +58,1 @@
+-  const hasAdminPrivileges = isAdminLevel(userProfile as any);
++  const hasAdminPrivileges = isAdminLevel(userProfile as unknown);
+diff --git a/scripts/get-workflow-schema.ts b/scripts/get-workflow-schema.ts
+--- a/scripts/get-workflow-schema.ts
++++ b/scripts/get-workflow-schema.ts
+@@ -66,1 +66,1 @@
+-      data.forEach((col: any) => {
++      data.forEach((col: unknown) => {
+diff --git a/components/org-chart/org-chart-node.tsx b/components/org-chart/org-chart-node.tsx
+--- a/components/org-chart/org-chart-node.tsx
++++ b/components/org-chart/org-chart-node.tsx
+@@ -114,1 +114,1 @@
+-                <AvatarImage src={user.image || undefined} />
++                <AvatarImage src={user.image ?? undefined} />
+@@ -225,1 +225,1 @@
+-            <h3 className="font-semibold text-sm">{name || 'Unknown'}</h3>
++            <h3 className="font-semibold text-sm">{name ?? 'Unknown'}</h3>
+diff --git a/components/account-list.tsx b/components/account-list.tsx
+--- a/components/account-list.tsx
++++ b/components/account-list.tsx
+@@ -73,1 +73,1 @@
+-    checkPermissionsAndFilter();
++    void checkPermissionsAndFilter();
+@@ -160,1 +160,1 @@
+-              onChange={(e) => setSearchTerm(e.target.value)}
++              onChange={(e) => { setSearchTerm(e.target.value); }}
+@@ -252,1 +252,1 @@
+-            <Button variant="outline" onClick={() => setSearchTerm('')}>
++            <Button variant="outline" onClick={() => { setSearchTerm(''); }}>
+diff --git a/scripts/verify-workflow-database.ts b/scripts/verify-workflow-database.ts
+--- a/scripts/verify-workflow-database.ts
++++ b/scripts/verify-workflow-database.ts
+@@ -106,1 +106,1 @@
+-    const grouped = (policies || []).reduce((acc: any, policy: any) => {
++    const grouped = (policies || []).reduce((acc: unknown, policy: any) => {
+@@ -117,1 +117,1 @@
+-      console.log(`  Policy Count: ${(tablePolicies as any[]).length}`);
++      console.log(`  Policy Count: ${(tablePolicies as unknown[]).length}`);
+@@ -119,1 +119,1 @@
+-      (tablePolicies as any[]).forEach((p: any) => {
++      (tablePolicies as unknown[]).forEach((p: any) => {
+@@ -190,1 +190,1 @@
+-        const projectName = (i.projects as any)?.name || 'Unknown';
++        const projectName = (i.projects as unknown)?.name || 'Unknown';
+@@ -333,1 +333,1 @@
+-    const orphanedInstances = instances.filter(i => !(i.projects as any)?.id);
++    const orphanedInstances = instances.filter(i => !(i.projects as unknown)?.id);
+@@ -350,1 +350,1 @@
+-    const orphanedNodes = nodes.filter(n => !(n.workflow_templates as any)?.id);
++    const orphanedNodes = nodes.filter(n => !(n.workflow_templates as unknown)?.id);
+@@ -368,1 +368,1 @@
+-    const orphanedHistory = history.filter(h => !(h.workflow_instances as any)?.id);
++    const orphanedHistory = history.filter(h => !(h.workflow_instances as unknown)?.id);
+@@ -393,1 +393,1 @@
+-      !(c.from_node as any)?.id || !(c.to_node as any)?.id
++      !(c.from_node as unknown)?.id || !(c.to_node as any)?.id
+@@ -407,1 +407,1 @@
+-    issues.forEach(issue => console.log(`  - ${issue}`));
++    issues.forEach(issue => { console.log(`  - ${issue}`); });
+diff --git a/next.config.ts b/next.config.ts
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -97,1 +97,1 @@
+-                  `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}`,
++                  `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}`,
+diff --git a/app/api/admin/time-entries/[id]/route.ts b/app/api/admin/time-entries/[id]/route.ts
+--- a/app/api/admin/time-entries/[id]/route.ts
++++ b/app/api/admin/time-entries/[id]/route.ts
+@@ -58,1 +58,1 @@
+-    const updateData: any = {};
++    const updateData: unknown = {};
+@@ -83,1 +83,1 @@
+-  } catch (error: any) {
++  } catch (error: unknown) {
+diff --git a/types/d3-org-chart.d.ts b/types/d3-org-chart.d.ts
+--- a/types/d3-org-chart.d.ts
++++ b/types/d3-org-chart.d.ts
+@@ -2,1 +2,1 @@
+-  export class OrgChart<T = any> {
++  export class OrgChart<T = unknown> {
+@@ -6,1 +6,1 @@
+-    nodeWidth(fn: (d?: any) => number): this;
++    nodeWidth(fn: (d?: unknown) => number): this;
+@@ -7,1 +7,1 @@
+-    nodeHeight(fn: (d?: any) => number): this;
++    nodeHeight(fn: (d?: unknown) => number): this;
+@@ -8,1 +8,1 @@
+-    childrenMargin(fn: (d?: any) => number): this;
++    childrenMargin(fn: (d?: unknown) => number): this;
+@@ -9,1 +9,1 @@
+-    compactMarginBetween(fn: (d?: any) => number): this;
++    compactMarginBetween(fn: (d?: unknown) => number): this;
+@@ -10,1 +10,1 @@
+-    compactMarginPair(fn: (d?: any) => number): this;
++    compactMarginPair(fn: (d?: unknown) => number): this;
+@@ -11,1 +11,1 @@
+-    neighbourMargin(fn: (d?: any) => number): this;
++    neighbourMargin(fn: (d?: unknown) => number): this;
+@@ -12,1 +12,1 @@
+-    siblingsMargin(fn: (d?: any) => number): this;
++    siblingsMargin(fn: (d?: unknown) => number): this;
+@@ -13,1 +13,1 @@
+-    nodeButtonX(fn: (d?: any) => number): this;
++    nodeButtonX(fn: (d?: unknown) => number): this;
+@@ -14,1 +14,1 @@
+-    nodeButtonY(fn: (d?: any) => number): this;
++    nodeButtonY(fn: (d?: unknown) => number): this;
+@@ -15,1 +15,1 @@
+-    nodeContent(fn: (d: any) => string): this;
++    nodeContent(fn: (d: unknown) => string): this;
+diff --git a/app/api/roles/route.ts b/app/api/roles/route.ts
+--- a/app/api/roles/route.ts
++++ b/app/api/roles/route.ts
+@@ -175,1 +175,1 @@
+-async function processRolesData(supabase: any, roles: any[]) {
++async function processRolesData(supabase: unknown, roles: any[]) {
+@@ -188,1 +188,1 @@
+-  const rolesMap = new Map(roles.map((r: any) => [r.id, r]));
++  const rolesMap = new Map(roles.map((r: unknown) => [r.id, r]));
+@@ -192,1 +192,1 @@
+-    roles.map(async (role: any) => {
++    roles.map(async (role: unknown) => {
+@@ -206,1 +206,1 @@
+-      const users = userError ? [] : userRoles?.map((ur: any) => ur.user_profiles).filter(Boolean) || [];
++      const users = userError ? [] : userRoles?.map((ur: unknown) => ur.user_profiles).filter(Boolean) || [];
+@@ -253,1 +253,1 @@
+-    levelGroups.get(level)!.push(role);
++    levelGroups.get(level)?.push(role);
+diff --git a/components/newsletter-edit-dialog.tsx b/components/newsletter-edit-dialog.tsx
+--- a/components/newsletter-edit-dialog.tsx
++++ b/components/newsletter-edit-dialog.tsx
+@@ -98,1 +98,1 @@
+-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
++            <Button type="button" variant="outline" onClick={() => { setOpen(false); }}>
+diff --git a/components/org-chart/department-view.tsx b/components/org-chart/department-view.tsx
+--- a/components/org-chart/department-view.tsx
++++ b/components/org-chart/department-view.tsx
+@@ -44,1 +44,1 @@
+-  onRoleSelect?: (role: any) => void;
++  onRoleSelect?: (role: unknown) => void;
+@@ -68,1 +68,1 @@
+-  const [roleUsers, setRoleUsers] = useState<Record<string, any[]>>({});
++  const [roleUsers, setRoleUsers] = useState<Record<string, unknown[]>>({});
+@@ -96,1 +96,1 @@
+-      const formattedUsers = users.map((user: any) => ({
++      const formattedUsers = users.map((user: unknown) => ({
+@@ -113,1 +113,1 @@
+-  const handleRoleClick = (role: any) => {
++  const handleRoleClick = (role: unknown) => {
+@@ -125,1 +125,1 @@
+-  const getRoleIcon = (role: any) => {
++  const getRoleIcon = (role: unknown) => {
+@@ -135,1 +135,1 @@
+-  const getRoleColor = (role: any) => {
++  const getRoleColor = (role: unknown) => {
+@@ -153,1 +153,1 @@
+-            {department.roles.reduce((sum, role) => sum + (role.user_count || 0), 0)} total users
++            {department.roles.reduce((sum, role) => sum + (role.user_count ?? 0), 0)} total users
+@@ -171,1 +171,1 @@
+-                  onClick={() => handleRoleClick(role)}
++                  onClick={() => { handleRoleClick(role); }}
+@@ -181,1 +181,1 @@
+-                        loadRoleUsers(role.id);
++                        void loadRoleUsers(role.id);
+@@ -248,1 +248,1 @@
+-                                  onClick={() => handleUserAssign(userRole.user_id, role.id)}
++                                  onClick={() => { handleUserAssign(userRole.user_id, role.id); }}
+@@ -286,1 +286,1 @@
+-    loadDepartments();
++    void loadDepartments();
+@@ -322,1 +322,1 @@
+-      const departmentsWithRoles = departments.map((dept: any) => ({
++      const departmentsWithRoles = departments.map((dept: unknown) => ({
+@@ -324,1 +324,1 @@
+-        roles: roles.filter((role: any) => role.department_id === dept.id),
++        roles: roles.filter((role: unknown) => role.department_id === dept.id),
+@@ -326,1 +326,1 @@
+-          .filter((role: any) => role.department_id === dept.id)
++          .filter((role: unknown) => role.department_id === dept.id)
+@@ -327,1 +327,1 @@
+-          .reduce((sum: number, role: any) => sum + (role.user_count || 0), 0)
++          .reduce((sum: number, role: unknown) => sum + (role.user_count || 0), 0)
+@@ -340,1 +340,1 @@
+-  const handleRoleSelect = (role: any) => {
++  const handleRoleSelect = (role: unknown) => {
+diff --git a/components/workflow-editor/edge-config-dialog.tsx b/components/workflow-editor/edge-config-dialog.tsx
+--- a/components/workflow-editor/edge-config-dialog.tsx
++++ b/components/workflow-editor/edge-config-dialog.tsx
+@@ -46,1 +46,1 @@
+-      setLabel(initialData.label || '');
++      setLabel(initialData.label ?? '');
+@@ -47,1 +47,1 @@
+-      setConditionValue(initialData.conditionValue || '');
++      setConditionValue(initialData.conditionValue ?? '');
+@@ -126,1 +126,1 @@
+-                onChange={(e) => setConditionValue(e.target.value)}
++                onChange={(e) => { setConditionValue(e.target.value); }}
+@@ -153,1 +153,1 @@
+-              onChange={(e) => setLabel(e.target.value)}
++              onChange={(e) => { setLabel(e.target.value); }}
+diff --git a/components/org-chart/permission-editor.tsx b/components/org-chart/permission-editor.tsx
+--- a/components/org-chart/permission-editor.tsx
++++ b/components/org-chart/permission-editor.tsx
+@@ -196,1 +196,1 @@
+-                          handlePermissionChange(permission, checked as boolean)
++                          { handlePermissionChange(permission, checked as boolean); }
+diff --git a/app/profile/page.tsx b/app/profile/page.tsx
+--- a/app/profile/page.tsx
++++ b/app/profile/page.tsx
+@@ -73,1 +73,1 @@
+-    checkPermissions()
++    void checkPermissions()
+@@ -124,1 +124,1 @@
+-      setTimeout(() => setSaveSuccess(false), 3000)
++      setTimeout(() => { setSaveSuccess(false); }, 3000)
+@@ -181,1 +181,1 @@
+-      setTimeout(() => setPasswordSuccess(false), 3000)
++      setTimeout(() => { setPasswordSuccess(false); }, 3000)
+@@ -208,1 +208,1 @@
+-            onClick={() => setIsEditing(!isEditing)}
++            onClick={() => { setIsEditing(!isEditing); }}
+@@ -339,1 +339,1 @@
+-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
++                    onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); }}
+@@ -349,1 +349,1 @@
+-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
++                    onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); }}
+@@ -360,1 +360,1 @@
+-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
++                  onChange={(e) => { setFormData(prev => ({ ...prev, bio: e.target.value })); }}
+@@ -378,1 +378,1 @@
+-                          onClick={() => handleRemoveSkill(skill)}
++                          onClick={() => { handleRemoveSkill(skill); }}
+@@ -391,1 +391,1 @@
+-                      onChange={(e) => setNewSkill(e.target.value)}
++                      onChange={(e) => { setNewSkill(e.target.value); }}
+@@ -527,1 +527,1 @@
+-                onClick={() => setIsChangingPassword(!isChangingPassword)}
++                onClick={() => { setIsChangingPassword(!isChangingPassword); }}
+@@ -543,1 +543,1 @@
+-                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
++                      onChange={(e) => { setPasswordData(prev => ({ ...prev, newPassword: e.target.value })); }}
+@@ -553,1 +553,1 @@
+-                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
++                      onChange={(e) => { setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value })); }}

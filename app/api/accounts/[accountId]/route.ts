@@ -32,7 +32,7 @@ export async function PATCH(
     const body = await request.json();
 
     // Only allow updating specific fields
-    const allowedUpdates: any = {};
+    const allowedUpdates: Record<string, unknown> = {};
 
     if (body.name !== undefined) {
       allowedUpdates.name = body.name;

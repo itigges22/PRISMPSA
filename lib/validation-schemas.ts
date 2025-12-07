@@ -214,7 +214,7 @@ export const getCapacityQuerySchema = z.object({
  * Safely parse request body with Zod schema
  * Returns { success: true, data } or { success: false, error }
  */
-export function validateRequestBody<T>(schema: z.ZodSchema<T>, body: unknown) {
+export function validateRequestBody<T>(schema: z.ZodSchema<T>, body: any) {
   try {
     const data = schema.parse(body);
     return { success: true as const, data };

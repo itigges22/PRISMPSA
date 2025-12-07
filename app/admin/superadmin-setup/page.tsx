@@ -185,7 +185,7 @@ export default function SuperadminSetupPage() {
           <p className="text-gray-600 mt-2">Manage superadmin roles and permissions</p>
         </div>
         <div className="flex justify-end">
-          <Button onClick={() => router.back()}>
+          <Button onClick={() => { router.back(); }}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Admin
           </Button>
@@ -211,7 +211,7 @@ export default function SuperadminSetupPage() {
               type="email"
               placeholder="user@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); }}
               disabled={isLoading}
             />
           </div>

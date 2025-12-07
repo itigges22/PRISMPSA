@@ -303,7 +303,7 @@ export function Navigation() {
 
     // Ensure filterItems runs
     console.log('🚀 Starting navigation filterItems for user:', currentUserId);
-    filterItems().catch(err => {
+    filterItems().catch((err: any) => {
       // Only update state if this operation wasn't cancelled
       if (!filterOperationRef.current.cancelled && filterOperationRef.current.userId === currentUserId) {
         console.error('Error filtering navigation items:', err);
@@ -570,7 +570,7 @@ export function Navigation() {
             <button
               type="button"
               className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); }}
             >
               {isMobileMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -595,7 +595,7 @@ export function Navigation() {
                     key={item.name}
                     href={item.href}
                     className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-600"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => { setIsMobileMenuOpen(false); }}
                   >
                     <Icon className="w-5 h-5" />
                     <span>{item.name}</span>

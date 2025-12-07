@@ -76,22 +76,22 @@ const QuickActionsCard = memo(({
     <CardContent>
       <div className="space-y-2">
         {canViewAccounts && (
-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/accounts')}>
+          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/accounts'); }}>
             View My Accounts
           </Button>
         )}
         {canViewDepartments && (
-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/departments')}>
+          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/departments'); }}>
             View My Departments
           </Button>
         )}
         {canAccessAdmin && (
-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/admin')}>
+          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/admin'); }}>
             View Admin Page
           </Button>
         )}
         {canAccessAnalytics && (
-          <Button className="w-full" variant="outline" onClick={() => onNavigate('/analytics')}>
+          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/analytics'); }}>
             View Org Analytics
           </Button>
         )}
@@ -182,7 +182,7 @@ export default function DashboardPage() {
       }
     }
 
-    checkPermissions();
+    void checkPermissions();
   }, [userProfile, loading])
 
   return (
@@ -207,7 +207,7 @@ export default function DashboardPage() {
               <CapacityDashboard
                 key={capacityRefreshKey}
                 userProfile={userProfile}
-                onOpenAvailability={() => setShowAvailabilityDialog(true)}
+                onOpenAvailability={() => { setShowAvailabilityDialog(true); }}
               />
             </Suspense>
           </div>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
             canViewDepartments={canViewDepartments}
             canAccessAdmin={canAccessAdmin}
             canAccessAnalytics={canAccessAnalytics}
-            onNavigate={(path) => router.push(path)}
+            onNavigate={(path) => { router.push(path); }}
           />
         </div>
 

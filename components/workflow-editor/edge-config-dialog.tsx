@@ -43,8 +43,8 @@ export function EdgeConfigDialog({
 
   useEffect(() => {
     if (initialData) {
-      setLabel(initialData.label || '');
-      setConditionValue(initialData.conditionValue || '');
+      setLabel(initialData.label ?? '');
+      setConditionValue(initialData.conditionValue ?? '');
     } else {
       setLabel('');
       setConditionValue('');
@@ -123,7 +123,7 @@ export function EdgeConfigDialog({
               <Input
                 id="condition-value"
                 value={conditionValue}
-                onChange={(e) => setConditionValue(e.target.value)}
+                onChange={(e) => { setConditionValue(e.target.value); }}
                 placeholder="e.g., priority == 'High'"
               />
               <p className="text-xs text-gray-500">
@@ -150,7 +150,7 @@ export function EdgeConfigDialog({
             <Input
               id="label"
               value={label}
-              onChange={(e) => setLabel(e.target.value)}
+              onChange={(e) => { setLabel(e.target.value); }}
               placeholder={conditionValue || 'Enter label for connection'}
             />
             <p className="text-xs text-gray-500">

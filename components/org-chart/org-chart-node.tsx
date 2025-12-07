@@ -111,7 +111,7 @@ function OrgChartNodeComponent({ data }: NodeProps) {
           <CardContent className="p-3">
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.image || undefined} />
+                <AvatarImage src={user.image ?? undefined} />
                 <AvatarFallback>
                   {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </AvatarFallback>
@@ -222,7 +222,7 @@ function OrgChartNodeComponent({ data }: NodeProps) {
       <Card className="w-48 cursor-pointer">
         <CardContent className="p-4">
           <div className="text-center">
-            <h3 className="font-semibold text-sm">{name || 'Unknown'}</h3>
+            <h3 className="font-semibold text-sm">{name ?? 'Unknown'}</h3>
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
         </CardContent>

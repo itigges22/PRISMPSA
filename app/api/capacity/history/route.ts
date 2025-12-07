@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || userProfile.id;
-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
+    const userId = searchParams.get('userId') ?? userProfile.id;
+    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
 
     // Generate date ranges based on period
     const ranges = getDateRanges(period);
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     // Combine all tasks (directly assigned + from projects)
     const allTasks = [
       ...(tasksData.data || []),
-      ...(projectTasksData || [])
+      ...(projectTasksData ?? [])
     ];
 
     // Remove duplicates (task might be both directly assigned and in an assigned project)
@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
           if (!project || (project as any).status === 'complete') continue;
 
           // Check if this project has any tasks
-          const projectHasTasks = (projectTasksData || []).some((t: any) => t.project_id === (project as any).id);
+          const projectHasTasks = (projectTasksData ?? []).some((t: any) => t.project_id === (project as any).id);
 
           // If no tasks exist, use project-level estimated hours
           if (!projectHasTasks && (project as any).estimated_hours) {

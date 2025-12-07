@@ -32,7 +32,7 @@ export function ReportingRoleDialog({
         reportingRoleId: role.reporting_role_id,
         reportingRoleName: role.reporting_role?.name
       });
-      setSelectedReportingRoleId(role.reporting_role_id || 'none');
+      setSelectedReportingRoleId(role.reporting_role_id ?? 'none');
     }
   }, [role]);
 
@@ -42,7 +42,7 @@ export function ReportingRoleDialog({
     const reportingRoleId = selectedReportingRoleId === 'none' ? null : selectedReportingRoleId;
     
     try {
-      await onSave(role.id, reportingRoleId);
+       onSave(role.id, reportingRoleId);
       onOpenChange(false);
       toast.success(`Updated reporting relationship for ${role.name}`);
     } catch (error) {
@@ -86,7 +86,7 @@ export function ReportingRoleDialog({
               <SelectContent>
                 <SelectItem value="none">No reporting role (Top level)</SelectItem>
                 {availableRoles
-                  .filter((r) => r && r.id && r.id !== '')
+                  .filter((r) => r?.id && r.id !== '')
                   .map((r) => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.name} (Level {r.hierarchy_level})
@@ -99,7 +99,7 @@ export function ReportingRoleDialog({
           {selectedReportingRoleId && selectedReportingRoleId !== 'none' && (
             <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
               <strong>Result:</strong> {role?.name} will be at hierarchy level{' '}
-              {(allRoles.find(r => r.id === selectedReportingRoleId)?.hierarchy_level || 0) - 1}
+              {(allRoles.find(r => r.id === selectedReportingRoleId)?.hierarchy_level ?? 0) - 1}
             </div>
           )}
           
@@ -111,7 +111,7 @@ export function ReportingRoleDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => { onOpenChange(false); }}>
             Cancel
           </Button>
           <Button onClick={handleSave}>

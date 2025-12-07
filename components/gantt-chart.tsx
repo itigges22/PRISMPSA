@@ -58,14 +58,14 @@ const TaskDetailExpansion = ({ task, isExpanded, onEdit, onRemove }: { task: Tas
           <span className="font-medium text-xs">{task.name}</span>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => onEdit(task)}
+              onClick={() => { onEdit(task); }}
               className="flex items-center gap-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
             >
               <Edit className="w-2.5 h-2.5" />
               Edit
             </button>
             <button
-              onClick={() => onRemove(task.id)}
+              onClick={() => { onRemove(task.id); }}
               className="flex items-center gap-1 px-1.5 py-0.5 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
             >
               <TrashIcon className="w-2.5 h-2.5" />
@@ -213,7 +213,7 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
 
@@ -228,14 +228,14 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
 
 
   // Group features by lane (which corresponds to group name from tasks)
-  const groupedFeatures = features.reduce((acc, feature) => {
+  const groupedFeatures = features.reduce((acc: Record<string, typeof features>, feature) => {
     const groupName = feature.lane || 'General';
     if (!acc[groupName]) {
       acc[groupName] = [];
     }
     acc[groupName].push(feature);
     return acc;
-  }, {} as Record<string, GanttFeature[]>);
+  }, {});
 
   // Sort groups alphabetically
   const sortedGroupedFeatures = Object.fromEntries(
@@ -266,7 +266,7 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
 
   const handleCopyLink = (id: string) => {
     console.log(`Copy link: ${id}`);
-    navigator.clipboard.writeText(`${window.location.origin}/gantt#${id}`);
+    void navigator.clipboard.writeText(`${window.location.origin}/gantt#${id}`);
   };
 
 
@@ -350,7 +350,7 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
         console.error('Error reloading tasks after creation:', error);
       }
     };
-    loadTasks();
+    void loadTasks();
   };
 
   // Function to scroll to today's date using the same mechanism as task clicking
@@ -394,7 +394,7 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
         scrollToToday();
       }, 100);
       
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); };
     }
   }, [loading, scrollToToday]);
 
@@ -435,8 +435,8 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
                 return (
                   <div 
                     key={feature.id}
-                    onMouseEnter={() => handleTaskHover(feature.id)}
-                    onMouseLeave={() => handleTaskHover(null)}
+                    onMouseEnter={() => { handleTaskHover(feature.id); }}
+                    onMouseLeave={() => { handleTaskHover(null); }}
                     className="transition-all duration-200 ease-in-out"
                   >
                     <GanttSidebarItem
@@ -479,7 +479,7 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
                       <ContextMenu>
                         <ContextMenuTrigger asChild>
                           <button
-                            onClick={() => handleViewFeature(feature.id)}
+                            onClick={() => { handleViewFeature(feature.id); }}
                             type="button"
                             className="w-full"
                           >
@@ -516,7 +516,7 @@ export default function GanttChart({ range = 'monthly', zoom = 100 }: GanttChart
                           </ContextMenuItem>
                           <ContextMenuItem
                             className="flex items-center gap-2"
-                            onClick={() => handleCopyLink(feature.id)}
+                            onClick={() => { handleCopyLink(feature.id); }}
                           >
                             <LinkIcon className="text-muted-foreground" size={16} />
                             Copy link

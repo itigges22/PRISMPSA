@@ -52,11 +52,11 @@ export default function NewsletterCard({ className, canCreate = false }: Newslet
       
       // Only load newsletters if user can view them
       if (view) {
-    loadNewsletters()
+    void loadNewsletters()
       }
     }
     
-    checkPermissions()
+    void checkPermissions()
   }, [userProfile])
 
   const loadNewsletters = async () => {
@@ -79,7 +79,7 @@ export default function NewsletterCard({ className, canCreate = false }: Newslet
   }
 
   const handleNewsletterDeleted = () => {
-    loadNewsletters() // Refresh the list
+    void loadNewsletters() // Refresh the list
   }
 
   const handleEdit = (newsletter: Newsletter) => {
@@ -107,7 +107,7 @@ export default function NewsletterCard({ className, canCreate = false }: Newslet
 
   if (loading) {
     return (
-      <Card className={`w-full ${className || ''}`}>
+      <Card className={`w-full ${className ?? ''}`}>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Mail className="w-5 h-5 text-purple-600" />
@@ -208,7 +208,7 @@ export default function NewsletterCard({ className, canCreate = false }: Newslet
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleEdit(newsletter)}
+                              onClick={() => { handleEdit(newsletter); }}
                               className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
                             >
                               <Edit className="h-3 w-3" />
@@ -218,7 +218,7 @@ export default function NewsletterCard({ className, canCreate = false }: Newslet
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleDelete(newsletter)}
+                              onClick={() => { handleDelete(newsletter); }}
                               className="h-6 w-6 p-0 text-gray-500 hover:text-red-600"
                             >
                               <Trash2 className="h-3 w-3" />

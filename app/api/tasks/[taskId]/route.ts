@@ -203,7 +203,7 @@ export async function PATCH(
     const body = await request.json()
 
     // Build update object with only provided fields
-    const updateFields: Record<string, any> = {}
+    const updateFields: Record<string, unknown> = {}
     if (body.status !== undefined) updateFields.status = body.status
     if (body.name !== undefined) updateFields.name = body.name
     if (body.description !== undefined) updateFields.description = body.description

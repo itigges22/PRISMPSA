@@ -54,7 +54,7 @@ export async function PUT(
     const body = await request.json();
     const { content } = body;
 
-    if (!content || !content.trim()) {
+    if (!content?.trim()) {
       return NextResponse.json({ error: 'Update content cannot be empty' }, { status: 400 });
     }
 

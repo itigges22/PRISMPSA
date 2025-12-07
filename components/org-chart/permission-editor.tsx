@@ -193,7 +193,7 @@ export function PermissionEditor({
                         id={permission}
                         checked={permissions[permission] || false}
                         onCheckedChange={(checked) => 
-                          handlePermissionChange(permission, checked as boolean)
+                          { handlePermissionChange(permission, checked as boolean); }
                         }
                         disabled={disabled}
                         className="mt-1"

@@ -117,7 +117,7 @@ export function ClientNavigation() {
 
       userProfile.user_roles.forEach(ur => {
         const dept = ur.roles?.departments;
-        if (dept && dept.id && !deptMap.has(dept.id)) {
+        if (dept?.id && !deptMap.has(dept.id)) {
           deptMap.set(dept.id, {
             id: dept.id,
             name: dept.name
@@ -224,7 +224,7 @@ export function ClientNavigation() {
       setPermissionsChecked(true)
     }
 
-    filterItems().catch(err => {
+    filterItems().catch((err: any) => {
       console.error('Error filtering ClientNavigation items:', err)
       setVisibleItems(navigationItems.filter(item => item.allowUnassigned === true))
       setPermissionsChecked(true)
@@ -539,7 +539,7 @@ export function ClientNavigation() {
               variant="ghost"
               size="sm"
               className="md:hidden"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); }}
             >
               {isMobileMenuOpen ? (
                 <X className="h-5 w-5" />
@@ -564,7 +564,7 @@ export function ClientNavigation() {
                             key={item.name}
                             href={item.href}
                             className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600"
-                            onClick={() => setIsMobileMenuOpen(false)}
+                            onClick={() => { setIsMobileMenuOpen(false); }}
                           >
                             <Icon className="w-4 h-4" />
                             <span>{item.name}</span>

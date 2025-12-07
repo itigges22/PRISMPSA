@@ -250,7 +250,7 @@ async function processRolesData(supabase: any, roles: any[]) {
     if (!levelGroups.has(level)) {
       levelGroups.set(level, []);
     }
-    levelGroups.get(level)!.push(role);
+    levelGroups.get(level)?.push(role);
   });
 
   // Create container metadata for each hierarchy level

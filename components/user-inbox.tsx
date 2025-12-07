@@ -49,7 +49,7 @@ export function UserInbox() {
   const [workflowSteps, setWorkflowSteps] = useState<{ [key: string]: string | null }>({});
 
   useEffect(() => {
-    loadInboxData();
+    void loadInboxData();
   }, []);
 
   // Fetch workflow steps when myProjects changes
@@ -87,7 +87,7 @@ export function UserInbox() {
       }
     }
 
-    fetchWorkflowSteps();
+    void fetchWorkflowSteps();
   }, [myProjects]);
 
   const loadInboxData = async () => {

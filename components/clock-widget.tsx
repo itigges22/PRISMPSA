@@ -63,7 +63,7 @@ export function ClockWidget() {
       setElapsedTime(prev => prev + 1)
     }, 1000)
 
-    return () => clearInterval(interval)
+    return () => { clearInterval(interval); }
   }, [clockedIn, showClockOutDialog])
 
   // Handle clock in
@@ -115,7 +115,7 @@ export function ClockWidget() {
           {isMinimized ? (
             // Minimized view - just an icon
             <button
-              onClick={() => setIsMinimized(false)}
+              onClick={() => { setIsMinimized(false); }}
               className="p-3 flex items-center gap-2"
             >
               <Clock className={`w-5 h-5 ${clockedIn ? 'text-green-600' : 'text-gray-600'}`} />
@@ -136,7 +136,7 @@ export function ClockWidget() {
                   </span>
                 </div>
                 <button
-                  onClick={() => setIsMinimized(true)}
+                  onClick={() => { setIsMinimized(true); }}
                   className="text-gray-400 hover:text-gray-600 text-xs"
                 >
                   minimize
@@ -155,7 +155,7 @@ export function ClockWidget() {
                     </div>
                   </div>
                   <Button
-                    onClick={() => setShowClockOutDialog(true)}
+                    onClick={() => { setShowClockOutDialog(true); }}
                     className="w-full bg-red-500 hover:bg-red-600"
                     size="sm"
                   >

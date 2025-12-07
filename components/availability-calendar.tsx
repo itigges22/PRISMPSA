@@ -33,7 +33,7 @@ interface AvailabilityCalendarProps {
 }
 
 export default function AvailabilityCalendar({ userProfile, userId }: AvailabilityCalendarProps) {
-  const targetUserId = userId || userProfile.id
+  const targetUserId = userId ?? userProfile.id
   const isOwnData = targetUserId === userProfile.id
 
   const [canEdit, setCanEdit] = useState(false)
@@ -101,7 +101,7 @@ export default function AvailabilityCalendar({ userProfile, userId }: Availabili
         setCanEdit(canEditAvailability)
       }
     }
-    checkPermissions()
+    void checkPermissions()
   }, [userProfile, isOwnData])
 
   // Initialize week
@@ -154,7 +154,7 @@ export default function AvailabilityCalendar({ userProfile, userId }: Availabili
       }
     }
 
-    loadAvailability()
+    void loadAvailability()
   }, [currentWeekStart, targetUserId])
 
   // Save availability
@@ -269,7 +269,7 @@ export default function AvailabilityCalendar({ userProfile, userId }: Availabili
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateWeek('prev')}
+            onClick={() => { navigateWeek('prev'); }}
             className="gap-1"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -286,7 +286,7 @@ export default function AvailabilityCalendar({ userProfile, userId }: Availabili
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateWeek('next')}
+            onClick={() => { navigateWeek('next'); }}
             className="gap-1"
           >
             Next
@@ -308,7 +308,7 @@ export default function AvailabilityCalendar({ userProfile, userId }: Availabili
                 max="24"
                 step="0.5"
                 value={schedule[key]}
-                onChange={(e) => handleDayChange(key, e.target.value)}
+                onChange={(e) => { handleDayChange(key, e.target.value); }}
                 disabled={!canEdit}
                 className="w-24"
               />
@@ -324,7 +324,7 @@ export default function AvailabilityCalendar({ userProfile, userId }: Availabili
             id="notes"
             placeholder="e.g., PTO on Friday, Half day on Wednesday..."
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => { setNotes(e.target.value); }}
             disabled={!canEdit}
             rows={3}
           />

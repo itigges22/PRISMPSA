@@ -382,6 +382,6 @@ export const UserValidationSchema = {
 };
 
 export const DepartmentValidationSchema = {
-  name: (value: unknown) => validateString(value, 'Department name', 100),
-  description: (value: unknown) => value ? validateString(value, 'Description', 500) : null,
+  name: (value: any) => validateString(value, 'Department name', 100),
+  description: (value: any) => value ? validateString(value, 'Description', 500) : null,
 };

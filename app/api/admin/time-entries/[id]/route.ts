@@ -55,7 +55,7 @@ export async function PATCH(
     }
 
     // Build update object
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (hours_logged !== undefined) updateData.hours_logged = parseFloat(hours_logged);
     if (project_id !== undefined) updateData.project_id = project_id || null;
     if (description !== undefined) updateData.description = description || null;

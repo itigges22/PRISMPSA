@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type') || 'user';
+    const type = searchParams.get('type') ?? 'user';
     const id = searchParams.get('id');
     
     // Get Monday of current week as default
@@ -46,13 +46,13 @@ export async function GET(request: NextRequest) {
       return monday.toISOString().split('T')[0];
     };
     
-    const weekStartDate = searchParams.get('weekStartDate') || getWeekStartDate();
+    const weekStartDate = searchParams.get('weekStartDate') ?? getWeekStartDate();
 
     let metrics = null;
 
     switch (type) {
       case 'user': {
-        const userId = id || userProfile.id;
+        const userId = id ?? userProfile.id;
         
         // Permission check
         const isOwnData = userId === userProfile.id;

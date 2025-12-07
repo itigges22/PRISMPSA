@@ -304,7 +304,7 @@ export async function GET(request: NextRequest) {
               userDepartments[ur.user_id] = []
             }
             const role = ur.roles
-            if (role && role.departments) {
+            if (role?.departments) {
               const dept = role.departments
               const exists = userDepartments[ur.user_id].some((d: any) => d.id === dept.id)
               if (!exists) {

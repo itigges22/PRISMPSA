@@ -114,9 +114,9 @@ async function checkRLSPolicies(): Promise<void> {
     for (const [tablename, tablePolicies] of Object.entries(grouped)) {
       console.log(`\n${tablename}:`);
       console.log(`  RLS Enabled: Yes`);
-      console.log(`  Policy Count: ${(tablePolicies as any[]).length}`);
+      console.log(`  Policy Count: ${(tablePolicies as unknown[]).length}`);
       console.log('  Policies:');
-      (tablePolicies as any[]).forEach((p: any) => {
+      (tablePolicies as unknown[]).forEach((p: any) => {
         console.log(`    - ${p.policyname} (${p.cmd})`);
       });
     }
@@ -404,7 +404,7 @@ async function checkDataIntegrity(): Promise<void> {
 
   if (issues.length > 0) {
     console.log('\n❌ Data Integrity Issues Found:');
-    issues.forEach(issue => console.log(`  - ${issue}`));
+    issues.forEach(issue => { console.log(`  - ${issue}`); });
   } else {
     console.log('\n✓ No data integrity issues detected');
   }

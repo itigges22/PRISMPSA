@@ -97,7 +97,7 @@ export function DepartmentOverview({
       }
     };
 
-    fetchTaskHours();
+    void fetchTaskHours();
   }, [projects]);
 
   // Load active issues for this department
@@ -115,7 +115,7 @@ export function DepartmentOverview({
       }
     };
 
-    loadActiveIssues();
+    void loadActiveIssues();
   }, [department.id]);
 
   // Fetch workflow steps for projects
@@ -153,7 +153,7 @@ export function DepartmentOverview({
       }
     }
 
-    fetchWorkflowSteps();
+    void fetchWorkflowSteps();
   }, [projects]);
 
   // Split projects into active and finished
@@ -189,7 +189,7 @@ export function DepartmentOverview({
     })
     .map(project => ({
       ...project,
-      workflow_step: workflowSteps[project.id] || null
+      workflow_step: workflowSteps[project.id] ?? null
     }));
 
   // Chart data for workload distribution
@@ -526,7 +526,7 @@ export function DepartmentOverview({
                   </SelectContent>
                 </Select>
 
-                <Select value={sortBy} onValueChange={(value: 'name' | 'priority' | 'deadline') => setSortBy(value)}>
+                <Select value={sortBy} onValueChange={(value: 'name' | 'priority' | 'deadline') => { setSortBy(value); }}>
                   <SelectTrigger className="w-full min-w-0">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -540,7 +540,7 @@ export function DepartmentOverview({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  onClick={() => { setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
                   className="w-full sm:w-auto"
                 >
                   {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}

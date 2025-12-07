@@ -39,7 +39,7 @@ export function LoginForm({
   
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/'
+  const redirectTo = searchParams.get('redirectTo') ?? '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,7 +129,7 @@ export function LoginForm({
                     type="text"
                     placeholder="John Doe"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => { setName(e.target.value); }}
                     required
                     disabled={isLoading}
                   />
@@ -143,7 +143,7 @@ export function LoginForm({
                   type="email"
                   placeholder="m@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); }}
                   required
                   disabled={isLoading}
                 />
@@ -165,7 +165,7 @@ export function LoginForm({
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); }}
                   required
                   disabled={isLoading}
                 />
@@ -194,7 +194,7 @@ export function LoginForm({
                       Already have an account?{' '}
                       <button
                         type="button"
-                        onClick={() => setIsSignUp(false)}
+                        onClick={() => { setIsSignUp(false); }}
                         className="underline-offset-4 hover:underline"
                         disabled={isLoading}
                       >
@@ -206,7 +206,7 @@ export function LoginForm({
                       Don&apos;t have an account?{' '}
                       <button
                         type="button"
-                        onClick={() => setIsSignUp(true)}
+                        onClick={() => { setIsSignUp(true); }}
                         className="underline-offset-4 hover:underline"
                         disabled={isLoading}
                       >

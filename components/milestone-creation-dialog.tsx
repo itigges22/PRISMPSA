@@ -104,7 +104,7 @@ export default function MilestoneCreationDialog({
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => { handleInputChange('name', e.target.value); }}
                 placeholder="e.g., Project Launch"
                 required
               />
@@ -115,7 +115,7 @@ export default function MilestoneCreationDialog({
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) => { handleInputChange('description', e.target.value); }}
                 placeholder="Describe what this milestone represents..."
                 rows={3}
               />
@@ -134,7 +134,7 @@ export default function MilestoneCreationDialog({
                         : 'border-gray-200'
                     }`}
                     style={{ backgroundColor: color.value }}
-                    onClick={() => handleInputChange('color', color.value)}
+                    onClick={() => { handleInputChange('color', color.value); }}
                     title={color.name}
                   />
                 ))}
@@ -142,7 +142,7 @@ export default function MilestoneCreationDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => { onOpenChange(false); }}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>

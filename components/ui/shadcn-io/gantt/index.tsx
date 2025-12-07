@@ -697,8 +697,8 @@ export const GanttColumn: FC<GanttColumnProps> = ({
   const [hovering, setHovering] = useState(false);
   const [windowScroll] = useWindowScroll();
 
-  const handleMouseEnter = () => setHovering(true);
-  const handleMouseLeave = () => setHovering(false);
+  const handleMouseEnter = () => { setHovering(true); };
+  const handleMouseLeave = () => { setHovering(false); };
 
   const top = useThrottle(
     mousePosition.y -
@@ -780,7 +780,7 @@ export const GanttCreateMarkerTrigger: FC<GanttCreateMarkerTriggerProps> = ({
 
   const date = getDateByMousePosition(gantt, x);
 
-  const handleClick = () => onCreateMarker(date);
+  const handleClick = () => { onCreateMarker(date); };
 
   return (
     <div

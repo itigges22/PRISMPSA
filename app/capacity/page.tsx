@@ -38,7 +38,7 @@ export default function CapacityPage() {
     }
 
     if (!loading) {
-      checkAccess()
+      void checkAccess()
     }
   }, [userProfile, loading])
 

@@ -52,7 +52,7 @@ export default function NewsletterCreationDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {children || (
+        {children ?? (
           <Button className="inline-flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Create Newsletter</span>
@@ -76,7 +76,7 @@ export default function NewsletterCreationDialog({
             <Input
               id="title"
               value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
+              onChange={(e) => { handleInputChange('title', e.target.value); }}
               placeholder="Enter newsletter title..."
               required
             />
@@ -87,7 +87,7 @@ export default function NewsletterCreationDialog({
             <Textarea
               id="content"
               value={formData.content}
-              onChange={(e) => handleInputChange('content', e.target.value)}
+              onChange={(e) => { handleInputChange('content', e.target.value); }}
               placeholder="Enter newsletter content..."
               rows={8}
               required
@@ -98,7 +98,7 @@ export default function NewsletterCreationDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); }}
               disabled={loading}
             >
               Cancel

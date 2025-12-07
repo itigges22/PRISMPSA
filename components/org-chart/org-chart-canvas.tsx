@@ -103,13 +103,13 @@ export function OrgChartCanvas({
         }
 
         // Calculate position
-        const levelWidth = levelWidths.get(level) || 0;
-        const levelHeight = levelHeights.get(level) || 0;
+        const levelWidth = levelWidths.get(level) ?? 0;
+        const levelHeight = levelHeights.get(level) ?? 0;
         
         // Center children under their parent
-        let x = parentX || 0;
+        let x = parentX ?? 0;
         if (level > 0) {
-          x = parentX || 0;
+          x = parentX ?? 0;
         } else {
           x = levelWidth * 300; // Horizontal spacing between root nodes
         }
@@ -238,7 +238,7 @@ export function OrgChartCanvas({
           description: department.description,
           userCount: department.roles.reduce((sum, role) => sum + role.user_count, 0),
           isSelected: selectedNode?.id === deptNodeId,
-          onSelect: () => setSelectedNode(deptNode),
+          onSelect: () => { setSelectedNode(deptNode); },
         },
       };
       nodes.push(deptNode);
@@ -269,7 +269,7 @@ export function OrgChartCanvas({
               children: [],
             },
             isSelected: selectedNode?.id === roleNodeId,
-            onSelect: () => setSelectedNode(roleNode),
+            onSelect: () => { setSelectedNode(roleNode); },
             onUserAssign: onUserAssign,
             onRoleUpdate: onRoleUpdate,
             isReadOnly,
@@ -480,7 +480,7 @@ export function OrgChartCanvas({
       {selectedNode && (
         <RoleDetailPanel
           node={selectedNode}
-          onClose={() => setSelectedNode(null)}
+          onClose={() => { setSelectedNode(null); }}
           onUserAssign={onUserAssign}
           onRoleUpdate={onRoleUpdate}
           isReadOnly={isReadOnly}

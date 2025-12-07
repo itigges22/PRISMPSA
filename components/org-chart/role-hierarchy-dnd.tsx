@@ -182,9 +182,9 @@ function SortableRoleItem({
           <Badge 
             variant="outline" 
             className="text-xs"
-            title={`Reports to: ${role.reporting_role?.name || 'Unknown'}`}
+            title={`Reports to: ${role.reporting_role?.name ?? 'Unknown'}`}
           >
-            Reports to: {role.reporting_role?.name || 'Unknown'}
+            Reports to: {role.reporting_role?.name ?? 'Unknown'}
           </Badge>
         )}
         <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -201,7 +201,7 @@ function SortableRoleItem({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onAssignUser(role)}
+            onClick={() => { onAssignUser(role); }}
             className="h-7 w-7 p-0"
             title="Assign User"
           >
@@ -211,7 +211,7 @@ function SortableRoleItem({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onSetReportingRole(role)}
+            onClick={() => { onSetReportingRole(role); }}
             className="h-7 w-7 p-0"
             title="Set Reporting Role"
           >
@@ -222,7 +222,7 @@ function SortableRoleItem({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => onEdit(role)}
+              onClick={() => { onEdit(role); }}
               className="h-7 w-7 p-0"
               title="Edit Role"
             >
@@ -234,7 +234,7 @@ function SortableRoleItem({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => onDelete(role.id)}
+              onClick={() => { onDelete(role.id); }}
               className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
               title="Delete Role"
             >
@@ -273,7 +273,7 @@ interface RoleHierarchyDndProps {
   onSetReportingRole: (role: RoleWithUsers) => void;
   isReadOnly: boolean;
   onEditModeChange?: (isEditMode: boolean) => void; // Notify parent of edit mode changes
-  pendingRoleEdits?: Map<string, any>; // NEW: Role edits queued in parent
+  pendingRoleEdits?: Map<string, unknown>; // NEW: Role edits queued in parent
   pendingUserAssignments?: Array<{roleId: string, userId: string, userName: string}>; // NEW: User assignments queued in parent (from dialogs)
   onHasUnsavedChanges?: (hasChanges: boolean) => void; // NEW: Notify parent of unsaved changes
 }
@@ -415,7 +415,7 @@ export function RoleHierarchyDnd({
         });
         
         // Save the changes
-        saveDisplayOrderChanges(rolesToMove);
+        void saveDisplayOrderChanges(rolesToMove);
       } else {
         // Insert at the specified position
         const newItems = [
@@ -431,7 +431,7 @@ export function RoleHierarchyDnd({
         });
         
         // Save the changes
-        saveDisplayOrderChanges(newItems);
+        void saveDisplayOrderChanges(newItems);
       }
       
       toast.success(`Moved ${activeRole.name} and ${childrenToMove.size} child role(s)`);
@@ -453,7 +453,7 @@ export function RoleHierarchyDnd({
       });
       
       // Save the changes
-      saveDisplayOrderChanges(sameLevelRoles);
+      void saveDisplayOrderChanges(sameLevelRoles);
     }
   }
   
@@ -479,7 +479,7 @@ export function RoleHierarchyDnd({
       toast.success('Role order updated successfully');
       
       // Reload data to ensure consistency
-      await onRoleUpdate();
+       onRoleUpdate();
     } catch (error) {
       console.error('Error updating role order:', error);
       toast.error('Failed to update role order');
@@ -490,7 +490,7 @@ export function RoleHierarchyDnd({
 
   // Build hierarchy tree for rendering with proper parent-child nesting
   function buildHierarchyTree(roles: RoleWithUsers[]): RoleWithUsers[] {
-    console.log('🌳 Building hierarchy tree with roles:', roles.map(r => `${r.name} (Level ${r.hierarchy_level}, Reports to: ${r.reporting_role?.name || r.reporting_role_id || 'none'})`));
+    console.log('🌳 Building hierarchy tree with roles:', roles.map(r => `${r.name} (Level ${r.hierarchy_level}, Reports to: ${(r.reporting_role?.name ?? r.reporting_role_id) || 'none'})`));
     
     // Create a map for quick lookup
     const roleMap = new Map(roles.map(role => [role.id, role]));
@@ -554,7 +554,7 @@ export function RoleHierarchyDnd({
     // Add any orphaned roles (roles that weren't added due to missing parent)
     const orphanedRoles = roles.filter(role => !addedRoles.has(role.id));
     if (orphanedRoles.length > 0) {
-      console.log('🌳 Orphaned roles (missing parent):', orphanedRoles.map(r => `${r.name} (reports to: ${r.reporting_role?.name || r.reporting_role_id})`));
+      console.log('🌳 Orphaned roles (missing parent):', orphanedRoles.map(r => `${r.name} (reports to: ${r.reporting_role?.name ?? r.reporting_role_id})`));
       // Sort orphaned roles by hierarchy level (descending) then by display order
       const sortedOrphans = orphanedRoles.sort((a, b) => {
         if (a.hierarchy_level !== b.hierarchy_level) {
@@ -565,7 +565,7 @@ export function RoleHierarchyDnd({
       result.push(...sortedOrphans.map(role => ({ ...role, depth: 0 })));
     }
     
-    console.log('🌳 Final hierarchy tree:', result.map(r => `${'  '.repeat(r.depth || 0)}${r.name} (Level ${r.hierarchy_level})`));
+    console.log('🌳 Final hierarchy tree:', result.map(r => `${'  '.repeat(r.depth ?? 0)}${r.name} (Level ${r.hierarchy_level})`));
     return result;
   }
 
@@ -589,9 +589,9 @@ export function RoleHierarchyDnd({
               <SortableRoleItem
                 key={`${role.id}-${role.hierarchy_level}-${role.display_order}-${index}`}
                 role={role}
-                depth={role.depth || 0}
+                depth={role.depth ?? 0}
                 expanded={expandedIds.has(role.id)}
-                onToggle={() => toggleExpanded(role.id)}
+                onToggle={() => { toggleExpanded(role.id); }}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAssignUser={handleAssignUser}

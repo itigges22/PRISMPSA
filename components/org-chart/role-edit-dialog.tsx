@@ -49,7 +49,7 @@ export function RoleEditDialog({
   onLocalUpdate
 }: RoleEditDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>(externalDepartments || []);
+  const [departments, setDepartments] = useState<Department[]>(externalDepartments ?? []);
   const [formData, setFormData] = useState({
     name: role?.name || '',
     description: role?.description || '',
@@ -58,7 +58,7 @@ export function RoleEditDialog({
     const initialPermissions = {} as Record<Permission, boolean>;
     getAllPermissions().forEach(permission => {
       // Add null check for role.permissions
-      initialPermissions[permission] = (role?.permissions && role.permissions[permission]) || false;
+      initialPermissions[permission] = (role?.permissions?.[permission]) || false;
     });
     return initialPermissions;
   });
@@ -182,7 +182,7 @@ export function RoleEditDialog({
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => { handleInputChange('name', e.target.value); }}
                 placeholder="Enter role name"
                 required
                 disabled={isSystemRole}
@@ -213,7 +213,7 @@ export function RoleEditDialog({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={(e) => { handleInputChange('description', e.target.value); }}
               placeholder="Enter role description"
               rows={3}
             />
@@ -250,7 +250,7 @@ export function RoleEditDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { onOpenChange(false); }}
               disabled={loading}
             >
               Cancel

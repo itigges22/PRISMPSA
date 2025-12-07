@@ -340,7 +340,7 @@ export const KanbanProvider = <
     }
 
     const activeColumn = activeItem.column;
-    const overColumn = overItem?.column || columns.find((col) => col.id === over.id)?.id;
+    const overColumn = overItem?.column ?? columns.find((col) => col.id === over.id)?.id;
 
     console.log('[KANBAN] Column analysis:', {
       activeColumn,

@@ -60,7 +60,7 @@ export function LabeledEdge({
 
   // Cast data to our expected type
   const edgeData = data as LabeledEdgeData | undefined;
-  const decision = edgeData?.decision || edgeData?.conditionValue;
+  const decision = edgeData?.decision ?? edgeData?.conditionValue;
   const colors = getEdgeColors(decision);
 
   // Get all nodes to check for obstacles
@@ -141,7 +141,7 @@ export function LabeledEdge({
   const labelX = adjustedPath.labelX;
   const labelY = adjustedPath.labelY;
 
-  const label = edgeData?.label || edgeData?.conditionValue;
+  const label = edgeData?.label ?? edgeData?.conditionValue;
 
   // Dynamic stroke width based on hover/selected state
   const strokeWidth = isHovered || selected ? 3 : 2;
@@ -155,8 +155,8 @@ export function LabeledEdge({
         fill="none"
         strokeWidth={20}
         stroke="transparent"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => { setIsHovered(true); }}
+        onMouseLeave={() => { setIsHovered(false); }}
         style={{ cursor: 'pointer' }}
       />
 

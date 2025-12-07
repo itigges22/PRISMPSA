@@ -62,7 +62,7 @@ function TreeNode({
 
   useEffect(() => {
     if (showUsers && node.id) {
-      loadRoleUsers();
+      void loadRoleUsers();
     }
   }, [showUsers, node.id]);
 
@@ -249,7 +249,7 @@ function TreeNode({
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2 text-xs"
-                  onClick={() => handleUserAssign(user.id)}
+                  onClick={() => { handleUserAssign(user.id); }}
                 >
                   Reassign
                 </Button>
@@ -294,7 +294,7 @@ export function HierarchyView({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadHierarchy();
+    void loadHierarchy();
   }, []);
 
   const loadHierarchy = async () => {

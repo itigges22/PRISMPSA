@@ -1,17 +1,17 @@
 declare module 'd3-org-chart' {
-  export class OrgChart<T = any> {
+  export class OrgChart<T = unknown> {
     constructor();
     container(element: HTMLElement | null): this;
     data(data: T[]): this;
-    nodeWidth(fn: (d?: any) => number): this;
-    nodeHeight(fn: (d?: any) => number): this;
-    childrenMargin(fn: (d?: any) => number): this;
-    compactMarginBetween(fn: (d?: any) => number): this;
-    compactMarginPair(fn: (d?: any) => number): this;
-    neighbourMargin(fn: (d?: any) => number): this;
-    siblingsMargin(fn: (d?: any) => number): this;
-    nodeButtonX(fn: (d?: any) => number): this;
-    nodeButtonY(fn: (d?: any) => number): this;
+    nodeWidth(fn: (d?: unknown) => number): this;
+    nodeHeight(fn: (d?: unknown) => number): this;
+    childrenMargin(fn: (d?: unknown) => number): this;
+    compactMarginBetween(fn: (d?: unknown) => number): this;
+    compactMarginPair(fn: (d?: unknown) => number): this;
+    neighbourMargin(fn: (d?: unknown) => number): this;
+    siblingsMargin(fn: (d?: unknown) => number): this;
+    nodeButtonX(fn: (d?: unknown) => number): this;
+    nodeButtonY(fn: (d?: unknown) => number): this;
     nodeContent(fn: (d: any) => string): this;
     onNodeClick(fn: (nodeId: string) => void): this;
     render(): this;

@@ -46,7 +46,7 @@ export function DatabaseStatus() {
   }
 
   useEffect(() => {
-    checkDatabase()
+    void checkDatabase()
   }, [])
 
   return (

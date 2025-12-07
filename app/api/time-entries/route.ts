@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const taskId = searchParams.get('taskId');
     const projectId = searchParams.get('projectId');
-    const startDate = searchParams.get('startDate') || undefined;
-    const endDate = searchParams.get('endDate') || undefined;
+    const startDate = searchParams.get('startDate') ?? undefined;
+    const endDate = searchParams.get('endDate') ?? undefined;
 
     let timeEntries = [];
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       timeEntries = await timeEntryService.getProjectTimeEntries(projectId);
     } else {
       // Get time entries for a user (default to current user)
-      const targetUserId = userId || userProfile.id;
+      const targetUserId = userId ?? userProfile.id;
       
       // Permission check for viewing other users' time entries
       if (targetUserId !== userProfile.id) {

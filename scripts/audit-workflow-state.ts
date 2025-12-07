@@ -193,10 +193,10 @@ async function auditWorkflowState() {
   if (instancesError) {
     console.error('❌ Error fetching instances:', instancesError.message);
   } else {
-    console.log(`Total instances: ${enrichedInstances?.length || 0}\n`);
+    console.log(`Total instances: ${enrichedInstances.length || 0}\n`);
 
     // Group by status
-    const statusCounts = (enrichedInstances || []).reduce((acc: any, inst: any) => {
+    const statusCounts: Record<string, number> = (enrichedInstances || []).reduce((acc: any, inst: any) => {
       acc[inst.status] = (acc[inst.status] || 0) + 1;
       return acc;
     }, {});
@@ -241,7 +241,7 @@ async function auditWorkflowState() {
     .limit(20);
 
   // Enrich history with related data
-  let enrichedHistory: any[] = [];
+  let enrichedHistory: unknown[] = [];
   if (history && !historyError) {
     const instanceIds = [...new Set(history.map(h => h.workflow_instance_id))];
     const nodeIds = [...new Set([...history.map(h => h.from_node_id), ...history.map(h => h.to_node_id)].filter(Boolean))];
@@ -275,7 +275,7 @@ async function auditWorkflowState() {
   if (historyError) {
     console.error('❌ Error fetching history:', historyError.message);
   } else {
-    console.log(`Total history entries (last 20): ${enrichedHistory?.length || 0}\n`);
+    console.log(`Total history entries (last 20): ${enrichedHistory.length || 0}\n`);
 
     if (enrichedHistory && enrichedHistory.length > 0) {
       enrichedHistory.forEach((h: any) => {
@@ -315,7 +315,7 @@ async function auditWorkflowState() {
     .limit(20);
 
   // Enrich assignments with related data
-  let enrichedAssignments: any[] = [];
+  let enrichedAssignments: unknown[] = [];
   if (assignments && !assignmentsError) {
     const projectIds = [...new Set(assignments.map(a => a.project_id))];
     const userIds = [...new Set(assignments.map(a => a.user_id))];
@@ -343,7 +343,7 @@ async function auditWorkflowState() {
   if (assignmentsError) {
     console.error('❌ Error fetching assignments:', assignmentsError.message);
   } else {
-    console.log(`Active assignments (last 20): ${enrichedAssignments?.length || 0}\n`);
+    console.log(`Active assignments (last 20): ${enrichedAssignments.length || 0}\n`);
 
     if (enrichedAssignments && enrichedAssignments.length > 0) {
       enrichedAssignments.forEach((a: any) => {
@@ -421,7 +421,7 @@ async function auditWorkflowState() {
     console.log('✅ No data integrity issues detected!');
   } else {
     console.log('Issues found:');
-    issues.forEach(issue => console.log(`  ${issue}`));
+    issues.forEach(issue => { console.log(`  ${issue}`); });
   }
 
   // 7. Summary
@@ -433,8 +433,8 @@ async function auditWorkflowState() {
   console.log(`Workflow Templates:     ${templates?.length || 0} (${activeCount} active, ${inactiveCount} inactive)`);
   console.log(`Workflow Nodes:         ${nodes?.length || 0}`);
   console.log(`Workflow Instances:     ${instances?.length || 0}`);
-  console.log(`History Entries:        ${enrichedHistory?.length || 0} (showing last 20)`);
-  console.log(`Active Assignments:     ${enrichedAssignments?.length || 0} (showing last 20)`);
+  console.log(`History Entries:        ${enrichedHistory.length || 0} (showing last 20)`);
+  console.log(`Active Assignments:     ${enrichedAssignments.length || 0} (showing last 20)`);
   console.log(`Data Integrity Issues:  ${issues.length}`);
 
   console.log('\n✅ Audit complete!\n');

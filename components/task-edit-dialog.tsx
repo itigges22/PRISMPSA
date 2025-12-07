@@ -42,7 +42,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
   // Load data when dialog opens
   useEffect(() => {
     if (open) {
-      loadData();
+      void loadData();
     }
   }, [open]);
 
@@ -141,7 +141,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); }}
                 required
               />
             </div>
@@ -151,7 +151,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
               <Select
                 value={formData.priority}
                 onValueChange={(value: 'low' | 'medium' | 'high') => 
-                  setFormData(prev => ({ ...prev, priority: value }))
+                  { setFormData(prev => ({ ...prev, priority: value })); }
                 }
               >
                 <SelectTrigger>
@@ -171,7 +171,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => { setFormData(prev => ({ ...prev, description: e.target.value })); }}
               rows={3}
             />
           </div>
@@ -183,7 +183,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
                 id="startAt"
                 type="date"
                 value={formData.startAt}
-                onChange={(e) => setFormData(prev => ({ ...prev, startAt: e.target.value }))}
+                onChange={(e) => { setFormData(prev => ({ ...prev, startAt: e.target.value })); }}
                 required
               />
             </div>
@@ -194,7 +194,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
                 id="endAt"
                 type="date"
                 value={formData.endAt}
-                onChange={(e) => setFormData(prev => ({ ...prev, endAt: e.target.value }))}
+                onChange={(e) => { setFormData(prev => ({ ...prev, endAt: e.target.value })); }}
                 required
               />
             </div>
@@ -205,14 +205,14 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.statusId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, statusId: value }))}
+                onValueChange={(value) => { setFormData(prev => ({ ...prev, statusId: value })); }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   {statuses
-                    .filter(status => status && status.id && status.id !== '')
+                    .filter(status => status?.id && status.id !== '')
                     .map(status => (
                       <SelectItem key={status.id} value={status.id}>
                         {status.name}
@@ -226,14 +226,14 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
               <Label htmlFor="group">Group</Label>
               <Select
                 value={formData.groupId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, groupId: value }))}
+                onValueChange={(value) => { setFormData(prev => ({ ...prev, groupId: value })); }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select group" />
                 </SelectTrigger>
                 <SelectContent>
                   {groups
-                    .filter(group => group && group.id && group.id !== '')
+                    .filter(group => group?.id && group.id !== '')
                     .map(group => (
                       <SelectItem key={group.id} value={group.id}>
                         {group.name}
@@ -247,14 +247,14 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
               <Label htmlFor="owner">Owner</Label>
               <Select
                 value={formData.ownerId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, ownerId: value }))}
+                onValueChange={(value) => { setFormData(prev => ({ ...prev, ownerId: value })); }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select owner" />
                 </SelectTrigger>
                 <SelectContent>
                   {users
-                    .filter(user => user && user.id && user.id !== '')
+                    .filter(user => user?.id && user.id !== '')
                     .map(user => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.name}
@@ -270,7 +270,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
             <div className="flex gap-2">
               <Input
                 value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
+                onChange={(e) => { setTagInput(e.target.value); }}
                 placeholder="Add a tag"
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               />
@@ -288,7 +288,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
                     {tag}
                     <button
                       type="button"
-                      onClick={() => removeTag(tag)}
+                      onClick={() => { removeTag(tag); }}
                       className="ml-1 hover:text-destructive"
                     >
                       ×
@@ -300,7 +300,7 @@ export default function TaskEditDialog({ open, onOpenChange, task, onTaskUpdated
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => { onOpenChange(false); }}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>

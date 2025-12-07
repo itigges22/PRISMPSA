@@ -109,7 +109,7 @@ export function RoleGuard({
       setPermissionCheck(true);
     }
 
-    checkAccess();
+    void checkAccess();
   }, [user, userProfile, loading, router, fallbackPath, requirePermission, requireAnyPermission, allowUnassigned]);
 
   // Show loading state
@@ -163,7 +163,7 @@ export function usePermissionCheck(permission?: Permission) {
       setHasAccess(access);
     }
 
-    check();
+    void check();
   }, [userProfile, loading, permission]);
   
   return {

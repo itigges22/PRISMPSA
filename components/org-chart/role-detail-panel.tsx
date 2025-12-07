@@ -67,7 +67,7 @@ export function RoleDetailPanel({
 
   useEffect(() => {
     if (role?.id) {
-      loadRoleDetails();
+      void loadRoleDetails();
     } else {
       // Reset state when no role
       setRoleDetails(null);
@@ -198,7 +198,7 @@ export function RoleDetailPanel({
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={nodeData.user?.image || undefined} />
+                    <AvatarImage src={nodeData.user?.image ?? undefined} />
                     <AvatarFallback>
                       {nodeData.user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                     </AvatarFallback>

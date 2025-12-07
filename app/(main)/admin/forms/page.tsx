@@ -49,7 +49,7 @@ interface FormField {
   required: boolean;
   placeholder?: string;
   options?: string[];
-  defaultValue?: any;
+  defaultValue?: unknown;
   validation?: {
     min?: number;
     max?: number;
@@ -58,7 +58,7 @@ interface FormField {
   };
   conditional?: {
     show_if: string;
-    equals: any;
+    equals: unknown;
   };
 }
 
@@ -134,7 +134,7 @@ export default function FormsPage() {
   const openEditFormEditor = (template: FormTemplate) => {
     setEditingTemplate(template);
     setFormName(template.name);
-    setFormDescription(template.description || '');
+    setFormDescription(template.description ?? '');
     setFields(template.fields);
     setSelectedFieldIndex(null);
     setEditorOpen(true);
@@ -365,7 +365,7 @@ export default function FormsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openEditFormEditor(template)}
+                      onClick={() => { openEditFormEditor(template); }}
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
@@ -373,7 +373,7 @@ export default function FormsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => confirmDeleteTemplate(template)}
+                      onClick={() => { confirmDeleteTemplate(template); }}
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />
                     </Button>
@@ -408,7 +408,7 @@ export default function FormsPage() {
                     <Input
                       id="formName"
                       value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
+                      onChange={(e) => { setFormName(e.target.value); }}
                       placeholder="e.g., Client Onboarding Form"
                     />
                   </div>
@@ -417,7 +417,7 @@ export default function FormsPage() {
                     <Textarea
                       id="formDescription"
                       value={formDescription}
-                      onChange={(e) => setFormDescription(e.target.value)}
+                      onChange={(e) => { setFormDescription(e.target.value); }}
                       placeholder="Brief description of this form"
                       rows={2}
                     />
@@ -433,7 +433,7 @@ export default function FormsPage() {
                         key={fieldType.value}
                         variant="outline"
                         size="sm"
-                        onClick={() => addField(fieldType.value)}
+                        onClick={() => { addField(fieldType.value); }}
                         className="justify-start"
                       >
                         <span className="mr-2">{fieldType.icon}</span>
@@ -462,7 +462,7 @@ export default function FormsPage() {
                               ? 'bg-blue-50 border-blue-300'
                               : 'hover:bg-gray-50'
                           }`}
-                          onClick={() => setSelectedFieldIndex(index)}
+                          onClick={() => { setSelectedFieldIndex(index); }}
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -534,7 +534,7 @@ export default function FormsPage() {
                           <Input
                             value={selectedField.label}
                             onChange={(e) =>
-                              updateField(selectedFieldIndex!, { label: e.target.value })
+                              { updateField(selectedFieldIndex!, { label: e.target.value }); }
                             }
                           />
                         </div>
@@ -542,9 +542,9 @@ export default function FormsPage() {
                         <div>
                           <Label>Placeholder</Label>
                           <Input
-                            value={selectedField.placeholder || ''}
+                            value={selectedField.placeholder ?? ''}
                             onChange={(e) =>
-                              updateField(selectedFieldIndex!, { placeholder: e.target.value })
+                              { updateField(selectedFieldIndex!, { placeholder: e.target.value }); }
                             }
                             placeholder="Hint text for user"
                           />
@@ -565,7 +565,7 @@ export default function FormsPage() {
                           <div>
                             <Label>Options (one per line)</Label>
                             <Textarea
-                              value={(selectedField.options || []).join('\n')}
+                              value={(selectedField.options ?? []).join('\n')}
                               onChange={(e) =>
                                 updateField(selectedFieldIndex!, {
                                   options: e.target.value.split('\n').filter(o => o.trim()),

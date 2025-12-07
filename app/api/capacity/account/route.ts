@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const accountId = searchParams.get('accountId');
-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
+    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
 
     if (!accountId) {
       return NextResponse.json(
@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
         if (!availabilityMap.has(a.user_id)) {
           availabilityMap.set(a.user_id, new Map());
         }
-        availabilityMap.get(a.user_id)!.set(a.week_start_date, a.available_hours);
+        availabilityMap.get(a.user_id)?.set(a.week_start_date, a.available_hours);
       });
     }
 
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
         if (!userAccountsMap.has(assignment.user_id)) {
           userAccountsMap.set(assignment.user_id, new Set());
         }
-        userAccountsMap.get(assignment.user_id)!.add(assignment.projects.account_id);
+        userAccountsMap.get(assignment.user_id)?.add(assignment.projects.account_id);
       });
     }
 
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
       // Proportionally allocate user capacity based on number of accounts they work on
       let totalAvailable = 0;
       userIds.forEach(userId => {
-        const userAvailability = availabilityMap.get(userId) || new Map();
+        const userAvailability = availabilityMap.get(userId) ?? new Map();
         const userAccounts = userAccountsMap.get(userId);
         const accountCount = userAccounts ? userAccounts.size : 1;
         const allocationFactor = 1 / accountCount; // Split capacity evenly across accounts

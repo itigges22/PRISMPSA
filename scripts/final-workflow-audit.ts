@@ -22,7 +22,7 @@ async function testInsertAndRollback(tableName: string) {
 
   try {
     // Try to insert a minimal record to see what columns are required/expected
-    const testData: any = {
+    const testData: unknown = {
       id: '00000000-0000-0000-0000-000000000000' // Will fail on FK constraints, but shows columns
     };
 
@@ -301,7 +301,7 @@ async function finalAudit() {
     console.log('\n✅ No data integrity issues detected!');
   } else {
     console.log('\n⚠️  Issues found:');
-    issues.forEach(issue => console.log(`  ${issue}`));
+    issues.forEach(issue => { console.log(`  ${issue}`); });
   }
 
   // Final Summary

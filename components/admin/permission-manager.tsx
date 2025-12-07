@@ -189,7 +189,7 @@ export function PermissionManager({
             <Card key={category}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1 cursor-pointer" onClick={() => toggleCategory(category)}>
+                  <div className="flex-1 cursor-pointer" onClick={() => { toggleCategory(category); }}>
                     <CardTitle className="text-base flex items-center gap-2">
                       {category}
                       <Badge variant={checkedCount > 0 ? "default" : "secondary"}>
@@ -206,7 +206,7 @@ export function PermissionManager({
                       id={`category-${category}`}
                       checked={allChecked}
                       className={cn(someChecked && "data-[state=checked]:bg-orange-500")}
-                      onCheckedChange={(checked) => toggleAllInCategory(category, checked as boolean)}
+                      onCheckedChange={(checked) => { toggleAllInCategory(category, checked as boolean); }}
                       disabled={readOnly}
                     />
                     <Label htmlFor={`category-${category}`} className="text-sm font-normal cursor-pointer">
@@ -235,7 +235,7 @@ export function PermissionManager({
                           <Checkbox
                             id={permission}
                             checked={permissions[permission] || false}
-                            onCheckedChange={(checked) => handlePermissionChange(permission, checked as boolean)}
+                            onCheckedChange={(checked) => { handlePermissionChange(permission, checked as boolean); }}
                             disabled={readOnly}
                             className="mt-1"
                           />

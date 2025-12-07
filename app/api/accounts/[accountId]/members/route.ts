@@ -133,7 +133,7 @@ export async function GET(
     }
 
     // Get user profiles for these members
-    const userIds = (accountMembers || []).map((m: any) => m.user_id);
+    const userIds = (accountMembers || []).map((m: { user_id: string }) => m.user_id);
     let members: any[] = [];
 
     if (userIds.length > 0) {
@@ -177,12 +177,12 @@ export async function GET(
         if (!rolesMap.has(ur.user_id)) {
           rolesMap.set(ur.user_id, []);
         }
-        rolesMap.get(ur.user_id)!.push(ur);
+        rolesMap.get(ur.user_id)?.push(ur);
       });
 
       members = (accountMembers || []).map((member: any) => {
         const profile = profilesMap.get(member.user_id);
-        const userRoles = rolesMap.get(member.user_id) || [];
+        const userRoles = rolesMap.get(member.user_id) ?? [];
 
         return {
           ...member,

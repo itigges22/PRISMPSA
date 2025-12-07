@@ -65,7 +65,7 @@ export function DepartmentList({
       setVisibleDepartments(filtered);
     }
 
-    filterDepartments();
+    void filterDepartments();
   }, [departments, userProfile]);
 
   // Note: Capacity and project metrics are now provided by server-side rendering

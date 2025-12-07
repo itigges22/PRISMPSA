@@ -110,7 +110,7 @@ export default function CapacityTrendChart({
           {(['daily', 'weekly', 'monthly', 'quarterly'] as TimePeriod[]).map((period) => (
             <button
               key={period}
-              onClick={() => onPeriodChange(period)}
+              onClick={() => { onPeriodChange(period); }}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                 timePeriod === period
                   ? 'bg-primary text-primary-foreground'

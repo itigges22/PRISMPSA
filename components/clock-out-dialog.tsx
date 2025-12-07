@@ -73,7 +73,7 @@ export function ClockOutDialog({
   // Load projects when dialog opens
   useEffect(() => {
     if (open) {
-      loadProjects()
+      void loadProjects()
       // Initialize with one empty allocation
       if (allocations.length === 0) {
         setAllocations([{
@@ -347,7 +347,7 @@ export function ClockOutDialog({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeAllocation(allocation.id)}
+                  onClick={() => { removeAllocation(allocation.id); }}
                   className="text-red-500 hover:text-red-600"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -360,7 +360,7 @@ export function ClockOutDialog({
                   <Label className="text-xs">Project *</Label>
                   <Select
                     value={allocation.projectId}
-                    onValueChange={(value) => updateAllocation(allocation.id, 'projectId', value)}
+                    onValueChange={(value) => { updateAllocation(allocation.id, 'projectId', value); }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select project" />
@@ -380,7 +380,7 @@ export function ClockOutDialog({
                   <Label className="text-xs">Task (Optional)</Label>
                   <Select
                     value={allocation.taskId}
-                    onValueChange={(value) => updateAllocation(allocation.id, 'taskId', value)}
+                    onValueChange={(value) => { updateAllocation(allocation.id, 'taskId', value); }}
                     disabled={!allocation.projectId || allocation.projectId === 'other'}
                   >
                     <SelectTrigger>
@@ -407,7 +407,7 @@ export function ClockOutDialog({
                     step="0.25"
                     min="0"
                     value={allocation.hours || ''}
-                    onChange={(e) => updateAllocation(allocation.id, 'hours', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => { updateAllocation(allocation.id, 'hours', parseFloat(e.target.value) || 0); }}
                     placeholder="0.00"
                   />
                 </div>
@@ -419,7 +419,7 @@ export function ClockOutDialog({
                   </Label>
                   <Input
                     value={allocation.description}
-                    onChange={(e) => updateAllocation(allocation.id, 'description', e.target.value)}
+                    onChange={(e) => { updateAllocation(allocation.id, 'description', e.target.value); }}
                     placeholder="What did you work on?"
                   />
                 </div>
@@ -443,7 +443,7 @@ export function ClockOutDialog({
             <Label className="text-xs">General Notes (Optional)</Label>
             <Textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => { setNotes(e.target.value); }}
               placeholder="Any additional notes about this work session..."
               rows={2}
             />
@@ -467,7 +467,7 @@ export function ClockOutDialog({
 
         <DialogFooter className="flex justify-between">
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => { onOpenChange(false); }}>
               Cancel
             </Button>
             <Button

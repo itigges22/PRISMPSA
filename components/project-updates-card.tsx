@@ -36,7 +36,7 @@ export default function ProjectUpdatesCard({ className }: ProjectUpdatesCardProp
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadUpdates()
+    void loadUpdates()
   }, [])
 
   const loadUpdates = async () => {
@@ -141,7 +141,7 @@ export default function ProjectUpdatesCard({ className }: ProjectUpdatesCardProp
   }
 
   return (
-    <Card className={`w-full ${className || ''}`}>
+    <Card className={`w-full ${className ?? ''}`}>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Activity className="w-5 h-5 text-blue-600" />

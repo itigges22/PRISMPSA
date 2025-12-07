@@ -27,7 +27,7 @@ interface DragAvailabilityCalendarProps {
 }
 
 export default function DragAvailabilityCalendar({ userProfile, userId, onSave }: DragAvailabilityCalendarProps) {
-  const targetUserId = userId || userProfile.id
+  const targetUserId = userId ?? userProfile.id
   const isOwnData = targetUserId === userProfile.id
 
   const [canEdit, setCanEdit] = useState(false)
@@ -227,7 +227,7 @@ export default function DragAvailabilityCalendar({ userProfile, userId, onSave }
         setCanEdit(canEditAvailability)
       }
     }
-    checkPermissions()
+    void checkPermissions()
   }, [userProfile, isOwnData])
 
   // Initialize week
@@ -247,7 +247,7 @@ export default function DragAvailabilityCalendar({ userProfile, userId, onSave }
         )
         const data = await response.json()
 
-        if (data.success && data.availability && data.availability.schedule_data) {
+        if (data.success && data.availability?.schedule_data) {
           const scheduleData = data.availability.schedule_data
 
           // Check if we have the new format with unavailableBlocks
@@ -303,7 +303,7 @@ export default function DragAvailabilityCalendar({ userProfile, userId, onSave }
       }
     }
 
-    loadAvailability()
+    void loadAvailability()
   }, [currentWeekStart, targetUserId])
 
   // Save availability
@@ -385,7 +385,7 @@ export default function DragAvailabilityCalendar({ userProfile, userId, onSave }
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateWeek('prev')}
+            onClick={() => { navigateWeek('prev'); }}
             className="gap-1"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -402,7 +402,7 @@ export default function DragAvailabilityCalendar({ userProfile, userId, onSave }
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateWeek('next')}
+            onClick={() => { navigateWeek('next'); }}
             className="gap-1"
           >
             Next
@@ -458,8 +458,8 @@ export default function DragAvailabilityCalendar({ userProfile, userId, onSave }
                         ${isInDragSelection ? 'bg-blue-200' : ''}
                         ${!canEdit ? 'cursor-not-allowed opacity-60' : ''}
                       `}
-                      onMouseDown={() => handleMouseDown(day, hour)}
-                      onMouseMove={() => handleMouseMove(day, hour)}
+                      onMouseDown={() => { handleMouseDown(day, hour); }}
+                      onMouseMove={() => { handleMouseMove(day, hour); }}
                       onMouseUp={handleMouseUp}
                     />
                   )

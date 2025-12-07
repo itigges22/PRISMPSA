@@ -116,8 +116,8 @@ export function Tooltip({
         updatePosition();
       });
       
-      const handleScroll = () => updatePosition();
-      const handleResize = () => updatePosition();
+      const handleScroll = () => { updatePosition(); };
+      const handleResize = () => { updatePosition(); };
       
       window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('resize', handleResize);

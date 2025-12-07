@@ -38,10 +38,13 @@ interface DepartmentWithRoles {
   user_count: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RoleCallback = (role: any) => void;
+
 interface DepartmentViewProps {
   searchQuery?: string;
   selectedDepartment?: string;
-  onRoleSelect?: (role: any) => void;
+  onRoleSelect?: RoleCallback;
   onUserAssign?: (userId: string, roleId: string) => void;
   onRoleUpdate?: (roleId: string) => void;
   isReadOnly?: boolean;
@@ -50,7 +53,7 @@ interface DepartmentViewProps {
 interface DepartmentCardProps {
   department: DepartmentWithRoles;
   searchQuery?: string;
-  onRoleSelect?: (role: any) => void;
+  onRoleSelect?: RoleCallback;
   onUserAssign?: (userId: string, roleId: string) => void;
   onRoleUpdate?: (roleId: string) => void;
   isReadOnly?: boolean;
@@ -150,7 +153,7 @@ function DepartmentCard({
         <div className="flex items-center gap-2">
           <Badge variant="outline">
             <Users className="h-3 w-3 mr-1" />
-            {department.roles.reduce((sum, role) => sum + (role.user_count || 0), 0)} total users
+            {department.roles.reduce((sum, role) => sum + (role.user_count ?? 0), 0)} total users
           </Badge>
           <Badge variant="outline">
             {department.roles.length} roles
@@ -168,7 +171,7 @@ function DepartmentCard({
               <div key={role.id} className="space-y-2">
                 <div
                   className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${getRoleColor(role)}`}
-                  onClick={() => handleRoleClick(role)}
+                  onClick={() => { handleRoleClick(role); }}
                 >
                   <Button
                     variant="ghost"
@@ -178,7 +181,7 @@ function DepartmentCard({
                       e.stopPropagation();
                       handleRoleToggle(role.id);
                       if (!expandedRoles.has(role.id)) {
-                        loadRoleUsers(role.id);
+                        void loadRoleUsers(role.id);
                       }
                     }}
                   >
@@ -245,7 +248,7 @@ function DepartmentCard({
                                   variant="ghost"
                                   size="sm"
                                   className="h-6 px-2 text-xs"
-                                  onClick={() => handleUserAssign(userRole.user_id, role.id)}
+                                  onClick={() => { handleUserAssign(userRole.user_id, role.id); }}
                                 >
                                   <UserPlus className="h-3 w-3 mr-1" />
                                   Reassign
@@ -283,7 +286,7 @@ export function DepartmentView({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDepartments();
+    void loadDepartments();
   }, []);
 
   const loadDepartments = async () => {

@@ -82,7 +82,7 @@ function ResetPasswordForm() {
                     type="password"
                     placeholder="Enter new password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); }}
                     required
                     disabled={isLoading}
                     minLength={6}
@@ -96,7 +96,7 @@ function ResetPasswordForm() {
                     type="password"
                     placeholder="Confirm new password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => { setConfirmPassword(e.target.value); }}
                     required
                     disabled={isLoading}
                     minLength={6}

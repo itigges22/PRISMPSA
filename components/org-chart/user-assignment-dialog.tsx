@@ -43,8 +43,8 @@ export function UserAssignmentDialog({
 
   useEffect(() => {
     if (open && role) {
-      loadUsers();
-      loadAssignedUsers();
+      void loadUsers();
+      void loadAssignedUsers();
     } else {
       setSearchQuery('');
       setUsers([]);
@@ -185,7 +185,7 @@ export function UserAssignmentDialog({
             <Input
               placeholder="Search users..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); }}
               className="pl-9"
             />
           </div>
@@ -296,7 +296,7 @@ export function UserAssignmentDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => { onOpenChange(false); }}>
             Close
           </Button>
         </DialogFooter>

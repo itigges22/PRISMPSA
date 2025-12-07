@@ -360,7 +360,7 @@ export async function requireOwnershipOrPermission(
  * @param error - The error thrown
  * @returns NextResponse with appropriate status code and message
  */
-export function handleGuardError(error: unknown): NextResponse {
+export function handleGuardError(error: any): NextResponse {
   if (error instanceof AuthenticationError) {
     return NextResponse.json(
       { error: error.message, code: 'UNAUTHENTICATED' },

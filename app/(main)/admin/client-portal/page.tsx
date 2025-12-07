@@ -94,16 +94,16 @@ export default function ClientPortalPage() {
 
   // Load accounts
   useEffect(() => {
-    loadAccounts();
+    void loadAccounts();
   }, []);
 
   // Load data when account or tab changes
   useEffect(() => {
     if (selectedAccount) {
       if (activeTab === 'invitations') {
-        loadInvitations(selectedAccount.id);
+        void loadInvitations(selectedAccount.id);
       } else if (activeTab === 'feedback') {
-        loadFeedback(selectedAccount.id);
+        void loadFeedback(selectedAccount.id);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,7 +201,7 @@ export default function ClientPortalPage() {
       return;
     }
 
-    if (!inviteEmail || !inviteEmail.includes('@')) {
+    if (!inviteEmail?.includes('@')) {
       toast.error('Please enter a valid email address');
       return;
     }
@@ -355,7 +355,7 @@ export default function ClientPortalPage() {
                 {accounts.map((account) => (
                   <button
                     key={account.id}
-                    onClick={() => setSelectedAccount(account)}
+                    onClick={() => { setSelectedAccount(account); }}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       selectedAccount?.id === account.id
                         ? 'bg-blue-100 text-blue-900 font-medium'
@@ -390,7 +390,7 @@ export default function ClientPortalPage() {
               </div>
               {activeTab === 'invitations' && (
                 <Button
-                  onClick={() => setInviteDialogOpen(true)}
+                  onClick={() => { setInviteDialogOpen(true); }}
                   disabled={!selectedAccount}
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
@@ -562,7 +562,7 @@ export default function ClientPortalPage() {
                             </TableCell>
                             <TableCell>
                               <button
-                                onClick={() => viewDetails(item)}
+                                onClick={() => { viewDetails(item); }}
                                 className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                               >
                                 View Details
@@ -597,7 +597,7 @@ export default function ClientPortalPage() {
                 type="email"
                 placeholder="client@example.com"
                 value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                onChange={(e) => { setInviteEmail(e.target.value); }}
               />
             </div>
             <div className="space-y-2">
@@ -608,7 +608,7 @@ export default function ClientPortalPage() {
                 min="1"
                 max="365"
                 value={inviteExpiryDays}
-                onChange={(e) => setInviteExpiryDays(e.target.value)}
+                onChange={(e) => { setInviteExpiryDays(e.target.value); }}
               />
               <p className="text-xs text-muted-foreground">
                 The invitation link will expire after this many days (1-365)
@@ -616,7 +616,7 @@ export default function ClientPortalPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)} disabled={sending}>
+            <Button variant="outline" onClick={() => { setInviteDialogOpen(false); }} disabled={sending}>
               Cancel
             </Button>
             <Button onClick={handleSendInvitation} disabled={sending}>

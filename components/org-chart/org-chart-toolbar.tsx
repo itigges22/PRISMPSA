@@ -78,7 +78,7 @@ export function OrgChartToolbar({
 
   // Load departments when component mounts
   useEffect(() => {
-    loadDepartments();
+    void loadDepartments();
   }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +130,7 @@ export function OrgChartToolbar({
               <Button
                 variant={viewType === 'hierarchy' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => handleViewTypeChange('hierarchy')}
+                onClick={() => { handleViewTypeChange('hierarchy'); }}
                 className="flex items-center gap-2"
               >
                 <Grid3X3 className="h-4 w-4" />
@@ -139,7 +139,7 @@ export function OrgChartToolbar({
               <Button
                 variant={viewType === 'department' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => handleViewTypeChange('department')}
+                onClick={() => { handleViewTypeChange('department'); }}
                 className="flex items-center gap-2"
               >
                 <Building2 className="h-4 w-4" />
@@ -153,7 +153,7 @@ export function OrgChartToolbar({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={() => { setShowFilters(!showFilters); }}
               className="flex items-center gap-2"
             >
               <Filter className="h-4 w-4" />
@@ -207,7 +207,7 @@ export function OrgChartToolbar({
               <div className="space-y-2">
                 <Label htmlFor="department-filter">Department</Label>
                 <Select
-                  value={selectedDepartment || 'all'}
+                  value={selectedDepartment ?? 'all'}
                   onValueChange={handleDepartmentChange}
                 >
                   <SelectTrigger>
@@ -216,7 +216,7 @@ export function OrgChartToolbar({
                   <SelectContent>
                     <SelectItem value="all">All departments</SelectItem>
                     {departments
-                      .filter((dept) => dept && dept.id && dept.id !== '')
+                      .filter((dept) => dept?.id && dept.id !== '')
                       .map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}

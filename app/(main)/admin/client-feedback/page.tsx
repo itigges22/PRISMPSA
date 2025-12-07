@@ -63,13 +63,13 @@ export default function ClientFeedbackPage() {
 
   // Load accounts
   useEffect(() => {
-    loadAccounts();
+    void loadAccounts();
   }, []);
 
   // Load feedback when account is selected
   useEffect(() => {
     if (selectedAccount) {
-      loadFeedback(selectedAccount.id);
+      void loadFeedback(selectedAccount.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAccount]);
@@ -226,7 +226,7 @@ export default function ClientFeedbackPage() {
                 {accounts.map((account) => (
                   <button
                     key={account.id}
-                    onClick={() => setSelectedAccount(account)}
+                    onClick={() => { setSelectedAccount(account); }}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       selectedAccount?.id === account.id
                         ? 'bg-blue-100 text-blue-900 font-medium'
@@ -339,7 +339,7 @@ export default function ClientFeedbackPage() {
                         </TableCell>
                         <TableCell>
                           <button
-                            onClick={() => viewDetails(item)}
+                            onClick={() => { viewDetails(item); }}
                             className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                           >
                             View Details

@@ -49,7 +49,7 @@ export interface FormField {
   required: boolean;
   placeholder?: string;
   options?: string[];
-  defaultValue?: any;
+  defaultValue?: unknown;
   validation?: {
     min?: number;
     max?: number;
@@ -58,7 +58,7 @@ export interface FormField {
   };
   conditional?: {
     show_if: string;
-    equals: any;
+    equals: unknown;
   };
 }
 
@@ -250,7 +250,7 @@ export function InlineFormBuilder({
                   key={fieldType.value}
                   variant="outline"
                   size="sm"
-                  onClick={() => addField(fieldType.value)}
+                  onClick={() => { addField(fieldType.value); }}
                   className="justify-start text-xs h-8"
                 >
                   <span className="mr-1">{fieldType.icon}</span>
@@ -280,7 +280,7 @@ export function InlineFormBuilder({
                 <Card key={field.id} className="overflow-hidden">
                   <div
                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
-                    onClick={() => toggleExpanded(index)}
+                    onClick={() => { toggleExpanded(index); }}
                   >
                     <div className="flex items-center gap-2 flex-1">
                       {isExpanded ? (
@@ -298,12 +298,12 @@ export function InlineFormBuilder({
                     </div>
                     <div
                       className="flex items-center gap-1"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); }}
                     >
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => moveFieldUp(index)}
+                        onClick={() => { moveFieldUp(index); }}
                         disabled={index === 0}
                         className="h-7 w-7 p-0"
                       >
@@ -312,7 +312,7 @@ export function InlineFormBuilder({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => moveFieldDown(index)}
+                        onClick={() => { moveFieldDown(index); }}
                         disabled={index === fields.length - 1}
                         className="h-7 w-7 p-0"
                       >
@@ -321,7 +321,7 @@ export function InlineFormBuilder({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeField(index)}
+                        onClick={() => { removeField(index); }}
                         className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -343,7 +343,7 @@ export function InlineFormBuilder({
                           id={`field-${index}-label`}
                           value={field.label}
                           onChange={(e) =>
-                            updateField(index, { label: e.target.value })
+                            { updateField(index, { label: e.target.value }); }
                           }
                           placeholder="Enter field label"
                           className="h-8 text-sm"
@@ -364,7 +364,7 @@ export function InlineFormBuilder({
                               newType === "dropdown" ||
                               newType === "multiselect"
                             ) {
-                              updates.options = field.options || [
+                              updates.options = field.options ?? [
                                 "Option 1",
                                 "Option 2",
                               ];
@@ -402,7 +402,7 @@ export function InlineFormBuilder({
                           </Label>
                           <Input
                             id={`field-${index}-placeholder`}
-                            value={field.placeholder || ""}
+                            value={field.placeholder ?? ""}
                             onChange={(e) =>
                               updateField(index, {
                                 placeholder: e.target.value,
@@ -439,7 +439,7 @@ export function InlineFormBuilder({
                             value={
                               optionsText[index] !== undefined
                                 ? optionsText[index]
-                                : (field.options || []).join(", ")
+                                : (field.options ?? []).join(", ")
                             }
                             onChange={(e) =>
                               setOptionsText({
@@ -474,7 +474,7 @@ export function InlineFormBuilder({
                           id={`field-${index}-required`}
                           checked={field.required}
                           onCheckedChange={(checked) =>
-                            updateField(index, { required: checked })
+                            { updateField(index, { required: checked }); }
                           }
                         />
                       </div>
@@ -525,7 +525,7 @@ export function InlineFormBuilder({
                                   <Input
                                     id={`field-${index}-max`}
                                     type="number"
-                                    value={field.validation?.max || ""}
+                                    value={field.validation?.max ?? ""}
                                     onChange={(e) =>
                                       updateField(index, {
                                         validation: {
@@ -642,7 +642,7 @@ export function InlineFormBuilder({
 
                   {field.type === "text" && (
                     <Input
-                      placeholder={field.placeholder || "Enter text"}
+                      placeholder={field.placeholder ?? "Enter text"}
                       disabled
                       className="bg-gray-50"
                     />
@@ -660,7 +660,7 @@ export function InlineFormBuilder({
                   {field.type === "email" && (
                     <Input
                       type="email"
-                      placeholder={field.placeholder || "Enter email"}
+                      placeholder={field.placeholder ?? "Enter email"}
                       disabled
                       className="bg-gray-50"
                     />
@@ -669,7 +669,7 @@ export function InlineFormBuilder({
                   {field.type === "number" && (
                     <Input
                       type="number"
-                      placeholder={field.placeholder || "Enter number"}
+                      placeholder={field.placeholder ?? "Enter number"}
                       disabled
                       className="bg-gray-50"
                     />
@@ -682,7 +682,7 @@ export function InlineFormBuilder({
                   {field.type === "url" && (
                     <Input
                       type="url"
-                      placeholder={field.placeholder || "https://example.com"}
+                      placeholder={field.placeholder ?? "https://example.com"}
                       disabled
                       className="bg-gray-50"
                     />
@@ -692,11 +692,11 @@ export function InlineFormBuilder({
                     <Select disabled>
                       <SelectTrigger className="bg-gray-50">
                         <SelectValue
-                          placeholder={field.placeholder || "Select an option"}
+                          placeholder={field.placeholder ?? "Select an option"}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {(field.options || []).map((option, idx) => (
+                        {(field.options ?? []).map((option, idx) => (
                           <SelectItem key={idx} value={option}>
                             {option}
                           </SelectItem>
@@ -720,7 +720,7 @@ export function InlineFormBuilder({
                     <div className="flex items-center space-x-2">
                       <input type="checkbox" disabled className="rounded" />
                       <span className="text-sm text-muted-foreground">
-                        {field.placeholder || "Check this box"}
+                        {field.placeholder ?? "Check this box"}
                       </span>
                     </div>
                   )}

@@ -70,7 +70,7 @@ export default function ProfilePage() {
       }
     }
 
-    checkPermissions()
+    void checkPermissions()
   }, [userProfile, loading, router])
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function ProfilePage() {
       setIsEditing(false)
       
       // Clear success message after 3 seconds
-      setTimeout(() => setSaveSuccess(false), 3000)
+      setTimeout(() => { setSaveSuccess(false); }, 3000)
       
     } catch (error) {
       console.error('Error saving profile:', error)
@@ -178,7 +178,7 @@ export default function ProfilePage() {
       setIsChangingPassword(false)
       
       // Clear success message after 3 seconds
-      setTimeout(() => setPasswordSuccess(false), 3000)
+      setTimeout(() => { setPasswordSuccess(false); }, 3000)
       
     } catch (error) {
       console.error('Error changing password:', error)
@@ -205,7 +205,7 @@ export default function ProfilePage() {
         <p className="text-gray-600">Manage your account information and preferences</p>
         <div className="mt-4">
           <Button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => { setIsEditing(!isEditing); }}
             variant={isEditing ? "outline" : "default"}
             disabled={isSaving}
           >
@@ -336,7 +336,7 @@ export default function ProfilePage() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); }}
                     disabled={!isEditing}
                   />
                 </div>
@@ -346,7 +346,7 @@ export default function ProfilePage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); }}
                     disabled={!isEditing}
                   />
                 </div>
@@ -357,7 +357,7 @@ export default function ProfilePage() {
                 <Textarea
                   id="bio"
                   value={formData.bio}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  onChange={(e) => { setFormData(prev => ({ ...prev, bio: e.target.value })); }}
                   disabled={!isEditing}
                   placeholder="Tell us about yourself..."
                   rows={4}
@@ -375,7 +375,7 @@ export default function ProfilePage() {
                       {skill}
                       {isEditing && (
                         <button
-                          onClick={() => handleRemoveSkill(skill)}
+                          onClick={() => { handleRemoveSkill(skill); }}
                           className="ml-2 text-gray-500 hover:text-red-500"
                         >
                           ×
@@ -388,7 +388,7 @@ export default function ProfilePage() {
                   <div className="flex space-x-2">
                     <Input
                       value={newSkill}
-                      onChange={(e) => setNewSkill(e.target.value)}
+                      onChange={(e) => { setNewSkill(e.target.value); }}
                       placeholder="Add a skill..."
                       onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
                     />
@@ -524,7 +524,7 @@ export default function ProfilePage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => setIsChangingPassword(!isChangingPassword)}
+                onClick={() => { setIsChangingPassword(!isChangingPassword); }}
                 disabled={isSaving}
               >
                 {isChangingPassword ? 'Cancel' : 'Change Password'}
@@ -540,7 +540,7 @@ export default function ProfilePage() {
                       id="newPassword"
                       type="password"
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      onChange={(e) => { setPasswordData(prev => ({ ...prev, newPassword: e.target.value })); }}
                       placeholder="Enter new password"
                     />
                   </div>
@@ -550,7 +550,7 @@ export default function ProfilePage() {
                       id="confirmPassword"
                       type="password"
                       value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      onChange={(e) => { setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value })); }}
                       placeholder="Confirm new password"
                     />
                   </div>

@@ -94,7 +94,7 @@ const nextConfig: NextConfig = {
                   "style-src 'self' 'unsafe-inline'",
                   "img-src 'self' data: https: blob:",
                   "font-src 'self' data:",
-                  `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}`,
+                  `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}`,
                   "frame-src 'self'",
                   "object-src 'none'",
                   "base-uri 'self'",

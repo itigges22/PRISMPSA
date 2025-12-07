@@ -142,7 +142,7 @@ function AccountCard({
       }
     }
 
-    checkPermissions();
+    void checkPermissions();
   }, [userProfile]);
 
   // Filter account by search query
@@ -155,7 +155,7 @@ function AccountCard({
   const handleToggle = () => {
     setExpanded(!expanded);
     if (!expanded && allUsers.length === 0) {
-      loadAllUsers();
+      void loadAllUsers();
     }
   };
 
@@ -298,7 +298,7 @@ function AccountCard({
           <Briefcase className="h-5 w-5 text-blue-500" />
           {account.name}
         </CardTitle>
-        <CardDescription>{account.description || 'No description'}</CardDescription>
+        <CardDescription>{account.description ?? 'No description'}</CardDescription>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className={getStatusColor(account.status)}>
             {account.status}
@@ -319,7 +319,7 @@ function AccountCard({
                 <span className="text-sm font-medium">Account Manager</span>
               </div>
               <Select
-                value={account.account_manager_id || 'none'}
+                value={account.account_manager_id ?? 'none'}
                 onValueChange={handleUpdateAccountManager}
                 disabled={updatingManager || loadingUsers}
               >
@@ -329,7 +329,7 @@ function AccountCard({
                 <SelectContent>
                   <SelectItem value="none">No Account Manager</SelectItem>
                   {allUsers.map((user) => {
-                    const roles = user.user_roles?.map(ur => ur.roles?.name).filter(Boolean).join(', ') || 'No Role';
+                    const roles = user.user_roles?.map(ur => ur.roles?.name).filter(Boolean).join(', ') ?? 'No Role';
                     return (
                       <SelectItem key={user.id} value={user.id}>
                         {roles} - {user.name}
@@ -341,9 +341,9 @@ function AccountCard({
               {account.account_manager && (
                 <div className="flex items-center gap-2 mt-2 p-2 bg-muted/30 rounded">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={account.account_manager.image || undefined} />
+                    <AvatarImage src={account.account_manager.image ?? undefined} />
                     <AvatarFallback className="text-xs">
-                      {account.account_manager.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                      {account.account_manager.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
@@ -390,9 +390,9 @@ function AccountCard({
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarImage src={member.user?.image || undefined} />
+                          <AvatarImage src={member.user?.image ?? undefined} />
                           <AvatarFallback>
-                            {member.user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                            {member.user?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
@@ -458,9 +458,9 @@ function AccountCard({
                             >
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <Avatar className="h-6 w-6 shrink-0">
-                                  <AvatarImage src={user.image || undefined} />
+                                  <AvatarImage src={user.image ?? undefined} />
                                   <AvatarFallback className="text-xs">
-                                    {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                    {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
@@ -524,7 +524,7 @@ export function AccountView({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAccounts();
+    void loadAccounts();
   }, []);
 
   const loadAccounts = async () => {

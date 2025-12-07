@@ -70,7 +70,7 @@ export function AccountList({ accounts, userProfile, onAccountCreated }: Account
       setVisibleAccounts(filtered);
     }
     
-    checkPermissionsAndFilter();
+    void checkPermissionsAndFilter();
   }, [userProfile, accounts]);
 
   const filteredAccounts = visibleAccounts.filter(account =>
@@ -157,7 +157,7 @@ export function AccountList({ accounts, userProfile, onAccountCreated }: Account
               type="text"
               placeholder="Search accounts..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); }}
               className="w-full pl-10 pr-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
             />
             <Users className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -249,7 +249,7 @@ export function AccountList({ accounts, userProfile, onAccountCreated }: Account
             <p className="text-gray-600 mb-4">
               No accounts match your search for "{searchTerm}"
             </p>
-            <Button variant="outline" onClick={() => setSearchTerm('')}>
+            <Button variant="outline" onClick={() => { setSearchTerm(''); }}>
               Clear Search
             </Button>
           </CardContent>

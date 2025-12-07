@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
+    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
 
     const ranges = getDateRanges(period);
     const earliestDate = ranges[0].startDate;
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         if (!availabilityMap.has(a.user_id)) {
           availabilityMap.set(a.user_id, new Map());
         }
-        availabilityMap.get(a.user_id)!.set(a.week_start_date, a.available_hours);
+        availabilityMap.get(a.user_id)?.set(a.week_start_date, a.available_hours);
       });
     }
 
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       // Calculate total available hours across all users
       let totalAvailable = 0;
       userIds.forEach(userId => {
-        const userAvailability = availabilityMap.get(userId) || new Map();
+        const userAvailability = availabilityMap.get(userId) ?? new Map();
 
         if (period === 'daily') {
           const weekStart = getWeekStartDate(periodStart);
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
       // Calculate allocated hours from all tasks
       const allTasks = [
         ...(tasksData.data || []),
-        ...(projectTasksData || [])
+        ...(projectTasksData ?? [])
       ];
       const uniqueTasks = Array.from(new Map(allTasks.map(t => [t.id, t])).values());
 
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
           const project = Array.isArray(pa.projects) ? pa.projects[0] : pa.projects;
           if (!project || (project as any).status === 'complete') continue;
 
-          const projectHasTasks = (projectTasksData || []).some((t: any) => t.project_id === (project as any).id);
+          const projectHasTasks = (projectTasksData ?? []).some((t: any) => t.project_id === (project as any).id);
 
           if (!projectHasTasks && (project as any).estimated_hours) {
             const projectStart = (project as any).start_date ? new Date((project as any).start_date) : new Date();

@@ -54,7 +54,7 @@ async function checkTables(): Promise<void> {
 
   for (const table of tables) {
     const { error } = await supabase.from(table).select('id').limit(1);
-    const exists = !error || !error.message.includes('does not exist');
+    const exists = !error?.message.includes('does not exist');
     result.tables[table] = exists;
 
     console.log(`${table}: ${exists ? 'EXISTS ✓' : 'MISSING ✗'}`);

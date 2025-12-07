@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const departmentId = searchParams.get('departmentId');
-    const period = (searchParams.get('period') || 'weekly') as TimePeriod;
+    const period = (searchParams.get('period') ?? 'weekly') as TimePeriod;
 
     if (!departmentId) {
       return NextResponse.json(
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
 
       let totalAvailable = 0;
       userIds.forEach(userId => {
-        const userAvailability = availabilityMap.get(userId) || new Map();
+        const userAvailability = availabilityMap.get(userId) ?? new Map();
 
         if (period === 'daily') {
           const weekStart = getWeekStartDate(periodStart);
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
 
       const allTasks = [
         ...(tasksData.data || []),
-        ...(projectTasksData || [])
+        ...(projectTasksData ?? [])
       ];
       const uniqueTasks = Array.from(new Map(allTasks.map(t => [t.id, t])).values());
 

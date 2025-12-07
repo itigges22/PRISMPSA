@@ -111,13 +111,13 @@ export async function POST(request: NextRequest) {
 
     // Create time entries for each allocation
     const timeEntries = allocations.map(allocation => ({
-      task_id: allocation.taskId || null,
+      task_id: allocation.taskId ?? null,
       user_id: userProfile.id,
       project_id: allocation.projectId,
       hours_logged: Math.round(allocation.hours * 100) / 100, // Round to 2 decimals
       entry_date: entryDate,
       week_start_date: weekStartDate,
-      description: allocation.description || notes || null,
+      description: (allocation.description ?? notes) || null,
       clock_session_id: session.id,
       clock_in_time: session.clock_in_time,
       clock_out_time: clockOutTime.toISOString(),
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       .update({
         is_active: false,
         clock_out_time: clockOutTime.toISOString(),
-        notes: notes || null,
+        notes: notes ?? null,
         updated_at: clockOutTime.toISOString()
       })
       .eq('id', session.id);

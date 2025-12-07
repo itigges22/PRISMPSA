@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || userProfile.id;
-    const weekStartDate = searchParams.get('weekStartDate') || availabilityService.getWeekStartDate();
+    const userId = searchParams.get('userId') ?? userProfile.id;
+    const weekStartDate = searchParams.get('weekStartDate') ?? availabilityService.getWeekStartDate();
 
     // Permission check: can view own or has VIEW_TEAM_CAPACITY/VIEW_ALL_CAPACITY
     const isOwnData = userId === userProfile.id;
