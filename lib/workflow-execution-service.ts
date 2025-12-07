@@ -2356,8 +2356,13 @@ export async function progressWorkflowStep(
           .limit(1)
           .single();
 
-        if (recentFormHistory?.form_responses?.response_data) {
-          accumulatedFormData = { ...recentFormHistory.form_responses.response_data };
+        // form_responses from join can be an array or object depending on the relationship
+        const formResponsesData = recentFormHistory?.form_responses;
+        const formResponseData = Array.isArray(formResponsesData)
+          ? formResponsesData[0]?.response_data
+          : (formResponsesData as unknown as { response_data?: unknown } | null)?.response_data;
+        if (formResponseData && typeof formResponseData === 'object') {
+          accumulatedFormData = { ...formResponseData as Record<string, unknown> };
           console.log('[progressWorkflowStep] Fetched recent form data from history for conditional routing');
         }
       }

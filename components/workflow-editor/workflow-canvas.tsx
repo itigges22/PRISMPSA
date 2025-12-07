@@ -123,12 +123,12 @@ function WorkflowCanvasInner({
             edgeData = {
               label,
               conditionValue: condition.value,
-              conditionType: condition.conditionType, // 'equals', 'contains', etc.
+              conditionType: sourceNode.data.config?.conditionType, // 'approval_decision', 'form_value', 'custom'
               decision: handleId,
               // Critical: These fields are needed for form-based conditional routing
-              sourceFormFieldId: sourceNode.data.config.sourceFormFieldId,
+              sourceFormFieldId: sourceNode.data.config?.sourceFormFieldId,
               value: condition.value,
-              value2: condition.value2,
+              value2: (condition as Record<string, unknown>).value2,
             };
           }
         }
