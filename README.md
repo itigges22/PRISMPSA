@@ -7,7 +7,7 @@ MovaLab is an enterprise-grade project and resource management platform built to
 ![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js&labelColor=aliceblue&color=bbd3dd&logoColor=%23000000)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=TypeScript&labelColor=aliceblue&color=bbd3dd)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=for-the-badge&logo=Supabase&labelColor=aliceblue&color=bbd3dd)
-![Discord](https://img.shields.io/discord/1450515917724188757?style=for-the-badge&logo=discord&label=Join%20Our%20Discord!&labelColor=aliceblue&color=bbd3dd)
+[![Discord](https://img.shields.io/discord/1450515917724188757?style=for-the-badge&logo=discord&label=Join%20Our%20Discord!&labelColor=aliceblue&color=bbd3dd)](https://discord.gg/99SpYzNbcu)
 ---
 
 ## 🎯 The Problem We Solve
