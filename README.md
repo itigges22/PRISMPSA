@@ -559,32 +559,35 @@ Clients deserve visibility without pestering your team. MovaLab's Client Portal 
 ```
 MovaLab/
 ├── app/                          # Next.js App Router pages and routes
-│   ├── (auth)/                  # Authentication pages (login, signup)
+│   ├── (main)/                  # Main app layout group
 │   ├── accounts/                # Client account management
 │   │   └── [accountId]/        # Account detail pages
 │   ├── projects/                # Project detail pages
 │   │   └── [projectId]/        # Individual project views
-│   ├── kanban/                  # Kanban board view
-│   ├── gantt/                   # Gantt chart view
 │   ├── capacity/                # Capacity planning dashboard
 │   ├── analytics/               # Analytics and reporting
-│   ├── admin/                   # Admin pages (roles, permissions, departments)
+│   ├── departments/             # Department views
+│   ├── admin/                   # Admin pages (roles, users, database, time-tracking)
 │   ├── profile/                 # User profile and availability
-│   ├── time-tracking/           # Time entry management
+│   ├── dashboard/               # Main dashboard
+│   ├── welcome/                 # Welcome/landing page
+│   ├── login/                   # Authentication pages
+│   ├── signup/
 │   └── api/                     # API routes
 │       ├── accounts/           # Account CRUD operations
 │       ├── projects/           # Project management
 │       ├── tasks/              # Task operations
 │       ├── time-entries/       # Time tracking
 │       ├── capacity/           # Capacity calculations
-│       └── auth/               # Authentication endpoints
+│       ├── workflows/          # Workflow management
+│       ├── auth/               # Authentication endpoints
+│       └── admin/              # Admin operations
 ├── components/                   # React components
 │   ├── ui/                      # Base UI components (shadcn/ui)
-│   ├── account-overview.tsx     # Account dashboard component
 │   ├── kanban-*.tsx             # Kanban board components
 │   ├── gantt-chart.tsx          # Gantt visualization
 │   ├── capacity-*.tsx           # Capacity planning components
-│   ├── analytics-*.tsx          # Analytics dashboards
+│   ├── workflow-*.tsx           # Workflow builder components
 │   └── ...
 ├── lib/                         # Utilities and business logic
 │   ├── supabase-*.ts            # Supabase client configurations
@@ -594,12 +597,14 @@ MovaLab/
 │   ├── validation-schemas.ts    # Zod input validation schemas
 │   ├── rate-limit.ts            # Rate limiting with Upstash Redis
 │   └── config.ts                # Application configuration
-├── supabase/                    # Database migrations and types
-│   └── migrations/              # SQL migration files
+├── types/                       # TypeScript type definitions
+├── scripts/                     # Utility scripts
 ├── public/                      # Static assets
-└── README/                      # Additional documentation
-    ├── FEATURELIST.md          # Comprehensive feature documentation
-    └── SECURITY.md             # Security architecture details
+└── docs/                        # Additional documentation
+    ├── architecture/           # Architecture documentation
+    │   └── FEATURELIST.md     # Comprehensive feature documentation
+    └── security/               # Security documentation
+        └── SECURITY.md        # Security architecture details
 ```
 
 ---
@@ -791,8 +796,8 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support & Documentation
 
-- **Feature Documentation**: See `/README/FEATURELIST.md` for comprehensive feature descriptions and database architecture
-- **Security Guide**: See `/README/SECURITY.md` for detailed security architecture and best practices
+- **Feature Documentation**: See `/docs/architecture/FEATURELIST.md` for comprehensive feature descriptions and database architecture
+- **Security Guide**: See `/docs/security/SECURITY.md` for detailed security architecture and best practices
 - **API Documentation**: See inline code comments and validation schemas in `/lib/validation-schemas.ts`
 
 ---
