@@ -189,8 +189,24 @@ print_header "📦 Step 3: Installing Dependencies"
 
 if [ -f "package.json" ]; then
   print_info "Running npm install..."
-  npm install
-  print_success "Dependencies installed"
+
+  if npm install; then
+    print_success "Dependencies installed"
+  else
+    print_error "npm install failed"
+    echo ""
+    echo "   ${YELLOW}Common causes:${NC}"
+    echo "   - Network connectivity issues"
+    echo "   - npm cache corruption"
+    echo "   - Node.js version mismatch"
+    echo ""
+    echo "   ${YELLOW}Try these fixes:${NC}"
+    echo "   1. Clear npm cache: ${GREEN}npm cache clean --force${NC}"
+    echo "   2. Delete node_modules: ${GREEN}rm -rf node_modules package-lock.json${NC}"
+    echo "   3. Try again: ${GREEN}npm install${NC}"
+    echo ""
+    exit 1
+  fi
 
   # Verify Supabase CLI is now available (installed as dev dependency)
   if npx supabase --version >/dev/null 2>&1; then
@@ -199,6 +215,17 @@ if [ -f "package.json" ]; then
   else
     print_error "Supabase CLI not found after npm install"
     echo "   This is unexpected. Please check package.json includes supabase in devDependencies"
+    exit 1
+  fi
+
+  # Verify tsx is available (needed for seed scripts)
+  if npx tsx --version >/dev/null 2>&1; then
+    TSX_VERSION=$(npx tsx --version)
+    print_success "tsx is available: $TSX_VERSION"
+  else
+    print_error "tsx not found after npm install"
+    echo "   This is needed to run TypeScript seed scripts"
+    echo "   Please check package.json includes tsx in devDependencies"
     exit 1
   fi
 else
@@ -319,14 +346,54 @@ else
 fi
 
 # ============================================================================
-# STEP 6.5: Check for Existing Data and Offer Reset
+# STEP 6.5: Wait for Database to be Ready
 # ============================================================================
-print_header "🔍 Step 6.5: Checking Database State"
+print_header "⏳ Step 6.5: Waiting for Database to be Ready"
+
+print_info "Waiting for PostgreSQL to accept connections..."
+
+# Wait for database to be ready (max 30 seconds)
+MAX_WAIT=30
+WAIT_COUNT=0
+DB_READY=false
+
+while [ $WAIT_COUNT -lt $MAX_WAIT ] && [ "$DB_READY" = false ]; do
+  # Try to get database URL and test connection
+  DB_URL=$(npx supabase status -o json 2>/dev/null | grep -o '"DB URL": "[^"]*"' | cut -d'"' -f4)
+
+  if [ -n "$DB_URL" ]; then
+    # Test if database accepts connections
+    if psql "$DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+      DB_READY=true
+      print_success "Database is ready!"
+      break
+    fi
+  fi
+
+  # Wait 1 second and try again
+  sleep 1
+  WAIT_COUNT=$((WAIT_COUNT + 1))
+
+  # Show progress every 5 seconds
+  if [ $((WAIT_COUNT % 5)) -eq 0 ]; then
+    print_info "Still waiting... (${WAIT_COUNT}s elapsed)"
+  fi
+done
+
+if [ "$DB_READY" = false ]; then
+  print_warning "Database connection timeout after ${MAX_WAIT}s"
+  print_info "Proceeding with setup anyway..."
+fi
+
+# ============================================================================
+# STEP 6.6: Check for Existing Data and Offer Reset
+# ============================================================================
+print_header "🔍 Step 6.6: Checking Database State"
 
 # Check if database has existing data by counting user_profiles
 print_info "Checking for existing data..."
 
-# Get database connection URL from supabase status
+# Get database connection URL from supabase status (refresh it)
 DB_URL=$(npx supabase status -o json 2>/dev/null | grep -o '"DB URL": "[^"]*"' | cut -d'"' -f4)
 
 if [ -n "$DB_URL" ]; then
