@@ -42,12 +42,36 @@ That's it! No Supabase account, no cloud setup, no credentials management.
    ./scripts/first-time-setup.sh
    ```
 
-   **Windows:**
+   **Windows - Choose Your Terminal:**
+
+   <details>
+   <summary><strong>📘 Git Bash</strong> (Recommended)</summary>
+
    ```bash
+   # In Git Bash terminal:
+   ./scripts/first-time-setup.sh
+   ```
+   </details>
+
+   <details>
+   <summary><strong>💻 Command Prompt (CMD)</strong></summary>
+
+   ```cmd
+   REM In Command Prompt:
    scripts\first-time-setup.bat
    ```
+   </details>
 
-   > **Windows Note:** The `.bat` file keeps the window open so you can see progress and errors!
+   <details>
+   <summary><strong>⚡ PowerShell</strong></summary>
+
+   ```powershell
+   # In PowerShell:
+   scripts\first-time-setup.bat
+   ```
+   </details>
+
+   > **💡 Windows Tip:** All three terminals work! The `.bat` file automatically finds Git Bash and runs the setup.
 
    This script will automatically:
    - ✅ Verify Node.js and Docker are installed

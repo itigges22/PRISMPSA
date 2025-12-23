@@ -45,7 +45,8 @@ echo Starting setup...
 echo.
 
 REM Run the bash script with Git Bash (not WSL bash)
-"%GIT_BASH%" --login -i "%~dp0first-time-setup.sh"
+REM Note: Removed -i flag to avoid "stdout is not a tty" errors in CMD/PowerShell
+"%GIT_BASH%" --login "%~dp0first-time-setup.sh"
 
 REM Check if script succeeded
 if %errorlevel% neq 0 (

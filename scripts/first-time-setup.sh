@@ -137,12 +137,12 @@ fi
 # ============================================================================
 print_header "🗄️  Step 2: Checking Database Schema"
 
-if [ -f "supabase/migrations/20250123_01_schema_base.sql" ]; then
+if [ -f "supabase/migrations/20250123000000_schema_base.sql" ]; then
   print_success "Base schema migration found"
 else
   print_error "Base schema migration is missing"
   echo ""
-  echo "   The file ${YELLOW}supabase/migrations/20250123_01_schema_base.sql${NC} does not exist."
+  echo "   The file ${YELLOW}supabase/migrations/20250123000000_schema_base.sql${NC} does not exist."
   echo "   This file contains your database table schemas and must be generated"
   echo "   from your cloud Supabase instance."
   echo ""
@@ -154,7 +154,7 @@ else
   echo "   This will create a file like: ${YELLOW}20250123XXXXXX_remote_schema.sql${NC}"
   echo ""
   echo "   Then rename it:"
-  echo "   ${GREEN}mv supabase/migrations/*_remote_schema.sql supabase/migrations/20250123_01_schema_base.sql${NC}"
+  echo "   ${GREEN}mv supabase/migrations/*_remote_schema.sql supabase/migrations/20250123000000_schema_base.sql${NC}"
   echo ""
   echo "   Finally, run this setup script again:"
   echo "   ${GREEN}./scripts/first-time-setup.sh${NC}"

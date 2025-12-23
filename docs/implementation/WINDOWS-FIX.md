@@ -47,8 +47,22 @@ Created **four-layer fix** for Windows compatibility:
 - Shows next steps after successful setup
 - Pauses before closing so user can read everything
 
-**How to use:**
+**How to use (choose your terminal):**
+
+**Git Bash:**
 ```bash
+cd movalab
+./scripts/first-time-setup.sh
+```
+
+**Command Prompt (CMD):**
+```cmd
+cd movalab
+scripts\first-time-setup.bat
+```
+
+**PowerShell:**
+```powershell
 cd movalab
 scripts\first-time-setup.bat
 ```
@@ -57,7 +71,8 @@ scripts\first-time-setup.bat
 - ✅ Window stays open - users can read all output
 - ✅ Clear error messages if prerequisites missing
 - ✅ Shows next steps after success
-- ✅ Works from Command Prompt or PowerShell
+- ✅ Works from all three Windows terminals
+- ✅ Automatically finds Git Bash (avoids WSL confusion)
 - ✅ Can double-click from File Explorer
 
 ---

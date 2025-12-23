@@ -125,14 +125,42 @@ cd movalab
 ./scripts/first-time-setup.sh
 ```
 
-**Windows (Git Bash or Command Prompt):**
+**Windows - Choose Your Terminal:**
+
+<details>
+<summary><strong>📘 Git Bash</strong> (Recommended for Windows)</summary>
+
 ```bash
+# In Git Bash terminal:
+git clone https://github.com/itigges22/movalab.git
+cd movalab
+./scripts/first-time-setup.sh
+```
+</details>
+
+<details>
+<summary><strong>💻 Command Prompt (CMD)</strong></summary>
+
+```cmd
+REM In Command Prompt:
 git clone https://github.com/itigges22/movalab.git
 cd movalab
 scripts\first-time-setup.bat
 ```
+</details>
 
-> **Windows Note:** Use `first-time-setup.bat` which keeps the window open so you can see what's happening!
+<details>
+<summary><strong>⚡ PowerShell</strong></summary>
+
+```powershell
+# In PowerShell:
+git clone https://github.com/itigges22/movalab.git
+cd movalab
+scripts\first-time-setup.bat
+```
+</details>
+
+> **💡 Windows Tip:** All three terminals work! Use whichever you're comfortable with. The `.bat` file automatically finds Git Bash and runs the setup.
 
 **That's it!** The script automatically:
 - ✅ Checks all prerequisites (Node, Docker, Supabase CLI)
