@@ -355,89 +355,89 @@ INSERT INTO project_assignments (project_id, user_id, role_in_project, assigned_
 
 INSERT INTO tasks (id, name, description, project_id, status, priority, estimated_hours, assigned_to, created_by) VALUES
 -- Website Redesign tasks
-('tttttttt-tttt-tttt-tttt-000000000001', 'Homepage Design Mockup', 'Create high-fidelity homepage design',
+('cccccccc-dddd-eeee-ffff-000000000001', 'Homepage Design Mockup', 'Create high-fidelity homepage design',
  'pppppppp-pppp-pppp-pppp-000000000001', 'in_progress', 'high', 16,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
-('tttttttt-tttt-tttt-tttt-000000000002', 'About Page Design', 'Design company about page',
+('cccccccc-dddd-eeee-ffff-000000000002', 'About Page Design', 'Design company about page',
  'pppppppp-pppp-pppp-pppp-000000000001', 'done', 'medium', 8,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
-('tttttttt-tttt-tttt-tttt-000000000003', 'Frontend Implementation', 'Implement React components',
+('cccccccc-dddd-eeee-ffff-000000000003', 'Frontend Implementation', 'Implement React components',
  'pppppppp-pppp-pppp-pppp-000000000001', 'todo', 'high', 40,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004'),
 
 -- Mobile App tasks
-('tttttttt-tttt-tttt-tttt-000000000004', 'User Authentication', 'Implement login and signup',
+('cccccccc-dddd-eeee-ffff-000000000004', 'User Authentication', 'Implement login and signup',
  'pppppppp-pppp-pppp-pppp-000000000003', 'done', 'urgent', 24,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000006'),
 
-('tttttttt-tttt-tttt-tttt-000000000005', 'Dashboard Screen', 'Main dashboard UI',
+('cccccccc-dddd-eeee-ffff-000000000005', 'Dashboard Screen', 'Main dashboard UI',
  'pppppppp-pppp-pppp-pppp-000000000003', 'in_progress', 'high', 20,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000006'),
 
-('tttttttt-tttt-tttt-tttt-000000000006', 'Profile Settings', 'User profile management',
+('cccccccc-dddd-eeee-ffff-000000000006', 'Profile Settings', 'User profile management',
  'pppppppp-pppp-pppp-pppp-000000000003', 'todo', 'medium', 16,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000006'),
 
 -- Marketing Campaign tasks
-('tttttttt-tttt-tttt-tttt-000000000007', 'Content Calendar', 'Q1 social media content calendar',
+('cccccccc-dddd-eeee-ffff-000000000007', 'Content Calendar', 'Q1 social media content calendar',
  'pppppppp-pppp-pppp-pppp-000000000002', 'done', 'high', 12,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
-('tttttttt-tttt-tttt-tttt-000000000008', 'Email Campaign Design', 'Newsletter template design',
+('cccccccc-dddd-eeee-ffff-000000000008', 'Email Campaign Design', 'Newsletter template design',
  'pppppppp-pppp-pppp-pppp-000000000002', 'in_progress', 'medium', 8,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
-('tttttttt-tttt-tttt-tttt-000000000009', 'Analytics Setup', 'Configure Google Analytics and tracking',
+('cccccccc-dddd-eeee-ffff-000000000009', 'Analytics Setup', 'Configure Google Analytics and tracking',
  'pppppppp-pppp-pppp-pppp-000000000002', 'todo', 'low', 6,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004'),
 
 -- Brand Identity tasks
-('tttttttt-tttt-tttt-tttt-000000000010', 'Logo Design', 'Create 3 logo concepts',
+('cccccccc-dddd-eeee-ffff-000000000010', 'Logo Design', 'Create 3 logo concepts',
  'pppppppp-pppp-pppp-pppp-000000000004', 'done', 'urgent', 20,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000005'),
 
-('tttttttt-tttt-tttt-tttt-000000000011', 'Brand Guidelines', 'Document brand colors, fonts, usage',
+('cccccccc-dddd-eeee-ffff-000000000011', 'Brand Guidelines', 'Document brand colors, fonts, usage',
  'pppppppp-pppp-pppp-pppp-000000000004', 'review', 'high', 12,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000005'),
 
-('tttttttt-tttt-tttt-tttt-000000000012', 'Social Media Templates', 'Instagram and Facebook post templates',
+('cccccccc-dddd-eeee-ffff-000000000012', 'Social Media Templates', 'Instagram and Facebook post templates',
  'pppppppp-pppp-pppp-pppp-000000000004', 'in_progress', 'medium', 10,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000005'),
 
 -- Social Media Management tasks
-('tttttttt-tttt-tttt-tttt-000000000013', 'January Posts', 'Create and schedule 20 posts',
+('cccccccc-dddd-eeee-ffff-000000000013', 'January Posts', 'Create and schedule 20 posts',
  'pppppppp-pppp-pppp-pppp-000000000005', 'done', 'medium', 8,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
-('tttttttt-tttt-tttt-tttt-000000000014', 'February Posts', 'Create and schedule 20 posts',
+('cccccccc-dddd-eeee-ffff-000000000014', 'February Posts', 'Create and schedule 20 posts',
  'pppppppp-pppp-pppp-pppp-000000000005', 'in_progress', 'medium', 8,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
-('tttttttt-tttt-tttt-tttt-000000000015', 'Community Engagement', 'Respond to comments and DMs',
+('cccccccc-dddd-eeee-ffff-000000000015', 'Community Engagement', 'Respond to comments and DMs',
  'pppppppp-pppp-pppp-pppp-000000000005', 'todo', 'low', 4,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 -- SEO Optimization tasks
-('tttttttt-tttt-tttt-tttt-000000000016', 'Keyword Research', 'Identify target keywords',
+('cccccccc-dddd-eeee-ffff-000000000016', 'Keyword Research', 'Identify target keywords',
  'pppppppp-pppp-pppp-pppp-000000000006', 'done', 'high', 6,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
-('tttttttt-tttt-tttt-tttt-000000000017', 'On-Page SEO', 'Optimize meta tags and content',
+('cccccccc-dddd-eeee-ffff-000000000017', 'On-Page SEO', 'Optimize meta tags and content',
  'pppppppp-pppp-pppp-pppp-000000000006', 'done', 'high', 10,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
-('tttttttt-tttt-tttt-tttt-000000000018', 'Technical SEO Audit', 'Fix crawl errors and improve site speed',
+('cccccccc-dddd-eeee-ffff-000000000018', 'Technical SEO Audit', 'Fix crawl errors and improve site speed',
  'pppppppp-pppp-pppp-pppp-000000000006', 'done', 'medium', 8,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 -- Additional Website Redesign tasks
-('tttttttt-tttt-tttt-tttt-000000000019', 'Contact Form', 'Design and implement contact form',
+('cccccccc-dddd-eeee-ffff-000000000019', 'Contact Form', 'Design and implement contact form',
  'pppppppp-pppp-pppp-pppp-000000000001', 'todo', 'medium', 6,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004'),
 
-('tttttttt-tttt-tttt-tttt-000000000020', 'Mobile Responsiveness', 'Test and fix mobile layout issues',
+('cccccccc-dddd-eeee-ffff-000000000020', 'Mobile Responsiveness', 'Test and fix mobile layout issues',
  'pppppppp-pppp-pppp-pppp-000000000001', 'todo', 'high', 12,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004');
 
@@ -459,15 +459,15 @@ INSERT INTO user_availability (user_id, week_start_date, available_hours) VALUES
 -- ============================================================================
 
 INSERT INTO time_entries (task_id, user_id, project_id, hours_logged, entry_date, week_start_date, description) VALUES
-('tttttttt-tttt-tttt-tttt-000000000001', '11111111-1111-1111-1111-000000000005',
+('cccccccc-dddd-eeee-ffff-000000000001', '11111111-1111-1111-1111-000000000005',
  'pppppppp-pppp-pppp-pppp-000000000001', 4.5, '2025-01-21', '2025-01-20',
  'Initial homepage design concepts'),
 
-('tttttttt-tttt-tttt-tttt-000000000002', '11111111-1111-1111-1111-000000000005',
+('cccccccc-dddd-eeee-ffff-000000000002', '11111111-1111-1111-1111-000000000005',
  'pppppppp-pppp-pppp-pppp-000000000001', 8.0, '2025-01-22', '2025-01-20',
  'Completed about page design and client review'),
 
-('tttttttt-tttt-tttt-tttt-000000000004', '11111111-1111-1111-1111-000000000006',
+('cccccccc-dddd-eeee-ffff-000000000004', '11111111-1111-1111-1111-000000000006',
  'pppppppp-pppp-pppp-pppp-000000000003', 6.0, '2025-01-21', '2025-01-20',
  'Implemented OAuth integration');
 

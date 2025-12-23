@@ -122,8 +122,10 @@ if command_exists docker; then
     # Check Docker Hub authentication (to avoid rate limits)
     if docker info 2>/dev/null | grep -q "Username:"; then
       DOCKER_USER=$(docker info 2>/dev/null | grep "Username:" | awk '{print $2}')
+      DOCKER_AUTHENTICATED=true
       print_success "Docker Hub authenticated as: $DOCKER_USER"
     else
+      DOCKER_AUTHENTICATED=false
       print_warning "Docker Hub not authenticated (may hit rate limits)"
       echo "   ${BLUE}Tip: Authenticate to increase rate limits:${NC}"
       echo "   ${GREEN}docker login${NC}"
@@ -264,11 +266,15 @@ if npx supabase status >/dev/null 2>&1; then
 else
   print_info "Starting Supabase for the first time (pulling Docker images)..."
   echo ""
-  print_warning "Note: If you get 'Rate exceeded' errors from Docker registry:"
-  echo "   1. Wait 6 hours for rate limit to reset, OR"
-  echo "   2. Authenticate with Docker Hub: ${GREEN}docker login${NC}"
-  echo "   3. Then retry: ${GREEN}npx supabase start${NC}"
-  echo ""
+
+  # Only show rate limit warning if not authenticated
+  if [ "$DOCKER_AUTHENTICATED" = false ]; then
+    print_warning "Note: If you get 'Rate exceeded' errors from Docker registry:"
+    echo "   1. Wait 6 hours for rate limit to reset, OR"
+    echo "   2. Authenticate with Docker Hub: ${GREEN}docker login${NC}"
+    echo "   3. Then retry: ${GREEN}npx supabase start${NC}"
+    echo ""
+  fi
 
   # Try to start Supabase with retry logic
   MAX_RETRIES=3
