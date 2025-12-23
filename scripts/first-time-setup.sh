@@ -350,158 +350,30 @@ fi
 # ============================================================================
 print_header "⏳ Step 6.5: Waiting for Database to be Ready"
 
-print_info "Waiting for PostgreSQL to accept connections..."
+print_info "Giving PostgreSQL time to initialize..."
 
-# Wait for database to be ready (max 30 seconds)
-MAX_WAIT=30
-WAIT_COUNT=0
-DB_READY=false
+# Simple approach: Wait a fixed time for database initialization
+# This is more reliable than trying to connect (requires psql which isn't on Windows)
+print_info "Waiting 5 seconds for all services to be ready..."
+sleep 5
 
-while [ $WAIT_COUNT -lt $MAX_WAIT ] && [ "$DB_READY" = false ]; do
-  # Try to get database URL and test connection
-  DB_URL=$(npx supabase status -o json 2>/dev/null | grep -o '"DB URL": "[^"]*"' | cut -d'"' -f4)
-
-  if [ -n "$DB_URL" ]; then
-    # Test if database accepts connections
-    if psql "$DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
-      DB_READY=true
-      print_success "Database is ready!"
-      break
-    fi
-  fi
-
-  # Wait 1 second and try again
-  sleep 1
-  WAIT_COUNT=$((WAIT_COUNT + 1))
-
-  # Show progress every 5 seconds
-  if [ $((WAIT_COUNT % 5)) -eq 0 ]; then
-    print_info "Still waiting... (${WAIT_COUNT}s elapsed)"
-  fi
-done
-
-if [ "$DB_READY" = false ]; then
-  print_warning "Database connection timeout after ${MAX_WAIT}s"
-  print_info "Proceeding with setup anyway..."
-fi
-
-# ============================================================================
-# STEP 6.6: Check for Existing Data and Offer Reset
-# ============================================================================
-print_header "🔍 Step 6.6: Checking Database State"
-
-# Check if database has existing data by counting user_profiles
-print_info "Checking for existing data..."
-
-# Get database connection URL from supabase status (refresh it)
-DB_URL=$(npx supabase status -o json 2>/dev/null | grep -o '"DB URL": "[^"]*"' | cut -d'"' -f4)
-
-if [ -n "$DB_URL" ]; then
-  # Query the database to check if user_profiles table has data
-  USER_COUNT=$(psql "$DB_URL" -t -c "SELECT COUNT(*) FROM user_profiles;" 2>/dev/null | xargs)
-
-  if [ -n "$USER_COUNT" ] && [ "$USER_COUNT" -gt 0 ]; then
-    print_warning "Database already contains $USER_COUNT user(s)"
-    echo ""
-    echo "   The database has existing data. This script can reset the database"
-    echo "   to a clean state with fresh seed data."
-    echo ""
-    echo "   ${RED}⚠️  WARNING: Resetting will DELETE ALL existing data!${NC}"
-    echo ""
-
-    # Only prompt if running in a TTY
-    if [ -t 0 ]; then
-      read -p "   Do you want to reset the database and reload seed data? (y/N): " -n 1 -r
-      echo
-      echo ""
-
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_info "Resetting database..."
-        npx supabase db reset
-
-        if [ $? -eq 0 ]; then
-          print_success "Database reset successfully"
-        else
-          print_error "Database reset failed"
-          exit 1
-        fi
-      else
-        print_info "Skipping database reset - keeping existing data"
-        print_warning "Skipping seed user creation (database already has data)"
-
-        # Skip to health check
-        print_header "🏥 Step 8: Running Health Check"
-
-        if [ -f "scripts/docker-health-check.ts" ]; then
-          npx tsx scripts/docker-health-check.ts
-        else
-          print_warning "Health check script not found (this is optional)"
-        fi
-
-        # Skip to end
-        print_header "🎉 Setup Complete!"
-        echo ""
-        echo "Your MovaLab development environment is ready!"
-        echo ""
-        echo "📋 What's Next:"
-        echo ""
-        echo "1. Start the development server:"
-        echo "   ${GREEN}npm run dev${NC}"
-        echo ""
-        echo "2. Open your browser:"
-        echo "   ${BLUE}http://localhost:3000${NC}"
-        echo ""
-        echo "3. Access Supabase Studio (database UI):"
-        echo "   ${GREEN}npm run docker:studio${NC}"
-        echo "   or open: ${BLUE}http://localhost:54323${NC}"
-        echo ""
-        print_success "Happy coding! 🚀"
-        echo ""
-
-        # Keep window open on Windows
-        if [ "$IS_WINDOWS" = true ]; then
-          echo "Press Enter to close this window..."
-          read
-        fi
-
-        exit 0
-      fi
-    else
-      # Non-interactive mode - skip reset
-      print_info "Non-interactive mode - keeping existing data"
-      print_warning "Skipping seed user creation"
-
-      # Continue to health check
-      print_header "🏥 Step 8: Running Health Check"
-
-      if [ -f "scripts/docker-health-check.ts" ]; then
-        npx tsx scripts/docker-health-check.ts
-      else
-        print_warning "Health check script not found (this is optional)"
-      fi
-
-      # Skip to end
-      print_header "🎉 Setup Complete!"
-      echo ""
-      echo "Your MovaLab development environment is ready!"
-      echo ""
-      print_success "Happy coding! 🚀"
-      echo ""
-
-      # Keep window open on Windows
-      if [ "$IS_WINDOWS" = true ]; then
-        echo "Press Enter to close this window..."
-        read
-      fi
-
-      exit 0
-    fi
-  else
-    print_success "Database is empty - proceeding with initial setup"
-  fi
+# Verify Supabase status shows services running
+if npx supabase status >/dev/null 2>&1; then
+  print_success "Supabase services are running!"
 else
-  print_warning "Could not connect to database - proceeding with setup"
+  print_warning "Unable to verify Supabase status, but proceeding..."
 fi
+
+# ============================================================================
+# STEP 6.6: Ready for Seed Data
+# ============================================================================
+print_header "📋 Step 6.6: Preparing to Load Seed Data"
+
+print_info "Database is ready for seed data"
+echo ""
+echo "   ${BLUE}Note:${NC} If you've run this script before and want to reset the database,"
+echo "   you can run: ${GREEN}npx supabase db reset${NC}"
+echo ""
 
 # ============================================================================
 # STEP 7: Create Seed Users
