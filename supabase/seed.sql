@@ -290,34 +290,34 @@ INSERT INTO account_members (user_id, account_id) VALUES
 
 INSERT INTO projects (id, name, description, account_id, status, priority, start_date, end_date, estimated_hours, created_by, assigned_user_id) VALUES
 -- Acme Corp projects
-('pppppppp-pppp-pppp-pppp-000000000001', 'Website Redesign', 'Complete overhaul of corporate website',
+('ffffffff-0001-0002-0003-000000000001', 'Website Redesign', 'Complete overhaul of corporate website',
  'aaaaaaaa-aaaa-aaaa-aaaa-000000000001', 'in_progress', 'high',
  '2025-01-15', '2025-03-15', 200,
  '11111111-1111-1111-1111-000000000003', '11111111-1111-1111-1111-000000000004'),
 
-('pppppppp-pppp-pppp-pppp-000000000002', 'Marketing Campaign', 'Q1 2025 marketing campaign',
+('ffffffff-0001-0002-0003-000000000002', 'Marketing Campaign', 'Q1 2025 marketing campaign',
  'aaaaaaaa-aaaa-aaaa-aaaa-000000000001', 'planning', 'medium',
  '2025-02-01', '2025-04-30', 120,
  '11111111-1111-1111-1111-000000000003', '11111111-1111-1111-1111-000000000004'),
 
 -- StartupXYZ projects
-('pppppppp-pppp-pppp-pppp-000000000003', 'Mobile App MVP', 'iOS and Android mobile application',
+('ffffffff-0001-0002-0003-000000000003', 'Mobile App MVP', 'iOS and Android mobile application',
  'aaaaaaaa-aaaa-aaaa-aaaa-000000000002', 'in_progress', 'urgent',
  '2025-01-10', '2025-02-28', 300,
  '11111111-1111-1111-1111-000000000003', '11111111-1111-1111-1111-000000000006'),
 
-('pppppppp-pppp-pppp-pppp-000000000004', 'Brand Identity', 'Logo and brand guidelines',
+('ffffffff-0001-0002-0003-000000000004', 'Brand Identity', 'Logo and brand guidelines',
  'aaaaaaaa-aaaa-aaaa-aaaa-000000000002', 'review', 'high',
  '2025-01-05', '2025-02-05', 80,
  '11111111-1111-1111-1111-000000000003', '11111111-1111-1111-1111-000000000005'),
 
 -- Local Business projects
-('pppppppp-pppp-pppp-pppp-000000000005', 'Social Media Management', 'Monthly social media content',
+('ffffffff-0001-0002-0003-000000000005', 'Social Media Management', 'Monthly social media content',
  'aaaaaaaa-aaaa-aaaa-aaaa-000000000003', 'in_progress', 'low',
  '2025-01-01', '2025-12-31', 240,
  '11111111-1111-1111-1111-000000000004', '11111111-1111-1111-1111-000000000007'),
 
-('pppppppp-pppp-pppp-pppp-000000000006', 'SEO Optimization', 'Website SEO improvements',
+('ffffffff-0001-0002-0003-000000000006', 'SEO Optimization', 'Website SEO improvements',
  'aaaaaaaa-aaaa-aaaa-aaaa-000000000003', 'complete', 'medium',
  '2024-12-01', '2025-01-15', 60,
  '11111111-1111-1111-1111-000000000004', '11111111-1111-1111-1111-000000000007');
@@ -328,26 +328,26 @@ INSERT INTO projects (id, name, description, account_id, status, priority, start
 
 INSERT INTO project_assignments (project_id, user_id, role_in_project, assigned_by) VALUES
 -- Website Redesign team
-('pppppppp-pppp-pppp-pppp-000000000001', '11111111-1111-1111-1111-000000000004', 'Project Manager', '11111111-1111-1111-1111-000000000003'),
-('pppppppp-pppp-pppp-pppp-000000000001', '11111111-1111-1111-1111-000000000005', 'Lead Designer', '11111111-1111-1111-1111-000000000003'),
-('pppppppp-pppp-pppp-pppp-000000000001', '11111111-1111-1111-1111-000000000006', 'Lead Developer', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000001', '11111111-1111-1111-1111-000000000004', 'Project Manager', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000001', '11111111-1111-1111-1111-000000000005', 'Lead Designer', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000001', '11111111-1111-1111-1111-000000000006', 'Lead Developer', '11111111-1111-1111-1111-000000000003'),
 
 -- Marketing Campaign team
-('pppppppp-pppp-pppp-pppp-000000000002', '11111111-1111-1111-1111-000000000004', 'Project Manager', '11111111-1111-1111-1111-000000000003'),
-('pppppppp-pppp-pppp-pppp-000000000002', '11111111-1111-1111-1111-000000000005', 'Creative Lead', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000002', '11111111-1111-1111-1111-000000000004', 'Project Manager', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000002', '11111111-1111-1111-1111-000000000005', 'Creative Lead', '11111111-1111-1111-1111-000000000003'),
 
 -- Mobile App MVP team
-('pppppppp-pppp-pppp-pppp-000000000003', '11111111-1111-1111-1111-000000000006', 'Tech Lead', '11111111-1111-1111-1111-000000000003'),
-('pppppppp-pppp-pppp-pppp-000000000003', '11111111-1111-1111-1111-000000000005', 'UI Designer', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000003', '11111111-1111-1111-1111-000000000006', 'Tech Lead', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000003', '11111111-1111-1111-1111-000000000005', 'UI Designer', '11111111-1111-1111-1111-000000000003'),
 
 -- Brand Identity team
-('pppppppp-pppp-pppp-pppp-000000000004', '11111111-1111-1111-1111-000000000005', 'Brand Designer', '11111111-1111-1111-1111-000000000003'),
+('ffffffff-0001-0002-0003-000000000004', '11111111-1111-1111-1111-000000000005', 'Brand Designer', '11111111-1111-1111-1111-000000000003'),
 
 -- Social Media team
-('pppppppp-pppp-pppp-pppp-000000000005', '11111111-1111-1111-1111-000000000007', 'Content Creator', '11111111-1111-1111-1111-000000000004'),
+('ffffffff-0001-0002-0003-000000000005', '11111111-1111-1111-1111-000000000007', 'Content Creator', '11111111-1111-1111-1111-000000000004'),
 
 -- SEO team
-('pppppppp-pppp-pppp-pppp-000000000006', '11111111-1111-1111-1111-000000000007', 'SEO Specialist', '11111111-1111-1111-1111-000000000004');
+('ffffffff-0001-0002-0003-000000000006', '11111111-1111-1111-1111-000000000007', 'SEO Specialist', '11111111-1111-1111-1111-000000000004');
 
 -- ============================================================================
 -- 9. TASKS (20 tasks across projects)
@@ -356,89 +356,89 @@ INSERT INTO project_assignments (project_id, user_id, role_in_project, assigned_
 INSERT INTO tasks (id, name, description, project_id, status, priority, estimated_hours, assigned_to, created_by) VALUES
 -- Website Redesign tasks
 ('cccccccc-dddd-eeee-ffff-000000000001', 'Homepage Design Mockup', 'Create high-fidelity homepage design',
- 'pppppppp-pppp-pppp-pppp-000000000001', 'in_progress', 'high', 16,
+ 'ffffffff-0001-0002-0003-000000000001', 'in_progress', 'high', 16,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
 ('cccccccc-dddd-eeee-ffff-000000000002', 'About Page Design', 'Design company about page',
- 'pppppppp-pppp-pppp-pppp-000000000001', 'done', 'medium', 8,
+ 'ffffffff-0001-0002-0003-000000000001', 'done', 'medium', 8,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
 ('cccccccc-dddd-eeee-ffff-000000000003', 'Frontend Implementation', 'Implement React components',
- 'pppppppp-pppp-pppp-pppp-000000000001', 'todo', 'high', 40,
+ 'ffffffff-0001-0002-0003-000000000001', 'todo', 'high', 40,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004'),
 
 -- Mobile App tasks
 ('cccccccc-dddd-eeee-ffff-000000000004', 'User Authentication', 'Implement login and signup',
- 'pppppppp-pppp-pppp-pppp-000000000003', 'done', 'urgent', 24,
+ 'ffffffff-0001-0002-0003-000000000003', 'done', 'urgent', 24,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000006'),
 
 ('cccccccc-dddd-eeee-ffff-000000000005', 'Dashboard Screen', 'Main dashboard UI',
- 'pppppppp-pppp-pppp-pppp-000000000003', 'in_progress', 'high', 20,
+ 'ffffffff-0001-0002-0003-000000000003', 'in_progress', 'high', 20,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000006'),
 
 ('cccccccc-dddd-eeee-ffff-000000000006', 'Profile Settings', 'User profile management',
- 'pppppppp-pppp-pppp-pppp-000000000003', 'todo', 'medium', 16,
+ 'ffffffff-0001-0002-0003-000000000003', 'todo', 'medium', 16,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000006'),
 
 -- Marketing Campaign tasks
 ('cccccccc-dddd-eeee-ffff-000000000007', 'Content Calendar', 'Q1 social media content calendar',
- 'pppppppp-pppp-pppp-pppp-000000000002', 'done', 'high', 12,
+ 'ffffffff-0001-0002-0003-000000000002', 'done', 'high', 12,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
 ('cccccccc-dddd-eeee-ffff-000000000008', 'Email Campaign Design', 'Newsletter template design',
- 'pppppppp-pppp-pppp-pppp-000000000002', 'in_progress', 'medium', 8,
+ 'ffffffff-0001-0002-0003-000000000002', 'in_progress', 'medium', 8,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000004'),
 
 ('cccccccc-dddd-eeee-ffff-000000000009', 'Analytics Setup', 'Configure Google Analytics and tracking',
- 'pppppppp-pppp-pppp-pppp-000000000002', 'todo', 'low', 6,
+ 'ffffffff-0001-0002-0003-000000000002', 'todo', 'low', 6,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004'),
 
 -- Brand Identity tasks
 ('cccccccc-dddd-eeee-ffff-000000000010', 'Logo Design', 'Create 3 logo concepts',
- 'pppppppp-pppp-pppp-pppp-000000000004', 'done', 'urgent', 20,
+ 'ffffffff-0001-0002-0003-000000000004', 'done', 'urgent', 20,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000005'),
 
 ('cccccccc-dddd-eeee-ffff-000000000011', 'Brand Guidelines', 'Document brand colors, fonts, usage',
- 'pppppppp-pppp-pppp-pppp-000000000004', 'review', 'high', 12,
+ 'ffffffff-0001-0002-0003-000000000004', 'review', 'high', 12,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000005'),
 
 ('cccccccc-dddd-eeee-ffff-000000000012', 'Social Media Templates', 'Instagram and Facebook post templates',
- 'pppppppp-pppp-pppp-pppp-000000000004', 'in_progress', 'medium', 10,
+ 'ffffffff-0001-0002-0003-000000000004', 'in_progress', 'medium', 10,
  '11111111-1111-1111-1111-000000000005', '11111111-1111-1111-1111-000000000005'),
 
 -- Social Media Management tasks
 ('cccccccc-dddd-eeee-ffff-000000000013', 'January Posts', 'Create and schedule 20 posts',
- 'pppppppp-pppp-pppp-pppp-000000000005', 'done', 'medium', 8,
+ 'ffffffff-0001-0002-0003-000000000005', 'done', 'medium', 8,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 ('cccccccc-dddd-eeee-ffff-000000000014', 'February Posts', 'Create and schedule 20 posts',
- 'pppppppp-pppp-pppp-pppp-000000000005', 'in_progress', 'medium', 8,
+ 'ffffffff-0001-0002-0003-000000000005', 'in_progress', 'medium', 8,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 ('cccccccc-dddd-eeee-ffff-000000000015', 'Community Engagement', 'Respond to comments and DMs',
- 'pppppppp-pppp-pppp-pppp-000000000005', 'todo', 'low', 4,
+ 'ffffffff-0001-0002-0003-000000000005', 'todo', 'low', 4,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 -- SEO Optimization tasks
 ('cccccccc-dddd-eeee-ffff-000000000016', 'Keyword Research', 'Identify target keywords',
- 'pppppppp-pppp-pppp-pppp-000000000006', 'done', 'high', 6,
+ 'ffffffff-0001-0002-0003-000000000006', 'done', 'high', 6,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 ('cccccccc-dddd-eeee-ffff-000000000017', 'On-Page SEO', 'Optimize meta tags and content',
- 'pppppppp-pppp-pppp-pppp-000000000006', 'done', 'high', 10,
+ 'ffffffff-0001-0002-0003-000000000006', 'done', 'high', 10,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 ('cccccccc-dddd-eeee-ffff-000000000018', 'Technical SEO Audit', 'Fix crawl errors and improve site speed',
- 'pppppppp-pppp-pppp-pppp-000000000006', 'done', 'medium', 8,
+ 'ffffffff-0001-0002-0003-000000000006', 'done', 'medium', 8,
  '11111111-1111-1111-1111-000000000007', '11111111-1111-1111-1111-000000000007'),
 
 -- Additional Website Redesign tasks
 ('cccccccc-dddd-eeee-ffff-000000000019', 'Contact Form', 'Design and implement contact form',
- 'pppppppp-pppp-pppp-pppp-000000000001', 'todo', 'medium', 6,
+ 'ffffffff-0001-0002-0003-000000000001', 'todo', 'medium', 6,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004'),
 
 ('cccccccc-dddd-eeee-ffff-000000000020', 'Mobile Responsiveness', 'Test and fix mobile layout issues',
- 'pppppppp-pppp-pppp-pppp-000000000001', 'todo', 'high', 12,
+ 'ffffffff-0001-0002-0003-000000000001', 'todo', 'high', 12,
  '11111111-1111-1111-1111-000000000006', '11111111-1111-1111-1111-000000000004');
 
 -- ============================================================================
@@ -460,15 +460,15 @@ INSERT INTO user_availability (user_id, week_start_date, available_hours) VALUES
 
 INSERT INTO time_entries (task_id, user_id, project_id, hours_logged, entry_date, week_start_date, description) VALUES
 ('cccccccc-dddd-eeee-ffff-000000000001', '11111111-1111-1111-1111-000000000005',
- 'pppppppp-pppp-pppp-pppp-000000000001', 4.5, '2025-01-21', '2025-01-20',
+ 'ffffffff-0001-0002-0003-000000000001', 4.5, '2025-01-21', '2025-01-20',
  'Initial homepage design concepts'),
 
 ('cccccccc-dddd-eeee-ffff-000000000002', '11111111-1111-1111-1111-000000000005',
- 'pppppppp-pppp-pppp-pppp-000000000001', 8.0, '2025-01-22', '2025-01-20',
+ 'ffffffff-0001-0002-0003-000000000001', 8.0, '2025-01-22', '2025-01-20',
  'Completed about page design and client review'),
 
 ('cccccccc-dddd-eeee-ffff-000000000004', '11111111-1111-1111-1111-000000000006',
- 'pppppppp-pppp-pppp-pppp-000000000003', 6.0, '2025-01-21', '2025-01-20',
+ 'ffffffff-0001-0002-0003-000000000003', 6.0, '2025-01-21', '2025-01-20',
  'Implemented OAuth integration');
 
 -- ============================================================================
@@ -476,11 +476,11 @@ INSERT INTO time_entries (task_id, user_id, project_id, hours_logged, entry_date
 -- ============================================================================
 
 INSERT INTO workflow_templates (id, name, description, created_by, is_active) VALUES
-('wwwwwwww-wwww-wwww-wwww-000000000001', 'Blog Post Approval',
+('00000001-0002-0003-0004-000000000001', 'Blog Post Approval',
  'Standard workflow for reviewing and publishing blog content',
  '11111111-1111-1111-1111-000000000002', TRUE),
 
-('wwwwwwww-wwww-wwww-wwww-000000000002', 'Video Production',
+('00000001-0002-0003-0004-000000000002', 'Video Production',
  'End-to-end video production workflow from concept to delivery',
  '11111111-1111-1111-1111-000000000002', TRUE);
 
@@ -490,19 +490,19 @@ INSERT INTO workflow_templates (id, name, description, created_by, is_active) VA
 
 INSERT INTO workflow_nodes (id, workflow_template_id, node_type, label, position_x, position_y) VALUES
 -- Blog Post Approval workflow nodes
-('aaaaaaaa-bbbb-cccc-dddd-000000000001', 'wwwwwwww-wwww-wwww-wwww-000000000001', 'start', 'Start', 100, 100),
-('aaaaaaaa-bbbb-cccc-dddd-000000000002', 'wwwwwwww-wwww-wwww-wwww-000000000001', 'department', 'Marketing Review', 300, 100),
-('aaaaaaaa-bbbb-cccc-dddd-000000000003', 'wwwwwwww-wwww-wwww-wwww-000000000001', 'approval', 'Manager Approval', 500, 100),
-('aaaaaaaa-bbbb-cccc-dddd-000000000004', 'wwwwwwww-wwww-wwww-wwww-000000000001', 'department', 'Design Graphics', 700, 100),
-('aaaaaaaa-bbbb-cccc-dddd-000000000005', 'wwwwwwww-wwww-wwww-wwww-000000000001', 'end', 'Publish', 900, 100),
+('aaaaaaaa-bbbb-cccc-dddd-000000000001', '00000001-0002-0003-0004-000000000001', 'start', 'Start', 100, 100),
+('aaaaaaaa-bbbb-cccc-dddd-000000000002', '00000001-0002-0003-0004-000000000001', 'department', 'Marketing Review', 300, 100),
+('aaaaaaaa-bbbb-cccc-dddd-000000000003', '00000001-0002-0003-0004-000000000001', 'approval', 'Manager Approval', 500, 100),
+('aaaaaaaa-bbbb-cccc-dddd-000000000004', '00000001-0002-0003-0004-000000000001', 'department', 'Design Graphics', 700, 100),
+('aaaaaaaa-bbbb-cccc-dddd-000000000005', '00000001-0002-0003-0004-000000000001', 'end', 'Publish', 900, 100),
 
 -- Video Production workflow nodes
-('aaaaaaaa-bbbb-cccc-dddd-000000000006', 'wwwwwwww-wwww-wwww-wwww-000000000002', 'start', 'Start', 100, 200),
-('aaaaaaaa-bbbb-cccc-dddd-000000000007', 'wwwwwwww-wwww-wwww-wwww-000000000002', 'department', 'Script Writing', 300, 200),
-('aaaaaaaa-bbbb-cccc-dddd-000000000008', 'wwwwwwww-wwww-wwww-wwww-000000000002', 'approval', 'Client Approval', 500, 200),
-('aaaaaaaa-bbbb-cccc-dddd-000000000009', 'wwwwwwww-wwww-wwww-wwww-000000000002', 'department', 'Video Filming', 700, 200),
-('aaaaaaaa-bbbb-cccc-dddd-000000000010', 'wwwwwwww-wwww-wwww-wwww-000000000002', 'department', 'Post-Production', 900, 200),
-('aaaaaaaa-bbbb-cccc-dddd-000000000011', 'wwwwwwww-wwww-wwww-wwww-000000000002', 'end', 'Deliver', 1100, 200);
+('aaaaaaaa-bbbb-cccc-dddd-000000000006', '00000001-0002-0003-0004-000000000002', 'start', 'Start', 100, 200),
+('aaaaaaaa-bbbb-cccc-dddd-000000000007', '00000001-0002-0003-0004-000000000002', 'department', 'Script Writing', 300, 200),
+('aaaaaaaa-bbbb-cccc-dddd-000000000008', '00000001-0002-0003-0004-000000000002', 'approval', 'Client Approval', 500, 200),
+('aaaaaaaa-bbbb-cccc-dddd-000000000009', '00000001-0002-0003-0004-000000000002', 'department', 'Video Filming', 700, 200),
+('aaaaaaaa-bbbb-cccc-dddd-000000000010', '00000001-0002-0003-0004-000000000002', 'department', 'Post-Production', 900, 200),
+('aaaaaaaa-bbbb-cccc-dddd-000000000011', '00000001-0002-0003-0004-000000000002', 'end', 'Deliver', 1100, 200);
 
 -- ============================================================================
 -- 14. WORKFLOW CONNECTIONS (define valid transitions)
@@ -510,17 +510,17 @@ INSERT INTO workflow_nodes (id, workflow_template_id, node_type, label, position
 
 INSERT INTO workflow_connections (workflow_template_id, from_node_id, to_node_id, label) VALUES
 -- Blog Post Approval connections
-('wwwwwwww-wwww-wwww-wwww-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Draft Complete'),
-('wwwwwwww-wwww-wwww-wwww-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000003', 'Content Ready'),
-('wwwwwwww-wwww-wwww-wwww-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000003', 'aaaaaaaa-bbbb-cccc-dddd-000000000004', 'Approved'),
-('wwwwwwww-wwww-wwww-wwww-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000004', 'aaaaaaaa-bbbb-cccc-dddd-000000000005', 'Graphics Complete'),
+('00000001-0002-0003-0004-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Draft Complete'),
+('00000001-0002-0003-0004-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000003', 'Content Ready'),
+('00000001-0002-0003-0004-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000003', 'aaaaaaaa-bbbb-cccc-dddd-000000000004', 'Approved'),
+('00000001-0002-0003-0004-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000004', 'aaaaaaaa-bbbb-cccc-dddd-000000000005', 'Graphics Complete'),
 
 -- Video Production connections
-('wwwwwwww-wwww-wwww-wwww-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000006', 'aaaaaaaa-bbbb-cccc-dddd-000000000007', 'Concept Approved'),
-('wwwwwwww-wwww-wwww-wwww-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000007', 'aaaaaaaa-bbbb-cccc-dddd-000000000008', 'Script Ready'),
-('wwwwwwww-wwww-wwww-wwww-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000008', 'aaaaaaaa-bbbb-cccc-dddd-000000000009', 'Approved to Film'),
-('wwwwwwww-wwww-wwww-wwww-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000009', 'aaaaaaaa-bbbb-cccc-dddd-000000000010', 'Footage Captured'),
-('wwwwwwww-wwww-wwww-wwww-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000010', 'aaaaaaaa-bbbb-cccc-dddd-000000000011', 'Editing Complete');
+('00000001-0002-0003-0004-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000006', 'aaaaaaaa-bbbb-cccc-dddd-000000000007', 'Concept Approved'),
+('00000001-0002-0003-0004-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000007', 'aaaaaaaa-bbbb-cccc-dddd-000000000008', 'Script Ready'),
+('00000001-0002-0003-0004-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000008', 'aaaaaaaa-bbbb-cccc-dddd-000000000009', 'Approved to Film'),
+('00000001-0002-0003-0004-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000009', 'aaaaaaaa-bbbb-cccc-dddd-000000000010', 'Footage Captured'),
+('00000001-0002-0003-0004-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000010', 'aaaaaaaa-bbbb-cccc-dddd-000000000011', 'Editing Complete');
 
 -- ============================================================================
 -- 15. WORKFLOW INSTANCES (2 instances: 1 active, 1 completed)
@@ -528,13 +528,13 @@ INSERT INTO workflow_connections (workflow_template_id, from_node_id, to_node_id
 
 INSERT INTO workflow_instances (id, workflow_template_id, project_id, current_node_id, status, started_at, completed_at) VALUES
 -- Active blog post workflow for Marketing Campaign project
-('bbbbbbbb-cccc-dddd-eeee-000000000001', 'wwwwwwww-wwww-wwww-wwww-000000000001',
- 'pppppppp-pppp-pppp-pppp-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000003', 'active',
+('bbbbbbbb-cccc-dddd-eeee-000000000001', '00000001-0002-0003-0004-000000000001',
+ 'ffffffff-0001-0002-0003-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-000000000003', 'active',
  '2025-01-20 09:00:00', NULL),
 
 -- Completed video workflow for Brand Identity project
-('bbbbbbbb-cccc-dddd-eeee-000000000002', 'wwwwwwww-wwww-wwww-wwww-000000000002',
- 'pppppppp-pppp-pppp-pppp-000000000004', 'aaaaaaaa-bbbb-cccc-dddd-000000000011', 'completed',
+('bbbbbbbb-cccc-dddd-eeee-000000000002', '00000001-0002-0003-0004-000000000002',
+ 'ffffffff-0001-0002-0003-000000000004', 'aaaaaaaa-bbbb-cccc-dddd-000000000011', 'completed',
  '2025-01-10 08:00:00', '2025-01-22 16:00:00');
 
 -- ============================================================================
@@ -555,7 +555,7 @@ INSERT INTO workflow_history (workflow_instance_id, from_node_id, to_node_id, tr
 -- ============================================================================
 
 INSERT INTO form_templates (id, name, description, schema, created_by) VALUES
-('ftftftft-ftft-ftft-ftft-000000000001', 'Client Intake Form',
+('dddddddd-eeee-ffff-0001-000000000001', 'Client Intake Form',
  'Standard client onboarding questionnaire',
  '{
    "fields": [
@@ -594,7 +594,7 @@ INSERT INTO form_templates (id, name, description, schema, created_by) VALUES
  }'::jsonb,
  '11111111-1111-1111-1111-000000000002'),
 
-('ftftftft-ftft-ftft-ftft-000000000002', 'Project Feedback Form',
+('dddddddd-eeee-ffff-0001-000000000002', 'Project Feedback Form',
  'Collect client feedback at project milestones',
  '{
    "fields": [
@@ -628,15 +628,15 @@ INSERT INTO form_templates (id, name, description, schema, created_by) VALUES
 -- ============================================================================
 
 INSERT INTO newsletters (id, title, content, created_by, is_published, published_at) VALUES
-('nnnnnnnn-nnnn-nnnn-nnnn-000000000001', 'Welcome to MovaLab!',
+('eeeeeeee-ffff-0001-0002-000000000001', 'Welcome to MovaLab!',
  'We are excited to announce the launch of MovaLab, our new project management platform.',
  '11111111-1111-1111-1111-000000000002', TRUE, '2025-01-15 10:00:00'),
 
-('nnnnnnnn-nnnn-nnnn-nnnn-000000000002', 'Q1 2025 Roadmap',
+('eeeeeeee-ffff-0001-0002-000000000002', 'Q1 2025 Roadmap',
  'Here is what we are planning for Q1 2025...',
  '11111111-1111-1111-1111-000000000002', FALSE, NULL),
 
-('nnnnnnnn-nnnn-nnnn-nnnn-000000000003', 'Team Updates',
+('eeeeeeee-ffff-0001-0002-000000000003', 'Team Updates',
  'Meet our new team members and see what everyone is working on.',
  '11111111-1111-1111-1111-000000000002', FALSE, NULL);
 
