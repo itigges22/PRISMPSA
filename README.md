@@ -246,29 +246,49 @@ MovaLab is purpose-built for agencies where:
 
 ---
 
-## 🚀 Future Roadmap
+## 🚀 Roadmap
 
-**Phase 2: Analytics Foundation**
-- ELO rating system for performance scoring
-- Enhanced wellbeing analytics
-- Workflow analytics engine
-- Project health indicators
+### Near-Term (Q1-Q2 2025)
 
-**Phase 3: Dashboard Enhancements**
-- Personal dashboard with ELO scores and trends
-- Leadership capacity dashboard with heatmaps
-- Skills tracking integration
-- Department & account analytics
+**Analytics & Insights**
+- Project health scoring and risk indicators
+- Workflow analytics (completion times, bottleneck identification)
+- Team wellbeing dashboard for leadership
+- Enhanced capacity forecasting
 
-**Phase 4: Organizational Analytics**
-- Executive analytics dashboard
-- Collaboration network visualization
-- Leadership intelligence hub
+**Client & Account Enhancements**
+- Full client dashboard with project visibility
+- External data source integrations (social media analytics per account)
+- Strategic plans tied to accounts and projects
+- Client feedback improvements
 
-**Phase 5: Recognition & Engagement**
-- Performance tier system
-- Achievements and badges
-- Competitive challenges (optional)
+### Mid-Term (Q3-Q4 2025)
+
+**Revenue & Business Operations**
+- Service offerings library (tied to workflow templates)
+- Proposals and estimates
+- Bill of materials / project budgeting
+- QuickBooks and/or Stripe integration for revenue tracking
+
+**Collaboration Analytics**
+- Network visualizations (who collaborates with whom)
+- Department collaboration mapping
+- Cross-account team insights
+
+**CRM Functions**
+- New client outreach tracking
+- Pipeline management for prospects
+- Lead-to-account conversion
+
+### Long-Term (2026+)
+
+**Platform Maturity**
+- Executive analytics dashboard / leadership intelligence hub
+- Full mobile compatibility
+- Performance recognition system (achievements, badges, tiers)
+- Advanced reporting and custom dashboards
+
+*Roadmap priorities may shift based on user feedback and design partner needs.*
 
 ---
 
