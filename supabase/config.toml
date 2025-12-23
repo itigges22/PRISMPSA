@@ -90,8 +90,12 @@ redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure, etc.
 url = ""
 
-[edge_functions]
+[edge_runtime]
 enabled = true
+# Policy to control how requests are handled: "per_worker" (default) or "oneshot"
+policy = "per_worker"
+# Port for the edge runtime inspector (for debugging)
+inspector_port = 8083
 
 # Configure seeding of your local database
 [db.seed]
