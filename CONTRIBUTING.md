@@ -31,14 +31,23 @@ That's it! No Supabase account, no cloud setup, no credentials management.
 
 2. **Clone your fork**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/MovaLab.git
-   cd MovaLab
+   git clone https://github.com/YOUR_USERNAME/movalab.git
+   cd movalab
    ```
 
 3. **Run the setup script**
+
+   **macOS / Linux:**
    ```bash
    ./scripts/first-time-setup.sh
    ```
+
+   **Windows:**
+   ```bash
+   scripts\first-time-setup.bat
+   ```
+
+   > **Windows Note:** The `.bat` file keeps the window open so you can see progress and errors!
 
    This script will automatically:
    - ✅ Verify Node.js and Docker are installed

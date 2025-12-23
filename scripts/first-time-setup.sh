@@ -2,6 +2,29 @@
 # MovaLab First-Time Setup Script
 # This script sets up everything needed to run MovaLab locally with Docker
 
+# Detect Windows/Git Bash
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+  IS_WINDOWS=true
+else
+  IS_WINDOWS=false
+fi
+
+# Error handler for Windows - prevent immediate window close
+error_exit() {
+  echo ""
+  echo "========================================="
+  echo "Setup failed! See error above."
+  echo "========================================="
+  echo ""
+  if [ "$IS_WINDOWS" = true ]; then
+    read -p "Press Enter to close..."
+  fi
+  exit 1
+}
+
+# Set error trap
+trap error_exit ERR
+
 set -e  # Exit on error
 
 # Colors for output
@@ -96,25 +119,8 @@ else
   exit 1
 fi
 
-# Check Supabase CLI
-if command_exists supabase; then
-  SUPABASE_VERSION=$(supabase --version)
-  print_success "Supabase CLI is installed: $SUPABASE_VERSION"
-else
-  print_warning "Supabase CLI is not installed"
-  echo "   Installing Supabase CLI..."
-
-  # Install Supabase CLI via npm
-  npm install -g supabase
-
-  if command_exists supabase; then
-    print_success "Supabase CLI installed successfully"
-  else
-    print_error "Failed to install Supabase CLI"
-    echo "   Please install manually: https://supabase.com/docs/guides/cli"
-    exit 1
-  fi
-fi
+# Note: Supabase CLI is installed as a dev dependency via npm install
+# We don't check for it here because it will be installed in Step 3
 
 # ============================================================================
 # STEP 2: Check for Base Schema Migration
@@ -155,6 +161,16 @@ if [ -f "package.json" ]; then
   print_info "Running npm install..."
   npm install
   print_success "Dependencies installed"
+
+  # Verify Supabase CLI is now available (installed as dev dependency)
+  if npx supabase --version >/dev/null 2>&1; then
+    SUPABASE_VERSION=$(npx supabase --version)
+    print_success "Supabase CLI is available: $SUPABASE_VERSION"
+  else
+    print_error "Supabase CLI not found after npm install"
+    echo "   This is unexpected. Please check package.json includes supabase in devDependencies"
+    exit 1
+  fi
 else
   print_error "package.json not found. Are you in the MovaLab root directory?"
   exit 1
@@ -207,15 +223,15 @@ print_info "This will start PostgreSQL, API, Auth, Storage, and Studio..."
 print_info "(This may take 1-2 minutes on first run)"
 echo ""
 
-# Start Supabase
-supabase start
+# Start Supabase using npx
+npx supabase start
 
 if [ $? -eq 0 ]; then
   print_success "Supabase started successfully"
 else
   print_error "Failed to start Supabase"
-  echo "   Try running: supabase stop"
-  echo "   Then: supabase start"
+  echo "   Try running: npx supabase stop"
+  echo "   Then: npx supabase start"
   exit 1
 fi
 
@@ -295,3 +311,9 @@ echo "   All passwords: ${YELLOW}Test1234!${NC}"
 echo ""
 print_success "Happy coding! 🚀"
 echo ""
+
+# Keep window open on Windows
+if [ "$IS_WINDOWS" = true ]; then
+  echo "Press Enter to close this window..."
+  read
+fi

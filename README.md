@@ -118,11 +118,21 @@ Before you begin, ensure you have:
 
 ### One-Command Setup
 
+**macOS / Linux:**
 ```bash
-git clone https://github.com/itigges/MovaLab.git
-cd MovaLab
+git clone https://github.com/itigges22/movalab.git
+cd movalab
 ./scripts/first-time-setup.sh
 ```
+
+**Windows (Git Bash or Command Prompt):**
+```bash
+git clone https://github.com/itigges22/movalab.git
+cd movalab
+scripts\first-time-setup.bat
+```
+
+> **Windows Note:** Use `first-time-setup.bat` which keeps the window open so you can see what's happening!
 
 **That's it!** The script automatically:
 - ✅ Checks all prerequisites (Node, Docker, Supabase CLI)
@@ -214,8 +224,8 @@ For deploying to production with cloud Supabase:
 
 1. **Clone and Install**
    ```bash
-   git clone https://github.com/itigges/MovaLab.git
-   cd MovaLab
+   git clone https://github.com/itigges22/movalab.git
+   cd movalab
    npm install
    ```
 
@@ -425,7 +435,7 @@ For feature requests, bug reports, or questions about adapting MovaLab for your 
 ### Get Help
 
 - 💬 **[Discord Community](https://discord.gg/99SpYzNbcu)** - Chat with other users and maintainers
-- 🐛 **[GitHub Issues](https://github.com/itigges/MovaLab/issues)** - Report bugs or request features
+- 🐛 **[GitHub Issues](https://github.com/itigges22/movalab/issues)** - Report bugs or request features
 - 📧 **Email Support** - For private inquiries
 
 ---
