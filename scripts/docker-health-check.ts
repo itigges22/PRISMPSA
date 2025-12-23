@@ -20,7 +20,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Local Supabase configuration
-const SUPABASE_URL = 'http://localhost:54321';
+const SUPABASE_URLS = [
+  'http://localhost:54321',  // Try localhost first
+  'http://127.0.0.1:54321'   // Fallback to IP (Windows sometimes requires this)
+];
 const SUPABASE_SERVICE_ROLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
@@ -50,42 +53,89 @@ async function runHealthChecks() {
   console.log('='.repeat(60));
   console.log('');
 
-  // Create Supabase client with service role key
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
+  // Try both localhost and 127.0.0.1 (Windows compatibility)
+  let workingUrl: string | null = null;
+  let supabase: any = null;
+
+  for (const url of SUPABASE_URLS) {
+    const testClient = createClient(url, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    try {
+      // Quick connectivity test
+      const { error } = await testClient.from('user_profiles').select('count').limit(1);
+      if (!error) {
+        workingUrl = url;
+        supabase = testClient;
+        break;
+      }
+    } catch (e) {
+      // Try next URL
+      continue;
+    }
+  }
+
+  if (!supabase || !workingUrl) {
+    // Create client anyway for remaining checks (will fail gracefully)
+    workingUrl = SUPABASE_URLS[0];
+    supabase = createClient(workingUrl, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+  }
 
   // ============================================================================
-  // CHECK 1: Database Connection (with retry)
+  // CHECK 1: Database Connection (with retry and better diagnostics)
   // ============================================================================
   console.log('1️⃣  Testing database connection...');
+  console.log(`   Attempting connection to Supabase API...`);
 
   let connectionSuccess = false;
   let connectionError: string | null = null;
-  const maxRetries = 3;
+  const maxRetries = 5; // Increased from 3 to 5 for Windows
+  let retryDelay = 2000; // Start with 2 seconds
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       if (attempt > 1) {
-        console.log(`   Retry ${attempt - 1}/${maxRetries - 1}...`);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between retries
+        console.log(`   Retry ${attempt - 1}/${maxRetries - 1} (waiting ${retryDelay / 1000}s)...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        retryDelay = Math.min(retryDelay + 1000, 5000); // Increase delay up to 5s
       }
 
       const { error } = await supabase.from('user_profiles').select('count').limit(1);
 
       if (error) {
         connectionError = error.message;
+        // If it's a connection error, retry
+        if (error.message && (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED'))) {
+          continue;
+        }
+        // Other errors (like table not found) shouldn't retry
+        break;
       } else {
         connectionSuccess = true;
         break;
       }
     } catch (error: any) {
       connectionError = error.message || 'Connection failed';
+
+      // Provide more specific error messages
       if (error.message && error.message.includes('fetch failed')) {
-        connectionError = 'Cannot connect to Supabase API (localhost:54321). Services may still be starting.';
+        connectionError = 'Cannot connect to Supabase API (localhost:54321)';
+        if (attempt === maxRetries) {
+          connectionError += '\n        Services are running in Docker but API is not accessible.';
+          connectionError += '\n        Try: npx supabase status (to verify services)';
+          connectionError += '\n        Or: npx supabase stop && npx supabase start (to restart)';
+        }
+      } else if (error.message && error.message.includes('ECONNREFUSED')) {
+        connectionError = 'Connection refused - Supabase API not responding';
       }
     }
   }
@@ -94,7 +144,7 @@ async function runHealthChecks() {
     results.push({
       name: 'Database Connection',
       passed: true,
-      details: 'Successfully connected to PostgreSQL',
+      details: `Successfully connected via ${workingUrl}`,
     });
   } else {
     results.push({

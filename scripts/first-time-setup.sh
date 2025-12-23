@@ -288,8 +288,10 @@ print_info "(This may take 1-2 minutes on first run)"
 echo ""
 
 # Check if already running to use cached images
+JUST_STARTED=false
 if npx supabase status >/dev/null 2>&1; then
   print_success "Supabase is already running (using cached images)"
+  JUST_STARTED=false
 else
   print_info "Starting Supabase for the first time (pulling Docker images)..."
   echo ""
@@ -318,6 +320,7 @@ else
     # Start Supabase using npx
     if npx supabase start; then
       SUCCESS=true
+      JUST_STARTED=true
       print_success "Supabase started successfully"
     else
       RETRY_COUNT=$((RETRY_COUNT + 1))
@@ -346,23 +349,38 @@ else
 fi
 
 # ============================================================================
-# STEP 6.5: Wait for Database to be Ready
+# STEP 6.5: Verify Services are Ready
 # ============================================================================
-print_header "⏳ Step 6.5: Waiting for Database to be Ready"
+print_header "⏳ Step 6.5: Verifying Services are Ready"
 
-print_info "Giving PostgreSQL time to initialize..."
-
-# Simple approach: Wait a fixed time for database initialization
-# This is more reliable than trying to connect (requires psql which isn't on Windows)
-print_info "Waiting 10 seconds for all services to be ready..."
-print_info "(Services may take longer to start on first run)"
-sleep 10
-
-# Verify Supabase status shows services running
-if npx supabase status >/dev/null 2>&1; then
-  print_success "Supabase services are running!"
+# Only wait if we just started Supabase
+if [ "$JUST_STARTED" = true ]; then
+  print_info "Waiting for services to initialize (just started)..."
+  print_info "(First-time startup may take 15-30 seconds)"
+  sleep 10
 else
-  print_warning "Unable to verify Supabase status, but proceeding..."
+  print_info "Supabase was already running, skipping wait"
+fi
+
+# Verify services are accessible using npx supabase status
+print_info "Verifying service connectivity..."
+if npx supabase status >/dev/null 2>&1; then
+  # Get the API URL to confirm it's accessible
+  API_URL=$(npx supabase status 2>/dev/null | grep "API URL" | awk '{print $3}')
+  if [ -n "$API_URL" ]; then
+    print_success "Supabase services are running at: $API_URL"
+  else
+    print_success "Supabase services are running!"
+  fi
+else
+  print_error "Cannot verify Supabase status"
+  echo ""
+  echo "   ${YELLOW}Troubleshooting:${NC}"
+  echo "   1. Check Docker Desktop is running"
+  echo "   2. Manually verify: ${GREEN}npx supabase status${NC}"
+  echo "   3. Restart services: ${GREEN}npx supabase stop && npx supabase start${NC}"
+  echo ""
+  exit 1
 fi
 
 # ============================================================================
