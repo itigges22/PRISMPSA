@@ -341,21 +341,20 @@ export function Navigation() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link 
-              href={isMounted && !loading && userProfile && !isUnassigned(userProfile) ? "/dashboard" : "/welcome"} 
+            <Link
+              href={isMounted && !loading && userProfile && !isUnassigned(userProfile) ? "/dashboard" : "/welcome"}
               className="flex items-center space-x-3"
             >
-              <div className="w-10 h-10 relative">
+              <div className="h-12 relative" style={{ width: 'auto' }}>
                 <Image
-                  src="/prism-logo.png"
+                  src="/logo-optimized.svg"
                   alt="MovaLab Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
+                  width={310}
+                  height={120}
+                  className="object-contain h-12 w-auto"
                   priority
                 />
               </div>
-              <span className="text-xl font-semibold text-gray-900">MovaLab</span>
             </Link>
           </div>
 

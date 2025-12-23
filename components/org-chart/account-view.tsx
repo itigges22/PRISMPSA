@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,8 @@ import {
   ChevronRight,
   X,
   Briefcase,
-  UserCog
+  UserCog,
+  RefreshCw
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -83,12 +83,18 @@ function AccountCard({
   isReadOnly = false,
   userProfile,
 }: AccountCardProps) {
-  const router = useRouter();
-  const [expanded, setExpanded] = useState(false);
-  const [allUsers, setAllUsers] = useState<Array<{ 
-    id: string; 
-    name: string; 
-    email: string; 
+  // Store expanded state in localStorage to persist across reloads
+  const [expanded, setExpanded] = useState(() => {
+    if (typeof window !== 'undefined' && account?.id) {
+      const stored = localStorage.getItem(`account-card-expanded-${account.id}`);
+      return stored === 'true';
+    }
+    return false;
+  });
+  const [allUsers, setAllUsers] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
     image: string | null;
     user_roles?: Array<{
       id: string;
@@ -109,6 +115,8 @@ function AccountCard({
   const [canRemoveUsers, setCanRemoveUsers] = useState(false);
   const [canManageAccountManager, setCanManageAccountManager] = useState(false);
   const [updatingManager, setUpdatingManager] = useState(false);
+  const [assigningUserId, setAssigningUserId] = useState<string | null>(null);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   // Check permissions
   useEffect(() => {
@@ -148,8 +156,13 @@ function AccountCard({
   if (!matchesSearch) return null;
 
   const handleToggle = () => {
-    setExpanded(!expanded);
-    if (!expanded && allUsers.length === 0) {
+    const newExpanded = !expanded;
+    setExpanded(newExpanded);
+    // Persist expanded state
+    if (typeof window !== 'undefined' && account?.id) {
+      localStorage.setItem(`account-card-expanded-${account.id}`, String(newExpanded));
+    }
+    if (newExpanded && allUsers.length === 0) {
       void loadAllUsers();
     }
   };
@@ -174,7 +187,8 @@ function AccountCard({
       toast.error('You do not have permission to assign users to accounts');
       return;
     }
-    
+
+    setAssigningUserId(userId);
     try {
       const response = await fetch(`/api/accounts/${account.id}/members`, {
         method: 'POST',
@@ -185,29 +199,30 @@ function AccountCard({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('API Error:', errorData);
-        
+
         // Provide more specific error messages
         let errorMessage = errorData.error || 'Failed to assign user';
         if (errorData.details) {
           errorMessage += `: ${errorData.details}`;
         }
-        
+
         // Check if it's a table doesn't exist error
         if (errorMessage.includes('does not exist') || errorMessage.includes('relation') || errorMessage.includes('account_members')) {
           errorMessage = 'The account_members table does not exist. Please create it in your database first.';
         }
-        
+
         throw new Error(errorMessage);
       }
 
       toast.success('User assigned to account successfully');
+      // Trigger parent reload - this will update the UI properly
       onUserAssign?.(userId, account.id);
-      // Refresh server data without full page reload
-      router.refresh();
     } catch (error: unknown) {
       console.error('Error assigning user:', error);
       const err = error as { message?: string };
       toast.error(err.message || 'Failed to assign user to account');
+    } finally {
+      setAssigningUserId(null);
     }
   };
 
@@ -221,6 +236,7 @@ function AccountCard({
       return;
     }
 
+    setRemovingUserId(userId);
     try {
       const response = await fetch(`/api/accounts/${account.id}/members/${userId}`, {
         method: 'DELETE',
@@ -232,11 +248,14 @@ function AccountCard({
       }
 
       toast.success('User removed from account successfully');
-      router.refresh();
+      // Trigger parent reload - this will update the UI properly
+      onUserAssign?.(userId, account.id);
     } catch (error: unknown) {
       console.error('Error removing user:', error);
       const err = error as { message?: string };
       toast.error(err.message || 'Failed to remove user from account');
+    } finally {
+      setRemovingUserId(null);
     }
   };
 
@@ -262,7 +281,8 @@ function AccountCard({
       }
 
       toast.success('Account manager updated successfully');
-      router.refresh();
+      // Trigger parent reload - this will update the UI properly
+      onUserAssign?.(managerId, account.id);
     } catch (error: unknown) {
       console.error('Error updating account manager:', error);
       const err = error as { message?: string };
@@ -423,8 +443,13 @@ function AccountCard({
                           size="sm"
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
                           onClick={() => handleRemoveUser(member.user_id)}
+                          disabled={removingUserId === member.user_id || assigningUserId !== null}
                         >
-                          <X className="h-4 w-4" />
+                          {removingUserId === member.user_id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <X className="h-4 w-4" />
+                          )}
                         </Button>
                       )}
                     </div>
@@ -490,9 +515,19 @@ function AccountCard({
                                 size="sm"
                                 className="h-7 px-2 text-xs shrink-0"
                                 onClick={() => handleAssignUser((user as any).id)}
+                                disabled={assigningUserId === (user as any).id || removingUserId !== null}
                               >
-                                <UserPlus className="h-3 w-3 mr-1" />
-                                Add
+                                {assigningUserId === (user as any).id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-1"></div>
+                                    Adding...
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserPlus className="h-3 w-3 mr-1" />
+                                    Add
+                                  </>
+                                )}
                               </Button>
                             </div>
                           );
@@ -557,8 +592,8 @@ export function AccountView({
 
   const handleUserAssign = (userId: string, accountId: string) => {
     onUserAssign?.(userId, accountId);
-    // Reload accounts after assignment
-    loadAccounts();
+    // Reload accounts after assignment to update the UI
+    void loadAccounts();
   };
 
   // Filter accounts by selected account
@@ -593,6 +628,16 @@ export function AccountView({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadAccounts()}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Badge variant="outline">
             {accounts.length} accounts
           </Badge>

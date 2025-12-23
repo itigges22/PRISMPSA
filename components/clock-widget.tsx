@@ -100,7 +100,7 @@ export function ClockWidget() {
   return (
     <>
       {/* Floating Widget */}
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-4 left-4 z-50">
         <Card className={`shadow-lg border-2 transition-all duration-200 ${
           clockedIn ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
         }`}>
@@ -157,11 +157,11 @@ export function ClockWidget() {
                   <Link href="/time-entries" className="block">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full text-xs py-1 h-7"
                       size="sm"
                     >
-                      <List className="w-4 h-4 mr-2" />
-                      View All Entries
+                      <List className="w-3 h-3 mr-1" />
+                      View Entries
                     </Button>
                   </Link>
                 </div>
@@ -192,11 +192,11 @@ export function ClockWidget() {
                   <Link href="/time-entries" className="block">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full text-xs py-1 h-7"
                       size="sm"
                     >
-                      <List className="w-4 h-4 mr-2" />
-                      View All Entries
+                      <List className="w-3 h-3 mr-1" />
+                      View Entries
                     </Button>
                   </Link>
                 </div>

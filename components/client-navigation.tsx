@@ -237,14 +237,14 @@ export function ClientNavigation() {
           <div className="flex justify-between items-center h-16">
             {/* Logo - use same as mounted state */}
             <div className="flex items-center">
-              <Link href="/welcome" className="flex items-center space-x-2">
-                <div className="w-8 h-8 relative">
+              <Link href="/welcome" className="flex items-center">
+                <div className="h-12 relative" style={{ width: 'auto' }}>
                   <Image
-                    src="/prism-logo.png"
+                    src="/logo-optimized.svg"
                     alt="MovaLab Logo"
-                    width={32}
-                    height={32}
-                    className="object-contain"
+                    width={310}
+                    height={120}
+                    className="object-contain h-12 w-auto"
                     priority
                   />
                 </div>
@@ -266,17 +266,17 @@ export function ClientNavigation() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link 
-              href={userProfile?.user_roles && userProfile.user_roles.length > 0 ? "/dashboard" : "/welcome"} 
-              className="flex items-center space-x-2"
+            <Link
+              href={userProfile?.user_roles && userProfile.user_roles.length > 0 ? "/dashboard" : "/welcome"}
+              className="flex items-center"
             >
-              <div className="w-8 h-8 relative">
+              <div className="h-12 relative" style={{ width: 'auto' }}>
                 <Image
-                  src="/prism-logo.png"
-                  alt="PRISM PSA Logo"
-                  width={32}
-                  height={32}
-                  className="object-contain"
+                  src="/logo-optimized.svg"
+                  alt="MovaLab Logo"
+                  width={310}
+                  height={120}
+                  className="object-contain h-12 w-auto"
                   priority
                 />
               </div>

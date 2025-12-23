@@ -75,7 +75,7 @@ performance-test.js
 
 # Test screenshots (large binary files - not needed in repo)
 docs/testing/*.png
-# Note: public/prism-logo.png is the app logo and should be tracked
+# Note: public/logo.svg is the app logo and should be tracked
 
 # Editor and IDE local files
 *.swp
