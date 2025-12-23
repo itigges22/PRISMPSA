@@ -234,7 +234,7 @@ INSERT INTO user_profiles (id, email, name, is_superadmin, bio, skills) VALUES
 
 ('11111111-1111-1111-1111-000000000008', 'client@test.local', 'Chris Client', FALSE,
  'Client user from Acme Corp',
- ARRAY[]);
+ ARRAY[]::text[]);
 
 -- ============================================================================
 -- 4. USER ROLES (assign roles to users)
