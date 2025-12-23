@@ -113,8 +113,15 @@ Before you begin, ensure you have:
 
 - ✅ **Node.js 18.0+** ([Download](https://nodejs.org/))
 - ✅ **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop)) - Must be running
+- ✅ **Docker Hub Account** (Recommended) - [Create free account](https://hub.docker.com/signup) to avoid rate limits
 - ✅ **Windows users:** Git Bash (included with [Git for Windows](https://gitforwindows.org/)) or [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install)
 - ⏱️ **5 minutes** setup time
+
+> **💡 Important:** Authenticate with Docker Hub to avoid rate limit errors:
+> ```bash
+> docker login
+> ```
+> This increases pull limits from 100 to 200 per 6 hours and prevents "Rate exceeded" errors during setup.
 
 ### One-Command Setup
 
@@ -200,9 +207,48 @@ Open [http://localhost:3000](http://localhost:3000) and login:
 
 **Quick fixes:**
 ```bash
+docker login            # Authenticate to avoid rate limits (do this first!)
 npm run docker:health   # Check if everything is working
 npm run docker:reset    # Reset database if something went wrong
 ```
+
+**Common Issues:**
+
+<details>
+<summary><strong>"Rate exceeded" error during Docker pull</strong></summary>
+
+**Problem:** Docker Hub rate limit hit (100 pulls per 6 hours for anonymous users)
+
+**Solution:**
+```bash
+# Authenticate with Docker Hub (increases limit to 200/6hrs)
+docker login
+
+# Then restart the setup
+npx supabase stop
+./scripts/first-time-setup.sh
+```
+
+**OR wait 6 hours** for the rate limit to reset.
+
+[More details](https://github.com/supabase/cli/issues/419)
+</details>
+
+<details>
+<summary><strong>"stdout is not a tty" error on Windows</strong></summary>
+
+**Problem:** Running bash script from PowerShell or CMD without proper terminal
+
+**Solution:** Use the batch file instead:
+```cmd
+scripts\first-time-setup.bat
+```
+
+Or open Git Bash and run:
+```bash
+./scripts/first-time-setup.sh
+```
+</details>
 
 ### Test User Accounts
 

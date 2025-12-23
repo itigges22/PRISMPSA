@@ -18,10 +18,17 @@ Thank you for your interest in contributing to MovaLab! This document provides g
 
 - **Node.js 18.0+** ([Download](https://nodejs.org/))
 - **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop))
+- **Docker Hub Account** (Recommended) - [Create free account](https://hub.docker.com/signup)
 - **Git**
 - **Windows users:** Git Bash (included with [Git for Windows](https://gitforwindows.org/)) or [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install)
 
 That's it! No Supabase account, no cloud setup, no credentials management.
+
+> **💡 Docker Authentication (Recommended):** Authenticate with Docker Hub to avoid rate limit errors:
+> ```bash
+> docker login
+> ```
+> **Why?** Anonymous users: 100 pulls/6hrs. Authenticated users: 200 pulls/6hrs. This prevents "Rate exceeded" errors during setup.
 
 > **💡 Windows Note:** The setup script requires bash. Use Git Bash (recommended) or WSL2. Open Git Bash and run `./scripts/first-time-setup.sh`
 
@@ -160,6 +167,19 @@ Test data is loaded from `/supabase/seed.sql`:
 - **Sample time entries** and newsletters
 
 ### Troubleshooting
+
+**"Rate exceeded" error during setup?**
+```bash
+# Authenticate with Docker Hub to increase rate limits
+docker login
+# Enter your Docker Hub username and password (create free account at https://hub.docker.com/signup)
+
+# Then restart the setup
+npx supabase stop
+./scripts/first-time-setup.sh
+```
+
+**Why?** Docker Hub limits anonymous users to 100 pulls per 6 hours. Authenticated users get 200 pulls per 6 hours. [Learn more](https://github.com/supabase/cli/issues/419)
 
 **Docker not running?**
 ```bash

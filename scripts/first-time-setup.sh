@@ -118,6 +118,24 @@ if command_exists docker; then
   # Check if Docker is running
   if docker info >/dev/null 2>&1; then
     print_success "Docker daemon is running"
+
+    # Check Docker Hub authentication (to avoid rate limits)
+    if docker info 2>/dev/null | grep -q "Username:"; then
+      DOCKER_USER=$(docker info 2>/dev/null | grep "Username:" | awk '{print $2}')
+      print_success "Docker Hub authenticated as: $DOCKER_USER"
+    else
+      print_warning "Docker Hub not authenticated (may hit rate limits)"
+      echo "   ${BLUE}Tip: Authenticate to increase rate limits:${NC}"
+      echo "   ${GREEN}docker login${NC}"
+      echo "   ${YELLOW}(Press Enter to continue anyway or Ctrl+C to cancel)${NC}"
+
+      # Only prompt if running in a TTY
+      if [ -t 0 ]; then
+        read -p "   "
+      else
+        echo "   (Non-interactive mode - continuing without authentication)"
+      fi
+    fi
   else
     print_error "Docker is installed but not running"
     echo "   Please start Docker Desktop and try again"
@@ -240,16 +258,58 @@ print_info "This will start PostgreSQL, API, Auth, Storage, and Studio..."
 print_info "(This may take 1-2 minutes on first run)"
 echo ""
 
-# Start Supabase using npx
-npx supabase start
-
-if [ $? -eq 0 ]; then
-  print_success "Supabase started successfully"
+# Check if already running to use cached images
+if npx supabase status >/dev/null 2>&1; then
+  print_success "Supabase is already running (using cached images)"
 else
-  print_error "Failed to start Supabase"
-  echo "   Try running: npx supabase stop"
-  echo "   Then: npx supabase start"
-  exit 1
+  print_info "Starting Supabase for the first time (pulling Docker images)..."
+  echo ""
+  print_warning "Note: If you get 'Rate exceeded' errors from Docker registry:"
+  echo "   1. Wait 6 hours for rate limit to reset, OR"
+  echo "   2. Authenticate with Docker Hub: ${GREEN}docker login${NC}"
+  echo "   3. Then retry: ${GREEN}npx supabase start${NC}"
+  echo ""
+
+  # Try to start Supabase with retry logic
+  MAX_RETRIES=3
+  RETRY_COUNT=0
+  SUCCESS=false
+
+  while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
+    if [ $RETRY_COUNT -gt 0 ]; then
+      WAIT_TIME=$((RETRY_COUNT * 10))
+      print_warning "Retry attempt $((RETRY_COUNT + 1))/$MAX_RETRIES (waiting ${WAIT_TIME}s)..."
+      sleep $WAIT_TIME
+    fi
+
+    # Start Supabase using npx
+    if npx supabase start; then
+      SUCCESS=true
+      print_success "Supabase started successfully"
+    else
+      RETRY_COUNT=$((RETRY_COUNT + 1))
+
+      if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+        print_warning "Start failed, will retry..."
+      fi
+    fi
+  done
+
+  if [ "$SUCCESS" = false ]; then
+    print_error "Failed to start Supabase after $MAX_RETRIES attempts"
+    echo ""
+    echo "   ${YELLOW}Common causes:${NC}"
+    echo "   - Docker Hub rate limit exceeded (wait 6 hours or run: ${GREEN}docker login${NC})"
+    echo "   - Docker Desktop not running"
+    echo "   - Port conflicts (stop other services using ports 54321-54326)"
+    echo ""
+    echo "   ${YELLOW}Manual recovery:${NC}"
+    echo "   1. Authenticate with Docker: ${GREEN}docker login${NC}"
+    echo "   2. Stop Supabase: ${GREEN}npx supabase stop${NC}"
+    echo "   3. Start again: ${GREEN}npx supabase start${NC}"
+    echo ""
+    exit 1
+  fi
 fi
 
 # ============================================================================

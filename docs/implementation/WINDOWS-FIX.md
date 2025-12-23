@@ -466,6 +466,37 @@ Press any key to continue...
 
 ## 🆘 Troubleshooting
 
+### Issue: "Rate exceeded" error from Docker registry
+
+**Problem:**
+```
+error from registry: Rate exceeded
+```
+
+**Cause:** Docker Hub rate limit hit (100 pulls per 6 hours for anonymous users)
+
+**Solution:**
+```bash
+# Authenticate with Docker Hub
+docker login
+# Enter your Docker Hub username and password
+# Create free account at https://hub.docker.com/signup
+
+# Then restart
+npx supabase stop
+scripts\first-time-setup.bat
+```
+
+**Why this helps:**
+- Anonymous: 100 pulls / 6 hours
+- Authenticated: 200 pulls / 6 hours (2x more!)
+
+**Alternative:** Wait 6 hours for rate limit to reset
+
+[GitHub Issue #419](https://github.com/supabase/cli/issues/419)
+
+---
+
 ### Issue: "bash: command not found"
 
 **Solution:**
