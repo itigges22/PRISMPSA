@@ -25,7 +25,9 @@ if (process.platform !== 'win32') {
 
   const child = spawn(nextBin, args, { stdio: 'inherit', shell: true });
   child.on('exit', (code) => process.exit(code || 0));
-  process.exit();
+  // Note: Don't call process.exit() here - wait for child to complete
+  // The script will exit when child.on('exit') fires
+  return;
 }
 
 /**

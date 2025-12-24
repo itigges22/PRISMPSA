@@ -60,12 +60,7 @@ export async function POST(
 
     const hasProjectAssignment = !!userAssignment
 
-    // If user has no access at all (not superadmin, no MANAGE_ALL_PROJECTS, not assigned), deny
-    if (!userIsSuperadmin && !hasManageAllProjects && !hasProjectAssignment) {
-      return NextResponse.json({ error: 'Access denied to this project' }, { status: 403 })
-    }
-
-    // Now fetch project - RLS should allow access since we verified permissions above
+    // Fetch project first to check creator status (RLS allows access for creators)
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .select('id, status, account_id, created_by')
@@ -74,6 +69,13 @@ export async function POST(
 
     if (projectError || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    const isProjectCreator = project.created_by === (user as any).id
+
+    // If user has no access at all (not superadmin, no MANAGE_ALL_PROJECTS, not assigned, not creator), deny
+    if (!userIsSuperadmin && !hasManageAllProjects && !hasProjectAssignment && !isProjectCreator) {
+      return NextResponse.json({ error: 'Access denied to this project' }, { status: 403 })
     }
 
     // Verify project is not already complete
@@ -97,7 +99,6 @@ export async function POST(
 
     // Final permission check - must be superadmin, have MANAGE_ALL_PROJECTS, project creator,
     // or be assigned to the project with manage_projects permission
-    const isProjectCreator = project.created_by === (user as any).id
     const hasManageProjects = await hasPermission(userProfile, Permission.MANAGE_PROJECTS, undefined, supabase)
     const canCompleteAsAssignedPM = hasProjectAssignment && hasManageProjects
 

@@ -189,7 +189,18 @@ class AccountService {
         return false;
       }
 
-      // First, check if user has EDIT_ALL_PROJECTS permission (override)
+      // First, check if user is superadmin (bypasses all permission checks)
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('is_superadmin')
+        .eq('id', userId)
+        .single();
+
+      if (userProfile?.is_superadmin) {
+        return true;
+      }
+
+      // Check if user has EDIT_ALL_PROJECTS permission or is Superadmin role
       // Get user's roles and permissions
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
@@ -208,6 +219,12 @@ class AccountService {
         for (const ur of typedUserRoles) {
           const role = ur.roles;
           if (!role) continue;
+
+          // Check if user has Superadmin role
+          const roleName = (role as any).name?.toLowerCase();
+          if (roleName === 'superadmin') {
+            return true;
+          }
 
           const permissions = role.permissions as Record<string, unknown> | null;
           if (!permissions) continue;
