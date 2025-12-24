@@ -54,12 +54,11 @@ export default function TaskCreateEditDialog({
   const isEditMode = !!task;
 
   // Task permissions are now inherited from project access - if user can view the project page, they can manage tasks
+  // Load only users who are members of the account or assigned to the project
   const loadUsers = useCallback(async () => {
     try {
       setLoadingUsers(true);
-      // Load users directly from Supabase - task assignment doesn't require MANAGE_USERS permission
-      // Only load users who have roles assigned (team members)
-      const supabase = createClientSupabase() as any as any;
+      const supabase = createClientSupabase() as any;
 
       if (!supabase) {
         console.error('Failed to create Supabase client');
@@ -67,68 +66,135 @@ export default function TaskCreateEditDialog({
         return;
       }
 
-      // Get users with roles through user_roles table
-      const { data: userRolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          roles!user_roles_role_id_fkey (
-            id,
-            name
-          ),
-          user_profiles!user_roles_user_id_fkey (
-            id,
-            name,
-            email
-          )
-        `);
+      // First, get the project to find its account_id
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('id, account_id')
+        .eq('id', projectId)
+        .single();
 
-      if (rolesError) {
-        console.error('Error loading user roles:', rolesError);
+      if (projectError || !projectData) {
+        console.error('Error loading project:', projectError);
         setUsers([]);
         return;
       }
 
-      if (userRolesData) {
-        // Aggregate all roles per user
-        const uniqueUsersMap = new Map<string, { id: string; name: string; roles: string[] }>();
-        userRolesData.forEach((ur: any) => {
-          const userProfile = ur.user_profiles as Record<string, unknown> | undefined;
-          const role = ur.roles as Record<string, unknown> | undefined;
+      const uniqueUsersMap = new Map<string, { id: string; name: string; roles: string[] }>();
 
+      // 1. Get users who are members of the account
+      if (projectData.account_id) {
+        const { data: accountMembers, error: accountError } = await supabase
+          .from('account_members')
+          .select(`
+            user_id,
+            user_profiles!account_members_user_id_fkey (
+              id,
+              name,
+              email
+            )
+          `)
+          .eq('account_id', projectData.account_id);
+
+        if (accountError) {
+          console.error('Error loading account members:', accountError);
+        }
+
+        if (accountMembers) {
+          for (const member of accountMembers) {
+            const userProfile = member.user_profiles as Record<string, unknown> | undefined;
+            if (userProfile && (userProfile as any).id) {
+              const userId = (userProfile as any).id as string;
+              if (!uniqueUsersMap.has(userId)) {
+                uniqueUsersMap.set(userId, {
+                  id: userId,
+                  name: ((userProfile as any).name as string | undefined) || 'Unknown',
+                  roles: []
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Get users assigned to this project
+      const { data: projectMembers, error: assignmentError } = await supabase
+        .from('project_assignments')
+        .select(`
+          user_id,
+          user_profiles!project_assignments_user_id_fkey (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq('project_id', projectId)
+        .is('removed_at', null);
+
+      if (assignmentError) {
+        console.error('Error loading project assignments:', assignmentError);
+      }
+
+      if (projectMembers) {
+        for (const member of projectMembers) {
+          const userProfile = member.user_profiles as Record<string, unknown> | undefined;
           if (userProfile && (userProfile as any).id) {
             const userId = (userProfile as any).id as string;
-            const roleName = (role?.name as string | undefined) || 'No Role';
-
-            if (uniqueUsersMap.has(userId)) {
-              // Add role to existing user if not already present
-              const existingUser = uniqueUsersMap.get(userId)!;
-              if (!existingUser.roles.includes(roleName)) {
-                existingUser.roles.push(roleName);
-              }
-            } else {
-              // Create new user entry
+            if (!uniqueUsersMap.has(userId)) {
               uniqueUsersMap.set(userId, {
                 id: userId,
                 name: ((userProfile as any).name as string | undefined) || 'Unknown',
-                roles: [roleName]
+                roles: []
               });
             }
           }
-        });
-        const usersWithRoles = Array.from(uniqueUsersMap.values());
-        console.log(`Task assignment: ${usersWithRoles.length} users with roles available`);
-        setUsers(usersWithRoles);
-      } else {
-        setUsers([]);
+        }
       }
+
+      // 3. Get roles for all users we found
+      const userIds = Array.from(uniqueUsersMap.keys());
+      if (userIds.length > 0) {
+        const { data: userRolesData, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            roles!user_roles_role_id_fkey (
+              id,
+              name
+            )
+          `)
+          .in('user_id', userIds);
+
+        if (!rolesError && userRolesData) {
+          for (const ur of userRolesData) {
+            const userId = ur.user_id as string;
+            const role = ur.roles as Record<string, unknown> | undefined;
+            const roleName = (role?.name as string | undefined) || 'No Role';
+
+            const existingUser = uniqueUsersMap.get(userId);
+            if (existingUser && !existingUser.roles.includes(roleName)) {
+              existingUser.roles.push(roleName);
+            }
+          }
+        }
+      }
+
+      // Set default role for users without any
+      uniqueUsersMap.forEach((user) => {
+        if (user.roles.length === 0) {
+          user.roles = ['Team Member'];
+        }
+      });
+
+      const usersWithRoles = Array.from(uniqueUsersMap.values());
+      console.log(`Task assignment: ${usersWithRoles.length} account/project members available`);
+      setUsers(usersWithRoles);
     } catch (error: unknown) {
       console.error('Error loading users:', error);
-      setUsers([]); // Set to empty array on error
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
-  }, []);
+  }, [projectId]);
 
   const loadProject = useCallback(async () => {
     try {

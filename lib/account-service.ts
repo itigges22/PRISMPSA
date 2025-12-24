@@ -230,10 +230,7 @@ class AccountService {
           id,
           created_by,
           assigned_user_id,
-          account_id,
-          accounts!inner(
-            account_manager_id
-          )
+          account_id
         `)
         .eq('id', projectId)
         .single();
@@ -250,14 +247,22 @@ class AccountService {
         return true;
       }
 
-      // Check if user is the assigned user
+      // Check if user is the assigned_user_id on the project (legacy field)
       if (typedProject.assigned_user_id === userId) {
         return true;
       }
 
-      // Check if user is the account manager
-      if (typedProject.accounts?.account_manager_id === userId) {
-        return true;
+      // Check if user is the account manager (separate query to avoid RLS issues)
+      if (typedProject.account_id) {
+        const { data: account } = await supabase
+          .from('accounts')
+          .select('account_manager_id')
+          .eq('id', typedProject.account_id)
+          .maybeSingle();
+
+        if (account?.account_manager_id === userId) {
+          return true;
+        }
       }
 
       // Check if user has EDIT_PROJECT permission AND is assigned to this project
@@ -509,36 +514,88 @@ class AccountService {
         assignedProjectAccountIds = typedAssigned.map((p:any) => p.account_id).filter(Boolean);
       }
 
-      // Combine all account IDs and deduplicate
-      const managedAccountIds = (managedAccounts || []) as Account[];
-      const memberAccountIds = (memberAccounts || []) as Account[];
+      // Get accounts via projects the user is assigned to
+      // First get project IDs from assignments, then query projects with account join
+      // This works because PM has VIEW_PROJECTS permission
+      let projectAssignmentAccounts: Account[] = [];
+      const { data: projectAssignments, error: projectAssignmentsError } = await supabase
+        .from('project_assignments')
+        .select('project_id')
+        .eq('user_id', userId)
+        .is('removed_at', null);
 
-      const allAccountIds = [
-        ...managedAccountIds.map((a:any) => a.id),
-        ...memberAccountIds.map((a:any) => a.id),
-        ...createdProjectAccountIds,
-        ...assignedProjectAccountIds
-      ];
+      if (projectAssignmentsError) {
+        console.error('Error fetching project assignments:', projectAssignmentsError);
+      } else if (projectAssignments && projectAssignments.length > 0) {
+        console.log('Found project assignments:', projectAssignments.length);
+        const projectIds = projectAssignments.map((pa: any) => pa.project_id).filter(Boolean);
 
-      // Remove duplicates
-      const uniqueAccountIds = Array.from(new Set(allAccountIds));
+        // Now query projects directly - PM has VIEW_PROJECTS permission
+        // The accounts join should work from projects table
+        const { data: projects, error: projectsError } = await supabase
+          .from('projects')
+          .select(`
+            id,
+            account_id,
+            accounts(id, name, description, status, primary_contact_email, primary_contact_name, account_manager_id, service_tier, created_at, updated_at)
+          `)
+          .in('id', projectIds);
 
-      // Fetch all accounts in one query
-      const { data: allAccounts, error: allAccountsError } = await supabase
-        .from('accounts')
-        .select('*')
-        .in('id', uniqueAccountIds);
+        if (projectsError) {
+          console.error('Error fetching projects with accounts:', projectsError);
+        } else if (projects && projects.length > 0) {
+          console.log('Found projects:', projects.length);
+          // Extract account objects from projects
+          const accountsFromProjects = projects
+            .map((p: any) => {
+              const account = Array.isArray(p.accounts) ? p.accounts[0] : p.accounts;
+              return account;
+            })
+            .filter((a: any) => a && a.id);
 
-      if (allAccountsError) {
-        console.error('Error fetching all accounts:', allAccountsError);
-        // Return the managed accounts as fallback
-        return managedAccounts || [];
+          // Deduplicate by account ID
+          const seenIds = new Set<string>();
+          projectAssignmentAccounts = accountsFromProjects.filter((a: any) => {
+            if (seenIds.has(a.id)) return false;
+            seenIds.add(a.id);
+            return true;
+          }) as Account[];
+          console.log('Accounts from projects:', projectAssignmentAccounts.length);
+        }
       }
 
-      const typedAllAccounts = (allAccounts || []) as Account[];
+      // Combine all accounts - use full account objects where available
+      const managedAccountsList = (managedAccounts || []) as Account[];
+      const memberAccountsList = (memberAccounts || []) as Account[];
+
+      // Start with accounts we already have as full objects
+      const allAccounts: Account[] = [
+        ...managedAccountsList,
+        ...memberAccountsList,
+        ...projectAssignmentAccounts
+      ];
+
+      // Get IDs of accounts we still need to fetch (from created/assigned project refs)
+      const existingIds = new Set(allAccounts.map(a => a.id));
+      const idsToFetch = [...createdProjectAccountIds, ...assignedProjectAccountIds]
+        .filter(id => id && !existingIds.has(id));
+
+      // Fetch remaining accounts if needed (may be blocked by RLS but try anyway)
+      if (idsToFetch.length > 0) {
+        const { data: additionalAccounts } = await supabase
+          .from('accounts')
+          .select('*')
+          .in('id', idsToFetch);
+
+        if (additionalAccounts) {
+          allAccounts.push(...(additionalAccounts as Account[]));
+        }
+      }
+
+      console.log('Total accounts found:', allAccounts.length);
 
       // Remove duplicates based on account ID
-      const uniqueAccounts = typedAllAccounts.filter((account, index, self) =>
+      const uniqueAccounts = allAccounts.filter((account, index, self) =>
         index === self.findIndex((a) => a.id === account.id)
       );
 

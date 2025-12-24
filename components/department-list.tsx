@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Users, 
-  FolderOpen, 
+import {
+  Plus,
+  Users,
+  FolderOpen,
   Settings,
   ArrowRight,
   Building2,
@@ -16,8 +15,7 @@ import {
 } from 'lucide-react';
 import { Department } from '@/lib/supabase';
 import { DepartmentMetrics } from '@/lib/department-client-service';
-import { hasPermission, canViewDepartment, UserWithRoles } from '@/lib/rbac';
-import { Permission } from '@/lib/permissions';
+import { UserWithRoles } from '@/lib/rbac';
 // Permission check is handled server-side via canManageDepartments prop
 import DepartmentCreateDialog from './department-create-dialog';
 import DepartmentDeleteDialog from './department-delete-dialog';
@@ -30,43 +28,17 @@ interface DepartmentListProps {
   initialDepartmentMetrics?: Map<string, DepartmentMetrics>;
 }
 
-export function DepartmentList({ 
-  departments, 
+export function DepartmentList({
+  departments,
   canCreateDepartments,
-  canManageDepartments, 
+  canManageDepartments,
   userProfile,
   initialDepartmentMetrics
 }: DepartmentListProps) {
-  const [visibleDepartments, setVisibleDepartments] = useState<Department[]>([]);
-
-  // Filter departments based on permissions
-  useEffect(() => {
-    if (!userProfile || departments.length === 0) {
-      setVisibleDepartments([]);
-      return;
-    }
-
-    async function filterDepartments() {
-      const filtered: Department[] = [];
-      
-      for (const dept of departments) {
-        // Check if user can view this specific department
-        const canView = await canViewDepartment(userProfile, dept.id);
-        // Also check for VIEW_ALL_DEPARTMENTS permission
-        const hasViewAll = await hasPermission(userProfile, Permission.VIEW_ALL_DEPARTMENTS);
-        // Or check VIEW_DEPARTMENTS permission (general permission)
-        const hasViewDepartments = await hasPermission(userProfile, Permission.VIEW_DEPARTMENTS);
-        
-        if (canView || hasViewAll || hasViewDepartments) {
-          filtered.push(dept);
-        }
-      }
-      
-      setVisibleDepartments(filtered);
-    }
-
-    void filterDepartments();
-  }, [departments, userProfile]);
+  // Departments are already filtered server-side based on permissions
+  // No need to re-filter client-side - the server already determined
+  // which departments this user can see via canViewDepartment checks
+  const visibleDepartments = departments;
 
   // Note: Capacity and project metrics are now provided by server-side rendering
   // via initialDepartmentMetrics prop, so we don't need to fetch them client-side

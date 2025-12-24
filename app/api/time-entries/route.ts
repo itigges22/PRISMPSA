@@ -138,12 +138,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate week start date (Monday)
+    // Calculate week start date (Monday) using local time format
     const entryDateObj = new Date(entryDate);
     const day = entryDateObj.getDay();
     const diff = entryDateObj.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(entryDateObj.setDate(diff));
-    const weekStartDate = monday.toISOString().split('T')[0];
+    const monday = new Date(entryDateObj);
+    monday.setDate(diff);
+    const mondayYear = monday.getFullYear();
+    const mondayMonth = String(monday.getMonth() + 1).padStart(2, '0');
+    const mondayDay = String(monday.getDate()).padStart(2, '0');
+    const weekStartDate = `${mondayYear}-${mondayMonth}-${mondayDay}`;
 
     // Insert time entry directly using server-side Supabase
     const { data: timeEntry, error: insertError } = await supabase

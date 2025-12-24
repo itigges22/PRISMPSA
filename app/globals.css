@@ -121,7 +121,7 @@
 }
 
 @layer base {
-  * {
+  *:not(svg):not(svg *) {
     @apply border-border outline-ring/50;
   }
   body {
@@ -199,4 +199,23 @@
   background-color: var(--milestone-bg) !important;
   color: white !important;
   border-color: var(--milestone-border) !important;
+}
+
+/* Ensure Recharts SVG paths render correctly */
+/* The global * { border-border } rule can interfere with SVG strokes */
+.recharts-line-curve {
+  stroke-width: 2 !important;
+  fill: none !important;
+}
+
+.recharts-line path {
+  stroke-width: inherit;
+  fill: none;
+}
+
+/* Ensure SVG elements don't inherit border styles */
+svg path,
+svg line,
+svg polyline {
+  border: none !important;
 }

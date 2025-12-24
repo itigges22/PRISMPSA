@@ -51,31 +51,22 @@ export async function GET(
       return NextResponse.json({ error: 'Insufficient permissions to view issues' }, { status: 403 });
     }
 
-    // Get issues with workflow history info
-    // Use explicit foreign key hint to resolve relationship ambiguity
+    // Get issues with user info
+    // Simplified query - workflow_history relationship is optional
     const { data: issues, error } = await supabase
       .from('project_issues')
       .select(`
-        *,
+        id,
+        project_id,
+        content,
+        status,
+        created_by,
+        resolved_by,
+        workflow_history_id,
+        created_at,
+        resolved_at,
         user_profiles:created_by(id, name, email, image),
-        resolver_profiles:resolved_by(id, name, email, image),
-        workflow_history:workflow_history!project_issues_workflow_history_id_fkey(
-          id,
-          from_node_id,
-          approval_decision,
-          workflow_nodes:workflow_nodes!workflow_history_from_node_id_fkey(
-            id,
-            label,
-            node_type
-          ),
-          workflow_instances:workflow_instances(
-            id,
-            workflow_templates(
-              id,
-              name
-            )
-          )
-        )
+        resolver_profiles:resolved_by(id, name, email, image)
       `)
       .eq('project_id', projectId)
       .order('created_at', { ascending: false });

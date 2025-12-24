@@ -31,6 +31,9 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
 
   // Fetch entity names for UUIDs
   useEffect(() => {
+    // Guard against null pathname (can happen during SSR in Next.js 15)
+    if (!pathname) return
+
     const pathSegments = pathname.split('/').filter(Boolean)
     const fetchEntityNames = async () => {
       const names = new Map<string, string>()
@@ -120,6 +123,9 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
   // Generate breadcrumb items from pathname if not provided
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
     if (items) return items
+
+    // Guard against null pathname (can happen during SSR in Next.js 15)
+    if (!pathname) return []
 
     const pathSegments = pathname.split('/').filter(Boolean)
     const breadcrumbs: BreadcrumbItem[] = []

@@ -1,15 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Clock, Play, Square, Timer, List } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Clock, Play, Square, Timer, List, Calendar, GripVertical } from 'lucide-react'
 import { ClockOutDialog } from './clock-out-dialog'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { isUnassigned } from '@/lib/rbac'
 import { useClockStatus } from '@/lib/hooks/use-data'
+import { Skeleton } from '@/components/ui/skeleton'
+
+// Lazy load the availability calendar
+const DragAvailabilityCalendar = dynamic(() => import('@/components/drag-availability-calendar'), {
+  loading: () => (
+    <div className="space-y-3">
+      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+  ),
+  ssr: false
+})
 
 export function ClockWidget() {
   const { userProfile, loading: authLoading } = useAuth()
@@ -20,7 +34,84 @@ export function ClockWidget() {
   const [elapsedTime, setElapsedTime] = useState(0)
   const [clockingIn, setClockingIn] = useState(false)
   const [showClockOutDialog, setShowClockOutDialog] = useState(false)
+  const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+
+  // Drag functionality
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragOffset = useRef({ x: 0, y: 0 })
+  const widgetRef = useRef<HTMLDivElement>(null)
+
+  // Load saved position from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('clockWidgetPosition')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setPosition(parsed)
+      } catch {
+        // Invalid JSON, use default position
+      }
+    }
+  }, [])
+
+  // Save position to localStorage when it changes
+  useEffect(() => {
+    if (position) {
+      localStorage.setItem('clockWidgetPosition', JSON.stringify(position))
+    }
+  }, [position])
+
+  // Handle mouse down for drag start
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if (!widgetRef.current) return
+    e.preventDefault()
+    setIsDragging(true)
+
+    const rect = widgetRef.current.getBoundingClientRect()
+    dragOffset.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    }
+  }, [])
+
+  // Handle mouse move during drag
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newX = e.clientX - dragOffset.current.x
+      const newY = e.clientY - dragOffset.current.y
+
+      // Keep within viewport bounds
+      const maxX = window.innerWidth - (widgetRef.current?.offsetWidth || 200)
+      const maxY = window.innerHeight - (widgetRef.current?.offsetHeight || 150)
+
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging])
+
+  // Reset position to default
+  const resetPosition = useCallback(() => {
+    setPosition(null)
+    localStorage.removeItem('clockWidgetPosition')
+  }, [])
 
   // Format elapsed time as HH:MM:SS
   const formatTime = (seconds: number) => {
@@ -97,42 +188,82 @@ export function ClockWidget() {
     return null
   }
 
+  // Compute position styles
+  const positionStyles = position
+    ? { left: `${position.x}px`, top: `${position.y}px`, bottom: 'auto', right: 'auto' }
+    : {}
+
   return (
     <>
       {/* Floating Widget */}
-      <div className="fixed bottom-4 left-4 z-50">
+      <div
+        ref={widgetRef}
+        className={`fixed z-50 ${isDragging ? 'cursor-grabbing' : ''}`}
+        style={{
+          bottom: position ? 'auto' : '1rem',
+          left: position ? 'auto' : '1rem',
+          ...positionStyles,
+        }}
+      >
         <Card className={`shadow-lg border-2 transition-all duration-200 ${
           clockedIn ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
         }`}>
           {isMinimized ? (
-            // Minimized view - just an icon
-            <button
-              onClick={() => { setIsMinimized(false); }}
-              className="p-3 flex items-center gap-2"
-            >
-              <Clock className={`w-5 h-5 ${clockedIn ? 'text-green-600' : 'text-gray-600'}`} />
-              {clockedIn && (
-                <span className="text-sm font-mono font-bold text-green-600">
-                  {formatTime(elapsedTime)}
-                </span>
-              )}
-            </button>
+            // Minimized view - just an icon with drag handle
+            <div className="flex items-center">
+              <div
+                onMouseDown={handleDragStart}
+                className="p-2 cursor-grab hover:bg-gray-100 rounded-l-lg"
+                title="Drag to move"
+              >
+                <GripVertical className="w-4 h-4 text-gray-400" />
+              </div>
+              <button
+                onClick={() => { setIsMinimized(false); }}
+                className="p-3 flex items-center gap-2"
+              >
+                <Clock className={`w-5 h-5 ${clockedIn ? 'text-green-600' : 'text-gray-600'}`} />
+                {clockedIn && (
+                  <span className="text-sm font-mono font-bold text-green-600">
+                    {formatTime(elapsedTime)}
+                  </span>
+                )}
+              </button>
+            </div>
           ) : (
             // Expanded view
             <div className="p-4 min-w-[200px]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
+                  <div
+                    onMouseDown={handleDragStart}
+                    className="cursor-grab hover:bg-gray-100 p-1 rounded -ml-1"
+                    title="Drag to move"
+                  >
+                    <GripVertical className="w-4 h-4 text-gray-400" />
+                  </div>
                   <Timer className={`w-4 h-4 ${clockedIn ? 'text-green-600' : 'text-gray-500'}`} />
                   <span className="text-sm font-medium">
                     {clockedIn ? 'Clocked In' : 'Time Tracking'}
                   </span>
                 </div>
-                <button
-                  onClick={() => { setIsMinimized(true); }}
-                  className="text-gray-400 hover:text-gray-600 text-xs"
-                >
-                  minimize
-                </button>
+                <div className="flex items-center gap-1">
+                  {position && (
+                    <button
+                      onClick={resetPosition}
+                      className="text-gray-400 hover:text-gray-600 text-xs"
+                      title="Reset position"
+                    >
+                      reset
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setIsMinimized(true); }}
+                    className="text-gray-400 hover:text-gray-600 text-xs"
+                  >
+                    minimize
+                  </button>
+                </div>
               </div>
 
               {clockedIn ? (
@@ -154,16 +285,27 @@ export function ClockWidget() {
                     <Square className="w-4 h-4 mr-2" />
                     Clock Out
                   </Button>
-                  <Link href="/time-entries" className="block">
+                  <div className="grid grid-cols-2 gap-1">
+                    <Link href="/time-entries">
+                      <Button
+                        variant="outline"
+                        className="w-full text-xs py-1 h-7"
+                        size="sm"
+                      >
+                        <List className="w-3 h-3 mr-1" />
+                        Entries
+                      </Button>
+                    </Link>
                     <Button
                       variant="outline"
                       className="w-full text-xs py-1 h-7"
                       size="sm"
+                      onClick={() => setShowAvailabilityDialog(true)}
                     >
-                      <List className="w-3 h-3 mr-1" />
-                      View Entries
+                      <Calendar className="w-3 h-3 mr-1" />
+                      Availability
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               ) : (
                 // Clocked out state
@@ -189,16 +331,27 @@ export function ClockWidget() {
                       </>
                     )}
                   </Button>
-                  <Link href="/time-entries" className="block">
+                  <div className="grid grid-cols-2 gap-1">
+                    <Link href="/time-entries">
+                      <Button
+                        variant="outline"
+                        className="w-full text-xs py-1 h-7"
+                        size="sm"
+                      >
+                        <List className="w-3 h-3 mr-1" />
+                        Entries
+                      </Button>
+                    </Link>
                     <Button
                       variant="outline"
                       className="w-full text-xs py-1 h-7"
                       size="sm"
+                      onClick={() => setShowAvailabilityDialog(true)}
                     >
-                      <List className="w-3 h-3 mr-1" />
-                      View Entries
+                      <Calendar className="w-3 h-3 mr-1" />
+                      Availability
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -214,6 +367,28 @@ export function ClockWidget() {
         elapsedSeconds={elapsedTime}
         onComplete={handleClockOutComplete}
       />
+
+      {/* Work Availability Dialog */}
+      <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Set Work Availability</DialogTitle>
+            <DialogDescription>
+              Drag to mark unavailable times. Gray blocks indicate times you cannot work.
+            </DialogDescription>
+          </DialogHeader>
+          {userProfile && (
+            <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+              <DragAvailabilityCalendar
+                userProfile={userProfile}
+                onSave={() => {
+                  toast.success('Availability saved')
+                }}
+              />
+            </Suspense>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

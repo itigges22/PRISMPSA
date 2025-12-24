@@ -15,6 +15,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { UserIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { supabaseTaskService, type User } from '@/lib/supabase-task-service';
 
@@ -34,6 +44,8 @@ export default function PeopleManagementDialog({
   const [people, setPeople] = useState<User[]>([]);
   const [newPersonName, setNewPersonName] = useState('');
   const [newPersonImage, setNewPersonImage] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [personToDelete, setPersonToDelete] = useState<string | null>(null);
 
   // Load people when dialog opens
   useEffect(() => {
@@ -76,25 +88,31 @@ export default function PeopleManagementDialog({
     }
   };
 
-  const handleDeletePerson = async (personId: string) => {
+  const handleDeletePerson = (personId: string) => {
     // Prevent deletion of the default "Unassigned" user
     if (personId === 'default-user') {
       toast.error('Cannot delete the default "Unassigned" user. This user is required for the system to function properly.');
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this person? Any tasks assigned to this person will be reassigned to "Unassigned". This action cannot be undone.')) {
-      return;
-    }
+    setPersonToDelete(personId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePerson = async () => {
+    if (!personToDelete) return;
 
     try {
-      const success = await supabaseTaskService.deleteUser(personId);
+      const success = await supabaseTaskService.deleteUser(personToDelete);
       if (success) {
-        setPeople(prev => prev.filter((person: any) => person.id !== personId));
-        onPersonDeleted?.(personId);
+        setPeople(prev => prev.filter((person: any) => person.id !== personToDelete));
+        onPersonDeleted?.(personToDelete);
       }
     } catch (error: unknown) {
       console.error('Error deleting person:', error);
+    } finally {
+      setDeleteDialogOpen(false);
+      setPersonToDelete(null);
     }
   };
 
@@ -212,6 +230,23 @@ export default function PeopleManagementDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Person</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this person? Any tasks assigned to this person will be reassigned to &quot;Unassigned&quot;. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeletePerson} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

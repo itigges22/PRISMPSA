@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Plus, Trash2, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClientSupabase } from '@/lib/supabase'
+import { handleApiPermissionError } from '@/lib/permission-toast'
 
 interface ClockSession {
   id: string
@@ -108,8 +109,7 @@ export function ClockOutDialog({
           projects (
             id,
             name,
-            status,
-            completed_at
+            status
           )
         `)
         .eq('user_id', (user as any).id)
@@ -131,45 +131,36 @@ export function ClockOutDialog({
         })
       }
 
-      // 2. Get projects user has contributed to (for historical time logging)
-      // This includes completed projects within the 1-hour grace period
-      const { data: contributions, error: contributionsError } = await supabase
-        .from('project_contributors')
+      // 2. Also check for recently completed projects the user was assigned to (within 1-hour grace period)
+      // This allows logging time to projects that just completed
+      const { data: recentCompleted, error: recentError } = await supabase
+        .from('project_assignments')
         .select(`
           project_id,
           projects (
             id,
             name,
             status,
-            completed_at
+            updated_at
           )
         `)
         .eq('user_id', (user as any).id)
+        .is('removed_at', null) // Only check current assignments for completed projects
 
-      if (contributionsError) {
-        console.error('Error fetching project contributions:', contributionsError)
+      if (recentError) {
+        console.error('Error fetching recent completed projects:', recentError)
       }
 
-      if (contributions && contributions.length > 0) {
-        contributions.forEach((c: any) => {
+      if (recentCompleted && recentCompleted.length > 0) {
+        recentCompleted.forEach((c: any) => {
           const project = c.projects as Record<string, unknown> | null | undefined
-          if (project) {
-            // Include active projects the user has contributed to
-            if ((project.status as string) !== 'complete') {
+          if (project && (project.status as string) === 'complete' && project.updated_at) {
+            const updatedAt = new Date(project.updated_at as string)
+            if (updatedAt > oneHourAgo) {
               projectMap.set(project.id as string, {
                 id: project.id as string,
-                name: project.name as string
+                name: `${project.name as string} (Completed - grace period)`
               })
-            }
-            // Include completed projects within 1-hour grace period
-            else if (project.completed_at) {
-              const completedAt = new Date(project.completed_at as string)
-              if (completedAt > oneHourAgo) {
-                projectMap.set(project.id as string, {
-                  id: project.id as string,
-                  name: `${project.name as string} (Completed - grace period)`
-                })
-              }
             }
           }
         })
@@ -290,7 +281,10 @@ export function ClockOutDialog({
         toast.success(`Clocked out! Logged ${data.summary.allocatedHours.toFixed(2)} hours`)
         onComplete()
       } else {
-        toast.error(data.error || 'Failed to clock out')
+        // Check for permission error and show specific toast
+        if (!handleApiPermissionError(response, 'time tracking')) {
+          toast.error(data.error || 'Failed to clock out')
+        }
       }
     } catch (error: unknown) {
       console.error('Error clocking out:', error)

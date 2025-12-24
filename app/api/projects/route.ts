@@ -212,35 +212,37 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (!hasViewAllProjects) {
-      // For users without VIEW_ALL_PROJECTS, get projects they have access to
-      // 1. Projects they created
-      // 2. Projects they're assigned to
-      // 3. Projects via project_assignments
-      // 4. Projects where they have tasks assigned
+      // For users without VIEW_ALL_PROJECTS, ONLY show projects they're explicitly assigned to
+      // This is stricter than RLS (which also allows viewing projects user created)
+      // Dashboard should only show projects where user is a team member
 
-      // Get project IDs from project_assignments
+      // Get project IDs from project_assignments (user is explicitly assigned)
       const { data: assignedProjects } = await supabase
         .from('project_assignments')
         .select('project_id')
         .eq('user_id', userId)
         .is('removed_at', null)
 
-      // Get project IDs from tasks
+      // Get project IDs from tasks (user has tasks assigned)
       const { data: taskProjects } = await supabase
         .from('tasks')
         .select('project_id')
         .eq('assigned_to', userId)
 
-      // Combine all project IDs
+      // Combine assigned project IDs only (NOT created_by)
       const assignedProjectIds = assignedProjects?.map((p: any) => p.project_id) || []
       const taskProjectIds = taskProjects?.map((t: any) => t.project_id) || []
       const allProjectIds = [...new Set([...assignedProjectIds, ...taskProjectIds])]
 
-      // Filter projects by: created by user, assigned to user, or in the combined list
+      // Only show projects user is explicitly assigned to
       if (allProjectIds.length > 0) {
-        query = query.or(`created_by.eq.${userId},assigned_user_id.eq.${userId},id.in.(${allProjectIds.join(',')})`)
+        query = query.in('id', allProjectIds)
       } else {
-        query = query.or(`created_by.eq.${userId},assigned_user_id.eq.${userId}`)
+        // No assigned projects - return empty
+        return NextResponse.json({
+          success: true,
+          projects: []
+        })
       }
       query = query.limit(limit)
     }

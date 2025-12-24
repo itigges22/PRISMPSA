@@ -1,18 +1,15 @@
 'use client'
 
 import { useAuth } from '@/lib/hooks/useAuth'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect, memo, Suspense } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, Suspense } from 'react'
 import { RoleGuard } from "@/components/role-guard"
-import { hasPermission } from '@/lib/rbac'
-import { Permission } from '@/lib/permissions'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from "@/components/ui/skeleton"
+import { Settings2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import useSWR from 'swr'
 
-// Loading skeleton for components - must be defined before dynamic imports
+// Loading skeleton for components
 const ComponentSkeleton = () => (
   <div className="space-y-3">
     <Skeleton className="h-8 w-full" />
@@ -21,12 +18,8 @@ const ComponentSkeleton = () => (
   </div>
 )
 
-// Code Splitting: Use Next.js dynamic() instead of React lazy() for better stability
+// Code Splitting with dynamic imports
 const CapacityDashboard = dynamic(() => import('@/components/capacity-dashboard'), {
-  loading: () => <ComponentSkeleton />,
-  ssr: false
-})
-const DragAvailabilityCalendar = dynamic(() => import('@/components/drag-availability-calendar'), {
   loading: () => <ComponentSkeleton />,
   ssr: false
 })
@@ -34,225 +27,283 @@ const UnifiedProjectsSection = dynamic(
   () => import('@/components/unified-projects-section').then(mod => mod.UnifiedProjectsSection),
   { loading: () => <ComponentSkeleton />, ssr: false }
 )
+const CustomizeModal = dynamic(
+  () => import('@/components/dashboard/customize-modal'),
+  { ssr: false }
+)
+const MyTimeWidget = dynamic(
+  () => import('@/components/dashboard/my-time-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const MyTasksWidget = dynamic(
+  () => import('@/components/dashboard/my-tasks-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const MyWorkflowsWidget = dynamic(
+  () => import('@/components/dashboard/my-workflows-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const MyAccountsWidget = dynamic(
+  () => import('@/components/dashboard/my-accounts-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const MyCollaboratorsWidget = dynamic(
+  () => import('@/components/dashboard/my-collaborators-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const TimeByProjectWidget = dynamic(
+  () => import('@/components/dashboard/time-by-project-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const TaskCompletionTrendWidget = dynamic(
+  () => import('@/components/dashboard/task-completion-trend-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const UpcomingDeadlinesWidget = dynamic(
+  () => import('@/components/dashboard/upcoming-deadlines-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
+const RecentActivityWidget = dynamic(
+  () => import('@/components/dashboard/recent-activity-widget'),
+  { loading: () => <ComponentSkeleton />, ssr: false }
+)
 
-// Memoized Profile Card to prevent unnecessary re-renders
-const ProfileCard = memo(({ userProfile }: { userProfile: Record<string, unknown> }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Profile Information</CardTitle>
-      <CardDescription>Your account details</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-2">
-        <p><strong>Name:</strong> {((userProfile as any)?.name as string) || 'N/A'}</p>
-        <p><strong>Email:</strong> {((userProfile as any)?.email as string) || 'N/A'}</p>
-        <p><strong>Roles:</strong> {(userProfile?.user_roles as Record<string, unknown>[] | undefined)?.map((ur: any) => {
-          const roles = ur.roles as Record<string, unknown> | Record<string, unknown>[];
-          const role = Array.isArray(roles) ? roles[0] : roles;
-          return role?.name as string;
-        }).join(', ') || 'None assigned'}</p>
-        <p><strong>Departments:</strong> {(userProfile?.user_roles as Record<string, unknown>[] | undefined)?.map((ur: any) => {
-          const roles = ur.roles as Record<string, unknown> | Record<string, unknown>[];
-          const role = Array.isArray(roles) ? roles[0] : roles;
-          const departments = role?.departments as Record<string, unknown> | Record<string, unknown>[] | undefined;
-          const department = departments ? (Array.isArray(departments) ? departments[0] : departments) : undefined;
-          return department?.name as string | undefined;
-        }).filter((name): name is string => Boolean(name)).join(', ') || 'None assigned'}</p>
-      </div>
-    </CardContent>
-  </Card>
-))
-ProfileCard.displayName = 'ProfileCard'
+// Types
+interface WidgetConfig {
+  id: string;
+  type: string;
+  visible: boolean;
+  order: number;
+  size: string;
+}
 
-// Memoized Quick Actions Card to prevent unnecessary re-renders
-const QuickActionsCard = memo(({
-  canViewAccounts,
-  canViewDepartments,
-  canAccessAdmin,
-  canAccessAnalytics,
-  onNavigate
-}: {
-  canViewAccounts: boolean
-  canViewDepartments: boolean
-  canAccessAdmin: boolean
-  canAccessAnalytics: boolean
-  onNavigate: (path: string) => void
-}) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Quick Actions</CardTitle>
-      <CardDescription>Common tasks</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-2">
-        {canViewAccounts && (
-          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/accounts'); }}>
-            View My Accounts
-          </Button>
-        )}
-        {canViewDepartments && (
-          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/departments'); }}>
-            View My Departments
-          </Button>
-        )}
-        {canAccessAdmin && (
-          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/admin'); }}>
-            View Admin Page
-          </Button>
-        )}
-        {canAccessAnalytics && (
-          <Button className="w-full" variant="outline" onClick={() => { onNavigate('/analytics'); }}>
-            View Org Analytics
-          </Button>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-))
-QuickActionsCard.displayName = 'QuickActionsCard'
+interface DashboardPreferences {
+  widgets: WidgetConfig[];
+  theme?: 'compact' | 'comfortable';
+}
+
+interface PreferencesResponse {
+  success: boolean;
+  data: {
+    widgetConfig: DashboardPreferences;
+    isDefault: boolean;
+    updatedAt?: string;
+  };
+}
+
+interface MyAnalyticsData {
+  time: {
+    hoursToday: number;
+    hoursThisWeek: number;
+    hoursThisMonth: number;
+    weeklyTarget: number;
+    dailyAverage: number;
+  };
+  tasks: {
+    inProgress: number;
+    dueThisWeek: number;
+    overdue: number;
+    completedThisWeek: number;
+    urgent: { id: string; name: string; projectName: string; dueDate: string; status: string }[];
+  };
+}
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function DashboardPage() {
-  const { userProfile, loading } = useAuth()
-  const router = useRouter()
-  const [canAccessAdmin, setCanAccessAdmin] = useState(false)
-  const [canAccessAnalytics, setCanAccessAnalytics] = useState(false)
-  const [canViewAccounts, setCanViewAccounts] = useState(false)
-  const [canViewDepartments, setCanViewDepartments] = useState(false)
-  const [_permissionsLoading, setPermissionsLoading] = useState(true)
-  const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false)
+  const { userProfile } = useAuth()
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false)
   const [capacityRefreshKey, setCapacityRefreshKey] = useState(0)
 
-  useEffect(() => {
-    if (loading || !userProfile) {
-      setPermissionsLoading(true);
-      setCanAccessAdmin(false);
-      setCanAccessAnalytics(false);
-      setCanViewAccounts(false);
-      setCanViewDepartments(false);
-      return;
+  // Fetch dashboard preferences
+  const { data: preferencesData, mutate: mutatePreferences } = useSWR<PreferencesResponse>(
+    '/api/dashboard/preferences',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
     }
+  )
 
-    async function checkPermissions() {
-      try {
-        setPermissionsLoading(true);
-        
-        // OPTIMIZED: Batch all permission checks in parallel instead of sequential
-        const [
-          manageUserRoles, manageUsersInAccounts, manageUsersInDepartments,
-          createDept, createAccount, manageUsers,
-          viewAllAnalytics,
-          viewAccounts, viewAllAccounts,
-          viewDepartments, viewAllDepartments
-        ] = await Promise.all([
-          hasPermission(userProfile, Permission.MANAGE_USER_ROLES),
-          hasPermission(userProfile, Permission.MANAGE_USERS_IN_ACCOUNTS),
-          hasPermission(userProfile, Permission.MANAGE_USERS_IN_DEPARTMENTS),
-          hasPermission(userProfile, Permission.MANAGE_DEPARTMENTS),
-          hasPermission(userProfile, Permission.MANAGE_ACCOUNTS),
-          hasPermission(userProfile, Permission.MANAGE_USERS),
-          hasPermission(userProfile, Permission.VIEW_ALL_ANALYTICS),
-          hasPermission(userProfile, Permission.VIEW_ACCOUNTS),
-          hasPermission(userProfile, Permission.VIEW_ALL_ACCOUNTS),
-          hasPermission(userProfile, Permission.VIEW_DEPARTMENTS),
-          hasPermission(userProfile, Permission.VIEW_ALL_DEPARTMENTS),
-        ]);
+  // Fetch analytics data for widgets
+  const { data: analyticsData, isLoading: analyticsLoading } = useSWR<{ success: boolean; data: MyAnalyticsData }>(
+    '/api/dashboard/my-analytics',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  )
 
-        const hasRoleManagementAccess = manageUserRoles || manageUsersInAccounts ||
-                                       manageUsersInDepartments || createDept ||
-                                       createAccount || manageUsers;
+  const preferences = preferencesData?.data?.widgetConfig
+  const analytics = analyticsData?.data
 
-        // Admin page access: role management permissions OR VIEW_ALL_ANALYTICS
-        const hasAdminAccess = hasRoleManagementAccess || viewAllAnalytics;
+  // Get user's first name for greeting
+  const firstName = (userProfile as any)?.name?.split(' ')[0] || 'there'
 
-        // Analytics page access: users can always view their own analytics (implicit)
-        // Only check for override permissions (VIEW_ALL_ANALYTICS)
-        const canViewAnalytics = viewAllAnalytics;
-        
-        // Check accounts and departments permissions
-        const canViewAccts = viewAccounts || viewAllAccounts;
-        const canViewDepts = viewDepartments || viewAllDepartments;
-        
-        setCanAccessAdmin(hasAdminAccess);
-        setCanAccessAnalytics(canViewAnalytics);
-        setCanViewAccounts(canViewAccts);
-        setCanViewDepartments(canViewDepts);
-      } catch (error: unknown) {
-        console.error('Error checking permissions:', error);
-        setCanAccessAdmin(false);
-        setCanAccessAnalytics(false);
-        setCanViewAccounts(false);
-        setCanViewDepartments(false);
-      } finally {
-        setPermissionsLoading(false);
+  // Helper to check if widget is visible
+  const isWidgetVisible = (type: string): boolean => {
+    if (!preferences?.widgets) return true; // Show all by default
+    const widget = preferences.widgets.find(w => w.type === type);
+    return widget ? widget.visible : true;
+  }
+
+  // Handle preference save
+  const handleSavePreferences = async (newPreferences: DashboardPreferences) => {
+    try {
+      const response = await fetch('/api/dashboard/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ widgetConfig: newPreferences }),
+      });
+
+      if (response.ok) {
+        await mutatePreferences();
       }
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
     }
+  }
 
-    void checkPermissions();
-  }, [userProfile, loading])
+  // Handle preference reset
+  const handleResetPreferences = async () => {
+    try {
+      const response = await fetch('/api/dashboard/preferences', {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await mutatePreferences();
+      }
+    } catch (error) {
+      console.error('Failed to reset preferences:', error);
+    }
+  }
 
   return (
     <RoleGuard>
-      <div>
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-            <p className="text-gray-600">Welcome to your MovaLab dashboard</p>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Welcome back, {firstName}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              Here's what's happening with your projects
+            </p>
           </div>
-
-        {/* Unified Projects Section - combines workflow inbox and assigned projects */}
-        <div className="mb-8">
-          <Suspense fallback={<ComponentSkeleton />}>
-            <UnifiedProjectsSection userProfile={userProfile as any} />
-          </Suspense>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCustomizeModal(true)}
+          >
+            <Settings2 className="h-4 w-4 mr-1.5" />
+            Customize
+          </Button>
         </div>
 
-        {/* Capacity Dashboard - Current Week Utilization */}
-        {userProfile && (
-          <div className="mb-8 mt-8">
+        {/* SECTION 1: My Projects - Primary Focus */}
+        {isWidgetVisible('projects') && (
+          <section>
+            <Suspense fallback={<ComponentSkeleton />}>
+              <UnifiedProjectsSection userProfile={userProfile as any} />
+            </Suspense>
+          </section>
+        )}
+
+        {/* SECTION 2: Capacity Trend - Full Width */}
+        {isWidgetVisible('capacity') && userProfile && (
+          <section>
             <Suspense fallback={<ComponentSkeleton />}>
               <CapacityDashboard
                 key={capacityRefreshKey}
                 userProfile={userProfile}
-                onOpenAvailability={() => { setShowAvailabilityDialog(true); }}
               />
             </Suspense>
-          </div>
+          </section>
         )}
 
-        {/* Work Availability Dialog - Lazy loaded only when opened */}
-        <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Set Work Availability</DialogTitle>
-              <DialogDescription>
-                Drag to mark unavailable times. Gray blocks indicate times you cannot work.
-              </DialogDescription>
-            </DialogHeader>
-            {userProfile && (
-              <Suspense fallback={<ComponentSkeleton />}>
-                <DragAvailabilityCalendar
-                  userProfile={userProfile}
-                  onSave={() => {
-                    // Refresh the capacity chart after saving
-                    setCapacityRefreshKey(prev => prev + 1)
-                  }}
-                />
-              </Suspense>
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* SECTION 3: Three Column Widgets - Time, Tasks, Workflows */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isWidgetVisible('time') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <MyTimeWidget
+                data={analytics?.time || null}
+                isLoading={analyticsLoading}
+              />
+            </Suspense>
+          )}
 
-        {/* User Info and Quick Actions - Memoized to prevent unnecessary re-renders */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-8">
-          {userProfile && <ProfileCard userProfile={userProfile as unknown as Record<string, unknown>} />}
-          <QuickActionsCard
-            canViewAccounts={canViewAccounts}
-            canViewDepartments={canViewDepartments}
-            canAccessAdmin={canAccessAdmin}
-            canAccessAnalytics={canAccessAnalytics}
-            onNavigate={(path) => { router.push(path); }}
-          />
-        </div>
+          {isWidgetVisible('tasks') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <MyTasksWidget
+                data={analytics?.tasks || null}
+                isLoading={analyticsLoading}
+              />
+            </Suspense>
+          )}
 
+          {isWidgetVisible('workflows') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <MyWorkflowsWidget />
+            </Suspense>
+          )}
+        </section>
+
+        {/* SECTION 4: Two Column Widgets - Accounts, Collaborators */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {isWidgetVisible('accounts') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <MyAccountsWidget />
+            </Suspense>
+          )}
+
+          {isWidgetVisible('collaborators') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <MyCollaboratorsWidget />
+            </Suspense>
+          )}
+        </section>
+
+        {/* SECTION 5: Charts and Analytics */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isWidgetVisible('time-by-project') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <TimeByProjectWidget />
+            </Suspense>
+          )}
+
+          {isWidgetVisible('task-trend') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <TaskCompletionTrendWidget />
+            </Suspense>
+          )}
+
+          {isWidgetVisible('deadlines') && (
+            <Suspense fallback={<ComponentSkeleton />}>
+              <UpcomingDeadlinesWidget />
+            </Suspense>
+          )}
+        </section>
+
+        {/* SECTION 6: Activity Feed */}
+        {isWidgetVisible('activity') && (
+          <section>
+            <Suspense fallback={<ComponentSkeleton />}>
+              <RecentActivityWidget />
+            </Suspense>
+          </section>
+        )}
+
+        {/* Customize Dashboard Modal */}
+        <CustomizeModal
+          open={showCustomizeModal}
+          onOpenChange={setShowCustomizeModal}
+          preferences={preferences || null}
+          onSave={handleSavePreferences}
+          onReset={handleResetPreferences}
+        />
       </div>
     </RoleGuard>
   )

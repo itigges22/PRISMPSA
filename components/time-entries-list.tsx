@@ -82,8 +82,14 @@ export function TimeEntriesList({ userProfile }: TimeEntriesListProps) {
   const [totalEntries, setTotalEntries] = useState(0);
 
   // Filters
+  // Use tomorrow's date for end date to handle timezone differences
+  // (entries created in UTC may appear as "tomorrow" in local time)
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return format(tomorrow, 'yyyy-MM-dd');
+  });
   const [projectFilter, setProjectFilter] = useState('all');
   const [taskFilter, setTaskFilter] = useState('all');
   const [sortBy, _setSortBy] = useState<'date' | 'hours' | 'project'>('date');
@@ -285,8 +291,10 @@ export function TimeEntriesList({ userProfile }: TimeEntriesListProps) {
   };
 
   const clearFilters = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
     setStartDate(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
-    setEndDate(format(new Date(), 'yyyy-MM-dd'));
+    setEndDate(format(tomorrow, 'yyyy-MM-dd'));
     setProjectFilter('all');
     setTaskFilter('all');
     setCurrentPage(1);

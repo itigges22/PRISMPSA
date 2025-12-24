@@ -14,6 +14,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { UsersIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { supabaseTaskService, type TaskGroup } from '@/lib/supabase-task-service';
 
@@ -32,6 +42,8 @@ export default function GroupManagementDialog({
   const [loading, setLoading] = useState(false);
   const [groups, setGroups] = useState<TaskGroup[]>([]);
   const [newGroupName, setNewGroupName] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
 
   // Load groups when dialog opens
   useEffect(() => {
@@ -72,25 +84,31 @@ export default function GroupManagementDialog({
     }
   };
 
-  const handleDeleteGroup = async (groupId: string) => {
+  const handleDeleteGroup = (groupId: string) => {
     // Prevent deletion of the default "General" group
     if (groupId === 'general') {
       toast.error('Cannot delete the default "General" group. This group is required for the system to function properly.');
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this group? Any tasks in this group will be moved to the "General" group. This action cannot be undone.')) {
-      return;
-    }
+    setGroupToDelete(groupId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteGroup = async () => {
+    if (!groupToDelete) return;
 
     try {
-      const success = await supabaseTaskService.deleteGroup(groupId);
+      const success = await supabaseTaskService.deleteGroup(groupToDelete);
       if (success) {
-        setGroups(prev => prev.filter((group: any) => group.id !== groupId));
-        onGroupDeleted?.(groupId);
+        setGroups(prev => prev.filter((group: any) => group.id !== groupToDelete));
+        onGroupDeleted?.(groupToDelete);
       }
     } catch (error: unknown) {
       console.error('Error deleting group:', error);
+    } finally {
+      setDeleteDialogOpen(false);
+      setGroupToDelete(null);
     }
   };
 
@@ -189,6 +207,23 @@ export default function GroupManagementDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this group? Any tasks in this group will be moved to the &quot;General&quot; group. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

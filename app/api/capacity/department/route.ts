@@ -155,6 +155,21 @@ export async function GET(request: NextRequest) {
       projectTasksData = data;
     }
 
+    // Build a map of project end dates for tasks to inherit when they have no due_date
+    const projectEndDateMap = new Map<string, Date | null>();
+    if (projectAssignmentsData.data) {
+      for (const pa of projectAssignmentsData.data) {
+        const project = Array.isArray(pa.projects) ? pa.projects[0] : pa.projects;
+        if (project) {
+          const projectId = (project as Record<string, unknown>).id as string;
+          const endDate = (project as Record<string, unknown>).end_date
+            ? new Date((project as Record<string, unknown>).end_date as string)
+            : null;
+          projectEndDateMap.set(projectId, endDate);
+        }
+      }
+    }
+
     const availabilityMap = new Map<string, Map<string, number>>();
     if (availabilityData.data) {
       availabilityData.data.forEach((a: any) => {
@@ -205,31 +220,65 @@ export async function GET(request: NextRequest) {
       ];
       const uniqueTasks = Array.from(new Map(allTasks.map((t: any) => [t.id, t])).values());
 
-      let totalAllocated = uniqueTasks
-        .filter((task: any) => {
-          if (task.status === 'done' || task.status === 'complete') return false;
-          const taskStart = task.start_date ? new Date(task.start_date as string) : new Date(task.created_at as string);
-          const taskEnd = task.due_date ? new Date(task.due_date as string) : new Date('2099-12-31');
-          return taskStart <= periodEnd && taskEnd >= periodStart;
-        })
-        .reduce((sum, task: any) => {
-          const hours = ((((task.remaining_hours ?? task.estimated_hours ?? 0) as number)) as number);
-          if (hours === 0) return sum;
+      // Filter to incomplete tasks only
+      const incompleteTasks = uniqueTasks.filter((task: any) => {
+        return task.status !== 'done' && task.status !== 'complete';
+      });
 
-          const taskStart = task.start_date ? new Date(task.start_date as string) : new Date(task.created_at as string);
-          const taskEnd = task.due_date ? new Date(task.due_date as string) : new Date('2099-12-31');
-          const taskDurationMs = taskEnd.getTime() - taskStart.getTime();
-          const taskDurationDays = Math.max(1, Math.ceil(taskDurationMs / (1000 * 60 * 60 * 24)) + 1);
-          const dailyRate = hours / taskDurationDays;
+      const now = new Date();
+      let totalAllocated = incompleteTasks.reduce((sum, task: any) => {
+        const hours = ((task.remaining_hours ?? task.estimated_hours ?? 0) as number);
+        if (hours === 0) return sum;
 
-          const overlapStart = new Date(Math.max(taskStart.getTime(), periodStart.getTime()));
-          const overlapEnd = new Date(Math.min(taskEnd.getTime(), periodEnd.getTime()));
-          const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
-          const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
+        const taskStart = task.start_date ? new Date(task.start_date as string) : new Date(task.created_at as string);
+        // IMPORTANT: If task has no due_date, inherit from parent project's end_date
+        // This ensures tasks in overdue projects are correctly treated as overdue
+        const taskOwnDueDate = task.due_date ? new Date(task.due_date as string) : null;
+        const projectEndDate = task.project_id ? projectEndDateMap.get(task.project_id as string) : null;
+        const taskDueDate = taskOwnDueDate ?? projectEndDate;
+
+        // CASE 1: Task is OVERDUE
+        if (taskDueDate && taskDueDate < now) {
+          if (periodStart <= now && periodEnd >= now) {
+            return sum + hours;
+          }
+          return sum;
+        }
+
+        // CASE 2: No due date - spread over 90 days
+        if (!taskDueDate) {
+          const effectiveEnd = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+          const effectiveStart = taskStart > now ? taskStart : now;
+
+          if (effectiveStart > periodEnd || effectiveEnd < periodStart) return sum;
+
+          const durationDays = Math.max(1, Math.ceil((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)));
+          const dailyRate = hours / durationDays;
+
+          const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+          const overlapEnd = new Date(Math.min(effectiveEnd.getTime(), periodEnd.getTime()));
+          const overlapDays = Math.max(0, Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
           return sum + (dailyRate * overlapDays);
-        }, 0);
+        }
 
+        // CASE 3: Future due date
+        const effectiveStart = taskStart > now ? taskStart : now;
+        if (effectiveStart > periodEnd) return sum;
+
+        const remainingDurationMs = taskDueDate.getTime() - effectiveStart.getTime();
+        const remainingDurationDays = Math.max(1, Math.ceil(remainingDurationMs / (1000 * 60 * 60 * 24)));
+        const dailyRate = hours / remainingDurationDays;
+
+        const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+        const overlapEnd = new Date(Math.min(taskDueDate.getTime(), periodEnd.getTime()));
+        const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
+        const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
+
+        return sum + (dailyRate * overlapDays);
+      }, 0);
+
+      // Add project-level estimates for projects with no tasks
       if (projectAssignmentsData.data) {
         for (const pa of projectAssignmentsData.data) {
           const project = Array.isArray(pa.projects) ? pa.projects[0] : pa.projects;
@@ -239,20 +288,49 @@ export async function GET(request: NextRequest) {
 
           if (!projectHasTasks && (project as Record<string, unknown>).estimated_hours) {
             const projectStart = (project as Record<string, unknown>).start_date ? new Date((project as Record<string, unknown>).start_date as string) : new Date();
-            const projectEnd = (project as Record<string, unknown>).end_date ? new Date((project as Record<string, unknown>).end_date as string) : new Date('2099-12-31');
+            const projectDueDate = (project as Record<string, unknown>).end_date ? new Date((project as Record<string, unknown>).end_date as string) : null;
+            const estimatedHours = (project as Record<string, unknown>).estimated_hours as number;
 
-            if (projectStart <= periodEnd && projectEnd >= periodStart) {
-              const projectDurationMs = projectEnd.getTime() - projectStart.getTime();
-              const projectDurationDays = Math.max(1, Math.ceil(projectDurationMs / (1000 * 60 * 60 * 24)) + 1);
-              const dailyRate = ((project as Record<string, unknown>).estimated_hours as number) / projectDurationDays;
-
-              const overlapStart = new Date(Math.max(projectStart.getTime(), periodStart.getTime()));
-              const overlapEnd = new Date(Math.min(projectEnd.getTime(), periodEnd.getTime()));
-              const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
-              const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
-
-              totalAllocated += dailyRate * overlapDays;
+            // CASE 1: Project is OVERDUE
+            if (projectDueDate && projectDueDate < now) {
+              if (periodStart <= now && periodEnd >= now) {
+                totalAllocated += estimatedHours;
+              }
+              continue;
             }
+
+            // CASE 2: No due date
+            if (!projectDueDate) {
+              const effectiveEnd = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+              const effectiveStart = projectStart > now ? projectStart : now;
+
+              if (effectiveStart <= periodEnd && effectiveEnd >= periodStart) {
+                const durationDays = Math.max(1, Math.ceil((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)));
+                const dailyRate = estimatedHours / durationDays;
+
+                const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+                const overlapEnd = new Date(Math.min(effectiveEnd.getTime(), periodEnd.getTime()));
+                const overlapDays = Math.max(0, Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+                totalAllocated += dailyRate * overlapDays;
+              }
+              continue;
+            }
+
+            // CASE 3: Future due date
+            const effectiveStart = projectStart > now ? projectStart : now;
+            if (effectiveStart > periodEnd) continue;
+
+            const remainingDurationMs = projectDueDate.getTime() - effectiveStart.getTime();
+            const remainingDurationDays = Math.max(1, Math.ceil(remainingDurationMs / (1000 * 60 * 60 * 24)));
+            const dailyRate = estimatedHours / remainingDurationDays;
+
+            const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+            const overlapEnd = new Date(Math.min(projectDueDate.getTime(), periodEnd.getTime()));
+            const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
+            const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
+
+            totalAllocated += dailyRate * overlapDays;
           }
         }
       }

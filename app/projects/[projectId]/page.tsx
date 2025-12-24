@@ -7,6 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { RoleGuard } from '@/components/role-guard'
 import { createClientSupabase } from '@/lib/supabase'
 import { ArrowLeft, Calendar, Clock, Building2, FolderOpen, Users, AlertCircle, FileText, AlertTriangle, Edit, Plus as PlusIcon, XCircle, CheckCircle2, List, LayoutGrid, GanttChart, RotateCcw, UserPlus, Trash2, Loader2, StickyNote, Pencil, GitBranch, X } from 'lucide-react'
@@ -24,6 +34,7 @@ import { taskServiceDB, Task } from '@/lib/task-service-db'
 import { Permission } from '@/lib/permissions'
 import { hasPermission } from '@/lib/rbac'
 import { toast } from 'sonner'
+import { handleApiPermissionError } from '@/lib/permission-toast'
 import { WorkflowProgressButton } from '@/components/workflow-progress-button'
 import { WorkflowProgress } from '@/components/workflow-progress'
 
@@ -272,6 +283,13 @@ export default function ProjectDetailPage() {
   const [editTaskDialogOpen, setEditTaskDialogOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [kanbanDialogOpen, setKanbanDialogOpen] = useState(false)
+
+  // Confirmation dialogs
+  const [deleteTaskDialogOpen, setDeleteTaskDialogOpen] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
+  const [completeProjectDialogOpen, setCompleteProjectDialogOpen] = useState(false)
+  const [removeTeamMemberDialogOpen, setRemoveTeamMemberDialogOpen] = useState(false)
+  const [teamMemberToRemove, setTeamMemberToRemove] = useState<string | null>(null)
   const [ganttDialogOpen, setGanttDialogOpen] = useState(false)
   const [ganttViewMode, setGanttViewMode] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly'>('weekly')
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
@@ -478,14 +496,16 @@ export default function ProjectDetailPage() {
             account:accounts(*)
           `)
           .eq('id', projectId)
-          .single()
+          .maybeSingle()
 
         if (queryError) {
-          throw queryError
+          console.error('Error fetching project:', queryError)
+          throw new Error('Failed to load project')
         }
 
         if (!data) {
-          throw new Error('Project not found')
+          // Project not found or user doesn't have access (RLS blocked)
+          throw new Error('Project not found or access denied')
         }
 
         // Fetch assigned user details
@@ -764,13 +784,16 @@ export default function ProjectDetailPage() {
   }, [userProfile, projectId, tasks.length])
 
   // Handle task delete
-  const handleDeleteTask = useCallback(async (taskId: string) => {
-    if (!confirm('Are you sure you want to delete this task?')) {
-      return
-    }
+  const handleDeleteTask = useCallback((taskId: string) => {
+    setTaskToDelete(taskId)
+    setDeleteTaskDialogOpen(true)
+  }, [])
+
+  const confirmDeleteTask = useCallback(async () => {
+    if (!taskToDelete) return
 
     try {
-      const success = await taskServiceDB.deleteTask(taskId)
+      const success = await taskServiceDB.deleteTask(taskToDelete)
       if (success) {
         // Reload tasks
         await loadTasks()
@@ -780,8 +803,11 @@ export default function ProjectDetailPage() {
     } catch (error: unknown) {
       console.error('Error deleting task:', error)
       toast.error('Error deleting task')
+    } finally {
+      setDeleteTaskDialogOpen(false)
+      setTaskToDelete(null)
     }
-  }, [loadTasks])
+  }, [taskToDelete, loadTasks])
 
   // Handle task edit
   const handleEditTask = useCallback((task: Task) => {
@@ -995,14 +1021,15 @@ export default function ProjectDetailPage() {
   }
 
   // Manually complete a non-workflow project
-  const handleCompleteProject = async () => {
+  const handleCompleteProject = () => {
     if (!projectId || project?.status === 'complete') return
+    setCompleteProjectDialogOpen(true)
+  }
 
-    // Confirm with user
-    if (!confirm('Are you sure you want to complete this project? This will mark the project as finished and remove all team assignments.')) {
-      return
-    }
+  const confirmCompleteProject = async () => {
+    if (!projectId) return
 
+    setCompleteProjectDialogOpen(false)
     setCompletingProject(true)
     try {
       const response = await fetch(`/api/projects/${projectId}/complete`, {
@@ -1237,6 +1264,7 @@ export default function ProjectDetailPage() {
       const supabase = supabaseResult3 as any
 
       // Get all contributors from project_contributors table
+      // Note: This table may not exist in all installations - handle gracefully
       const { data: contributors, error } = await supabase
         .from('project_contributors')
         .select('user_id, contribution_type, last_contributed_at')
@@ -1244,7 +1272,9 @@ export default function ProjectDetailPage() {
         .order('last_contributed_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading workflow contributors:', error)
+        // Table may not exist - silently return empty array
+        // This is expected for installations without the project_contributors table
+        setWorkflowContributors([])
         return
       }
 
@@ -1345,16 +1375,19 @@ export default function ProjectDetailPage() {
   }
 
   // Remove a team member
-  const handleRemoveTeamMember = async (userId: string) => {
+  const handleRemoveTeamMember = (userId: string) => {
     if (!projectId || removingMemberId) return
+    setTeamMemberToRemove(userId)
+    setRemoveTeamMemberDialogOpen(true)
+  }
 
-    if (!confirm('Are you sure you want to remove this team member from the project?')) {
-      return
-    }
+  const confirmRemoveTeamMember = async () => {
+    if (!projectId || !teamMemberToRemove) return
 
-    setRemovingMemberId(userId)
+    setRemoveTeamMemberDialogOpen(false)
+    setRemovingMemberId(teamMemberToRemove)
     try {
-      const response = await fetch(`/api/projects/${projectId}/assignments?userId=${userId}`, {
+      const response = await fetch(`/api/projects/${projectId}/assignments?userId=${teamMemberToRemove}`, {
         method: 'DELETE'
       })
 
@@ -1371,6 +1404,7 @@ export default function ProjectDetailPage() {
       toast.error('Failed to remove team member')
     } finally {
       setRemovingMemberId(null)
+      setTeamMemberToRemove(null)
     }
   }
 
@@ -1453,14 +1487,16 @@ export default function ProjectDetailPage() {
             account:accounts(*)
           `)
           .eq('id', projectId)
-          .single()
+          .maybeSingle()
 
         if (queryError) {
-          throw queryError
+          console.error('Error fetching project:', queryError)
+          throw new Error('Failed to load project')
         }
 
         if (!data) {
-          throw new Error('Project not found')
+          // Project not found or user doesn't have access (RLS blocked)
+          throw new Error('Project not found or access denied')
         }
 
         // Fetch assigned user details
@@ -1694,17 +1730,16 @@ export default function ProjectDetailPage() {
         .from('workflow_history')
         .select(`
           id,
-          handed_off_at,
+          created_at,
           notes,
           form_response_id,
           to_node_id,
-          handed_off_by,
-          approval_decision,
+          transitioned_by,
           workflow_nodes!workflow_history_to_node_id_fkey(label),
-          user_profiles!workflow_history_handed_off_by_fkey(name)
+          user_profiles!workflow_history_transitioned_by_fkey(name)
         `)
         .eq('workflow_instance_id', project.workflow_instance_id)
-        .order('handed_off_at', { ascending: true })
+        .order('created_at', { ascending: true })
 
       if (historyError) {
         console.error('Error loading workflow history:', historyError)
@@ -1717,19 +1752,9 @@ export default function ProjectDetailPage() {
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i]
 
-        // Find the approval decision from THIS entry OR the next entry that has one
-        // This handles the case where form submission is separate from approval
-        let approvalDecision = entry.approval_decision as 'approved' | 'rejected' | null
-        if (!approvalDecision) {
-          // Look at subsequent entries for an approval decision related to this form
-          for (let j = i + 1; j < entries.length && j <= i + 3; j++) {
-            const nextEntry = entries[j]
-            if (nextEntry.approval_decision) {
-              approvalDecision = nextEntry.approval_decision as 'approved' | 'rejected'
-              break
-            }
-          }
-        }
+        // Approval decision is not stored in workflow_history directly
+        // It would need to be derived from form responses or notes if needed
+        const approvalDecision: 'approved' | 'rejected' | null = null
 
         // Check for linked form response
         if (entry.form_response_id) {
@@ -1749,7 +1774,7 @@ export default function ProjectDetailPage() {
               id: entry.id as string,
               formName: ((formResp.form_template as Record<string, unknown>)?.name as string) || null,
               stepName: ((entry.workflow_nodes as Record<string, unknown>)?.label as string) || null,
-              submittedAt: (formResp.submitted_at as string) || (entry.handed_off_at as string),
+              submittedAt: (formResp.submitted_at as string) || (entry.created_at as string),
               submittedBy: ((entry.user_profiles as Record<string, unknown>)?.name as string) || null,
               responseData: (formResp.response_data as Record<string, Record<string, unknown>>) || {},
               fields: ((formResp.form_template as Record<string, unknown>)?.fields as Array<{ id: string; label: string; type: string }>) || null,
@@ -1767,7 +1792,7 @@ export default function ProjectDetailPage() {
                 id: entry.id as string,
                 formName: (notesDataData.formName as string) || null,
                 stepName: ((entry.workflow_nodes as Record<string, unknown>)?.label as string) || null,
-                submittedAt: entry.handed_off_at as string,
+                submittedAt: entry.created_at as string,
                 submittedBy: ((entry.user_profiles as Record<string, unknown>)?.name as string) || null,
                 responseData: (notesDataData.responses as Record<string, Record<string, unknown>>) || {},
                 fields: (notesDataData.fields as Array<{ id: string; label: string; type: string }>) || null,
@@ -1819,7 +1844,10 @@ export default function ProjectDetailPage() {
         setNewIssueContent('')
         setShowNewIssueForm(false)
       } else {
-        toast.error(result.error || 'Failed to create issue. Please try again.')
+        // Check for permission error and show specific toast
+        if (!handleApiPermissionError(response, 'issues')) {
+          toast.error(result.error || 'Failed to create issue. Please try again.')
+        }
       }
     } catch (error: unknown) {
       console.error('Error creating issue:', error)
@@ -1853,7 +1881,10 @@ export default function ProjectDetailPage() {
       } else {
         // Revert optimistic update on error
         setProjectIssues(previousIssues)
-        toast.error(result.error || 'Failed to update issue status')
+        // Check for permission error and show specific toast
+        if (!handleApiPermissionError(response, 'issues')) {
+          toast.error(result.error || 'Failed to update issue status')
+        }
         console.error('Error response:', result)
       }
     } catch (error: unknown) {
@@ -2717,54 +2748,110 @@ export default function ProjectDetailPage() {
                       })()}
                     </div>
                   </div>
-                  {/* Progress - Calculated from actual time logged vs estimated */}
+                  {/* Progress - Calculated from actual time logged vs project estimate */}
                   {(() => {
-                    // Show progress if there are tasks with estimates OR project-level hours logged
+                    // Project estimated hours is the total bar width
+                    const projectEstimate = project.estimated_hours || 0
+                    // Task estimates sum
                     const taskEstimatedSum = tasks.reduce((sum, task) => sum + (task.estimated_hours || 0), 0)
-                    // Use actual_hours from tasks + project-level hours (logged without a task)
+                    // Lead time = Project Estimate - Task Estimates (unallocated time)
+                    const leadTime = Math.max(0, projectEstimate - taskEstimatedSum)
+                    // Logged hours from tasks + project-level entries
                     const taskActualHours = tasks.reduce((sum, task) => sum + (task.actual_hours || 0), 0)
-                    const totalActualHours = taskActualHours + projectLevelHours
-                    const remainingHours = Math.max(0, taskEstimatedSum - totalActualHours)
-                    const progressPercent = taskEstimatedSum > 0 ? Math.round((totalActualHours / taskEstimatedSum) * 100) : 0
+                    const totalLoggedHours = taskActualHours + projectLevelHours
+                    // Remaining hours to log on tasks
+                    const remainingTaskHours = Math.max(0, taskEstimatedSum - totalLoggedHours)
 
-                    if (taskEstimatedSum > 0 || totalActualHours > 0) {
+                    // Calculate percentages based on project estimate
+                    const loggedPercent = projectEstimate > 0 ? (totalLoggedHours / projectEstimate) * 100 : 0
+                    const leadTimePercent = projectEstimate > 0 ? (leadTime / projectEstimate) * 100 : 0
+                    const progressPercent = projectEstimate > 0 ? Math.round((totalLoggedHours / projectEstimate) * 100) : 0
+
+                    if (projectEstimate > 0 || totalLoggedHours > 0) {
                       return (
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-blue-500" />
                           <div className="flex-1">
                             <p className="text-xs font-medium text-gray-500">Time Progress</p>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-blue-600">
-                                {totalActualHours.toFixed(1)}h logged
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-semibold text-green-600">
+                                {totalLoggedHours.toFixed(1)}h logged
                               </p>
                               <span className="text-xs text-gray-500">
-                                / {taskEstimatedSum.toFixed(1)}h estimated
+                                / {projectEstimate.toFixed(1)}h project estimate
                               </span>
-                              {remainingHours > 0 && (
-                                <span className="text-xs text-orange-600">
-                                  ({remainingHours.toFixed(1)}h remaining)
+                              {leadTime > 0 && (
+                                <span className="text-xs text-gray-500">
+                                  ({leadTime.toFixed(1)}h lead time)
                                 </span>
                               )}
                             </div>
-                            {/* Progress bar */}
-                            <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full transition-all duration-500 ${
-                                  progressPercent >= 100 ? 'bg-green-500' :
-                                  progressPercent >= 75 ? 'bg-blue-500' :
-                                  progressPercent >= 50 ? 'bg-yellow-500' : 'bg-gray-400'
-                                }`}
-                                style={{ width: `${Math.min(progressPercent, 100)}%` }}
-                              />
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {Math.min(progressPercent, 100)}% complete
-                              {projectLevelHours > 0 && (
-                                <span className="ml-2 text-purple-600">
-                                  (incl. {projectLevelHours.toFixed(1)}h project-level)
+                            {/* Progress bar - Green (logged) + Blue (remaining task work) + Gray (lead time) */}
+                            {(() => {
+                              // Calculate remaining task work (task estimates - logged)
+                              const remainingTaskPercent = projectEstimate > 0
+                                ? Math.max(0, (taskEstimatedSum - totalLoggedHours) / projectEstimate) * 100
+                                : 0;
+
+                              return (
+                                <div className="mt-1 w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
+                                  {/* Green portion: logged hours (from left) */}
+                                  <div
+                                    className="absolute left-0 top-0 h-3 bg-green-500 transition-all duration-500"
+                                    style={{
+                                      width: `${Math.min(loggedPercent, 100)}%`,
+                                      borderRadius: loggedPercent >= 100 ? '9999px' : '9999px 0 0 9999px'
+                                    }}
+                                  />
+                                  {/* Blue portion: remaining task work (middle) */}
+                                  {remainingTaskPercent > 0 && (
+                                    <div
+                                      className="absolute top-0 h-3 bg-blue-200 transition-all duration-500"
+                                      style={{
+                                        left: `${Math.min(loggedPercent, 100)}%`,
+                                        width: `${Math.min(remainingTaskPercent, 100 - loggedPercent)}%`
+                                      }}
+                                    />
+                                  )}
+                                  {/* Gray portion: lead time (at right end) */}
+                                  {leadTimePercent > 0 && (
+                                    <div
+                                      className="absolute right-0 top-0 h-3 bg-gray-400 rounded-r-full transition-all duration-500"
+                                      style={{
+                                        width: `${leadTimePercent}%`
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })()}
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-xs text-gray-500">
+                                {Math.min(progressPercent, 100)}% complete
+                                {projectLevelHours > 0 && (
+                                  <span className="ml-2 text-purple-600">
+                                    (incl. {projectLevelHours.toFixed(1)}h project-level)
+                                  </span>
+                                )}
+                              </p>
+                              {/* Legend */}
+                              <div className="flex items-center gap-3 text-xs">
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full" />
+                                  Logged
                                 </span>
-                              )}
-                            </p>
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-blue-200 rounded-full" />
+                                  Remaining
+                                </span>
+                                {leadTime > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-gray-400 rounded-full" />
+                                    Lead time
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )
@@ -3634,6 +3721,60 @@ export default function ProjectDetailPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Task Confirmation Dialog */}
+        <AlertDialog open={deleteTaskDialogOpen} onOpenChange={setDeleteTaskDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Task</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this task? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Complete Project Confirmation Dialog */}
+        <AlertDialog open={completeProjectDialogOpen} onOpenChange={setCompleteProjectDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Complete Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to complete this project? This will mark the project as finished and remove all team assignments.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmCompleteProject} className="bg-green-600 text-white hover:bg-green-700">
+                Complete Project
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Remove Team Member Confirmation Dialog */}
+        <AlertDialog open={removeTeamMemberDialogOpen} onOpenChange={setRemoveTeamMemberDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove this team member from the project?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRemoveTeamMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </RoleGuard>
   )

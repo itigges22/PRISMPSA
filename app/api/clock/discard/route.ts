@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
       .update({
         is_active: false,
         clock_out_time: clockOutTime.toISOString(),
-        notes: 'Discarded - no time logged',
-        updated_at: clockOutTime.toISOString()
+        notes: 'Discarded - no time logged'
       })
       .eq('id', session.id);
 

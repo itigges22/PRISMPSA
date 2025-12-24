@@ -66,30 +66,19 @@ export async function GET(
       return NextResponse.json({ error: 'Insufficient permissions to view project updates' }, { status: 403 });
     }
 
-    // Get updates with workflow history info
-    // Use explicit foreign key hint to resolve relationship ambiguity
+    // Get updates with user info
+    // Note: workflow_history relationship is optional and fetched separately if needed
     const { data: updates, error } = await supabase
       .from('project_updates')
       .select(`
-        *,
-        user_profiles:user_profiles(id, name, email, image),
-        workflow_history:workflow_history!project_updates_workflow_history_id_fkey(
-          id,
-          from_node_id,
-          approval_decision,
-          workflow_nodes:workflow_nodes!workflow_history_from_node_id_fkey(
-            id,
-            label,
-            node_type
-          ),
-          workflow_instances:workflow_instances(
-            id,
-            workflow_templates(
-              id,
-              name
-            )
-          )
-        )
+        id,
+        project_id,
+        content,
+        created_by,
+        workflow_history_id,
+        created_at,
+        updated_at,
+        user_profiles:created_by(id, name, email, image)
       `)
       .eq('project_id', projectId)
       .order('created_at', { ascending: false });

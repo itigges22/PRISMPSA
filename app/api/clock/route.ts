@@ -66,8 +66,7 @@ export async function GET(request: NextRequest) {
           .update({
             is_active: false,
             is_auto_clock_out: true,
-            clock_out_time: new Date(clockInTime.getTime() + 16 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date().toISOString()
+            clock_out_time: new Date(clockInTime.getTime() + 16 * 60 * 60 * 1000).toISOString()
           })
           .eq('id', session.id);
 

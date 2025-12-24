@@ -28,6 +28,16 @@ import { LabeledEdge, LabeledEdgeData } from './labeled-edge';
 import { EdgeConfigDialog } from './edge-config-dialog';
 import { WorkflowTutorialDialog } from './workflow-tutorial-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Save, Trash2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { validateWorkflow } from '@/lib/workflow-validation';
@@ -93,6 +103,7 @@ function WorkflowCanvasInner({
   const [edgeConfigDialogOpen, setEdgeConfigDialogOpen] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<Connection | null>(null);
   const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -379,11 +390,14 @@ function WorkflowCanvasInner({
   };
 
   const handleClear = useCallback(() => {
-    if (confirm('Are you sure you want to clear the entire workflow?')) {
-      setNodes([]);
-      setEdges([]);
-      toast.success('Workflow cleared');
-    }
+    setClearDialogOpen(true);
+  }, []);
+
+  const confirmClear = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    setClearDialogOpen(false);
+    toast.success('Workflow cleared');
   }, [setNodes, setEdges]);
 
   const handleDeleteSelected = useCallback(() => {
@@ -468,6 +482,23 @@ function WorkflowCanvasInner({
           open={tutorialDialogOpen}
           onOpenChange={setTutorialDialogOpen}
         />
+
+        <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear Workflow</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to clear the entire workflow? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmClear} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Clear
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

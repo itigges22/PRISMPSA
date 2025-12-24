@@ -4,6 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
@@ -48,6 +58,8 @@ export default function RoleManagementPage() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [reportingDialogOpen, setReportingDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleWithUsers | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
   
   // Permissions
   const [isReadOnly, setIsReadOnly] = useState(false);
@@ -255,13 +267,16 @@ export default function RoleManagementPage() {
     }
   }, [authLoading, userProfile, loadData, checkPermissions]);
 
-  async function handleDeleteRole(roleId: string) {
-    if (!confirm('Are you sure you want to delete this role?')) {
-      return;
-    }
+  function handleDeleteRole(roleId: string) {
+    setRoleToDelete(roleId);
+    setDeleteDialogOpen(true);
+  }
+
+  async function confirmDeleteRole() {
+    if (!roleToDelete) return;
 
     try {
-      const response = await fetch(`/api/roles/${roleId}`, {
+      const response = await fetch(`/api/roles/${roleToDelete}`, {
         method: 'DELETE',
       });
 
@@ -276,6 +291,9 @@ export default function RoleManagementPage() {
       const err = error as Error;
       console.error('Error deleting role:', err);
       toast.error(err.message || 'Failed to delete role');
+    } finally {
+      setDeleteDialogOpen(false);
+      setRoleToDelete(null);
     }
   }
 
@@ -569,6 +587,23 @@ export default function RoleManagementPage() {
         allRoles={roles}
         onSave={handleSaveReportingRole}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this role? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteRole} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </RoleGuard>
   );

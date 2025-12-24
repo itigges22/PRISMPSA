@@ -19,10 +19,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Local Supabase configuration
+// Local Supabase configuration - try 127.0.0.1 first for Windows compatibility
 const SUPABASE_URLS = [
-  'http://localhost:54321',  // Try localhost first
-  'http://127.0.0.1:54321'   // Fallback to IP (Windows sometimes requires this)
+  'http://127.0.0.1:54321',  // Windows prefers IP address
+  'http://localhost:54321',  // Fallback to localhost (macOS/Linux)
 ];
 const SUPABASE_SERVICE_ROLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
@@ -323,7 +323,7 @@ async function runHealthChecks() {
       });
     } else {
       // Check if roles have permissions JSONB field
-      const hasPermissions = roles.every((role) => role.permissions && typeof role.permissions === 'object');
+      const hasPermissions = roles.every((role: { id: string; name: string; permissions: unknown }) => role.permissions && typeof role.permissions === 'object');
 
       if (hasPermissions) {
         results.push({

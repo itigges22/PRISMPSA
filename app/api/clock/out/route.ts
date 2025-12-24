@@ -101,13 +101,22 @@ export async function POST(request: NextRequest) {
       console.warn(`Clock session ${session.id}: Allocated ${totalAllocated}h but was clocked in for ${totalHours.toFixed(2)}h`);
     }
 
+    // Calculate entry date (local time, not UTC)
+    // Use local date formatting to match the filter in time-entries-list.tsx
+    const year = clockOutTime.getFullYear();
+    const month = String(clockOutTime.getMonth() + 1).padStart(2, '0');
+    const dayOfMonth = String(clockOutTime.getDate()).padStart(2, '0');
+    const entryDate = `${year}-${month}-${dayOfMonth}`;
+
     // Calculate week start date (Monday)
-    const entryDate = clockOutTime.toISOString().split('T')[0];
     const day = clockOutTime.getDay();
     const diff = clockOutTime.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(clockOutTime);
     monday.setDate(diff);
-    const weekStartDate = monday.toISOString().split('T')[0];
+    const mondayYear = monday.getFullYear();
+    const mondayMonth = String(monday.getMonth() + 1).padStart(2, '0');
+    const mondayDay = String(monday.getDate()).padStart(2, '0');
+    const weekStartDate = `${mondayYear}-${mondayMonth}-${mondayDay}`;
 
     // Create time entries for each allocation
     const timeEntries = allocations.map((allocation: any) => ({
@@ -144,8 +153,7 @@ export async function POST(request: NextRequest) {
       .update({
         is_active: false,
         clock_out_time: clockOutTime.toISOString(),
-        notes: notes ?? null,
-        updated_at: clockOutTime.toISOString()
+        notes: notes ?? null
       })
       .eq('id', session.id);
 

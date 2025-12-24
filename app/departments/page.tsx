@@ -44,11 +44,17 @@ export default async function DepartmentsPage() {
   // Filter departments based on user access
   // If user has VIEW_ALL_DEPARTMENTS, show all departments
   // Otherwise, filter by department assignment
-  const departments = hasViewAllDepartments 
-    ? allDepartments 
-    : allDepartments.filter((dept: any) => 
-    canViewDepartment(userProfile, dept.id)
-  );
+  let departments = allDepartments;
+  if (!hasViewAllDepartments) {
+    // Need to await the async permission checks
+    const accessChecks = await Promise.all(
+      allDepartments.map(async (dept: any) => ({
+        dept,
+        canView: await canViewDepartment(userProfile, dept.id)
+      }))
+    );
+    departments = accessChecks.filter(({ canView }) => canView).map(({ dept }) => dept);
+  }
 
   // Fetch metrics for all visible departments (in parallel for performance)
   const metricsPromises = departments.map((dept: any) =>

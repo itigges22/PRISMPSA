@@ -58,13 +58,20 @@ export async function GET(request: NextRequest) {
     const earliestDate = ranges[0].startDate;
     const latestDate = ranges[ranges.length - 1].endDate;
 
+    console.log('[Capacity API] Account:', accountId, 'Period:', period, 'Date range:', earliestDate, 'to', latestDate);
+
     // Get all projects for this account
-    const { data: accountProjects } = await supabase
+    const { data: accountProjects, error: projectsError } = await supabase
       .from('projects')
       .select('id')
       .eq('account_id', accountId);
 
+    if (projectsError) {
+      console.error('[Capacity API] Error fetching projects:', projectsError);
+    }
+
     const projectIds = (accountProjects || []).map((p: any) => p.id);
+    console.log('[Capacity API] Found', projectIds.length, 'projects for account');
 
     if (projectIds.length === 0) {
       return NextResponse.json({
@@ -83,13 +90,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all users assigned to these projects
-    const { data: projectAssignmentsData } = await supabase
+    const { data: projectAssignmentsData, error: assignmentsError } = await supabase
       .from('project_assignments')
       .select('user_id, project_id')
       .in('project_id', projectIds)
       .is('removed_at', null);
 
+    if (assignmentsError) {
+      console.error('[Capacity API] Error fetching assignments:', assignmentsError);
+    }
+
     const userIds = Array.from(new Set((projectAssignmentsData || []).map((pa: any) => pa.user_id as string)));
+    console.log('[Capacity API] Found', userIds.length, 'unique users assigned to projects');
 
     if (userIds.length === 0) {
       return NextResponse.json({
@@ -141,6 +153,26 @@ export async function GET(request: NextRequest) {
         .in('user_id', userIds)
         .is('removed_at', null)
     ]);
+
+    // Debug logging
+    console.log('[Capacity API] Data fetched:');
+    console.log('  - Availability records:', availabilityData.data?.length || 0, availabilityData.error ? `(error: ${availabilityData.error.message})` : '');
+    console.log('  - Time entries:', timeEntriesData.data?.length || 0, timeEntriesData.error ? `(error: ${timeEntriesData.error.message})` : '');
+    console.log('  - Tasks:', tasksData.data?.length || 0, tasksData.error ? `(error: ${tasksData.error.message})` : '');
+
+    // Log sample availability data to check format
+    if (availabilityData.data && availabilityData.data.length > 0) {
+      console.log('  - Sample availability:', JSON.stringify(availabilityData.data[0]));
+    }
+
+    // Build a map of project end dates for tasks to inherit when they have no due_date
+    const projectEndDateMap = new Map<string, Date | null>();
+    if (projectsData.data) {
+      for (const project of projectsData.data) {
+        const endDate = project.end_date ? new Date(project.end_date) : null;
+        projectEndDateMap.set(project.id, endDate);
+      }
+    }
 
     // Build availability map
     const availabilityMap = new Map<string, Map<string, number>>();
@@ -220,36 +252,67 @@ export async function GET(request: NextRequest) {
 
       // Calculate allocated hours from tasks
       // Only count tasks assigned to users working on this account
-      let totalAllocated = (tasksData.data || [])
-        .filter((task: any) => {
-          // Skip completed tasks
-          if (task.status === 'done' || task.status === 'complete') return false;
+      const incompleteTasks = (tasksData.data || []).filter((task: any) => {
+        // Skip completed tasks
+        if (task.status === 'done' || task.status === 'complete') return false;
+        // Only count tasks assigned to users in this account (or unassigned tasks)
+        if (task.assigned_to && !userIds.includes(task.assigned_to as string)) return false;
+        return true;
+      });
 
-          // Only count tasks assigned to users in this account (or unassigned tasks)
-          if (task.assigned_to && !userIds.includes(task.assigned_to as string)) return false;
+      const now = new Date();
+      let totalAllocated = incompleteTasks.reduce((sum, task: any) => {
+        const hours = ((task.remaining_hours ?? task.estimated_hours ?? 0) as number);
+        if (hours === 0) return sum;
 
-          // Check if task overlaps with period
-          const taskStart = task.start_date ? new Date(task.start_date as string) : new Date(task.created_at as string);
-          const taskEnd = task.due_date ? new Date(task.due_date as string) : new Date('2099-12-31');
-          return taskStart <= periodEnd && taskEnd >= periodStart;
-        })
-        .reduce((sum, task: any) => {
-          const hours = ((((task.remaining_hours ?? task.estimated_hours ?? 0) as number)) as number);
-          if (hours === 0) return sum;
+        const taskStart = task.start_date ? new Date(task.start_date as string) : new Date(task.created_at as string);
+        // IMPORTANT: If task has no due_date, inherit from parent project's end_date
+        // This ensures tasks in overdue projects are correctly treated as overdue
+        const taskOwnDueDate = task.due_date ? new Date(task.due_date as string) : null;
+        const projectEndDate = task.project_id ? projectEndDateMap.get(task.project_id as string) : null;
+        const taskDueDate = taskOwnDueDate ?? projectEndDate;
 
-          const taskStart = task.start_date ? new Date(task.start_date as string) : new Date(task.created_at as string);
-          const taskEnd = task.due_date ? new Date(task.due_date as string) : new Date('2099-12-31');
-          const taskDurationMs = taskEnd.getTime() - taskStart.getTime();
-          const taskDurationDays = Math.max(1, Math.ceil(taskDurationMs / (1000 * 60 * 60 * 24)));
-          const dailyRate = hours / taskDurationDays;
+        // CASE 1: Task is OVERDUE (due date is in the past)
+        if (taskDueDate && taskDueDate < now) {
+          // Allocate all remaining hours to the current period
+          if (periodStart <= now && periodEnd >= now) {
+            return sum + hours;
+          }
+          return sum; // Don't count in past or future periods
+        }
 
-          const overlapStart = new Date(Math.max(taskStart.getTime(), periodStart.getTime()));
-          const overlapEnd = new Date(Math.min(taskEnd.getTime(), periodEnd.getTime()));
-          const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
-          const overlapDays = Math.max(1, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)));
+        // CASE 2: Task has no due date - spread over 90 days from now
+        if (!taskDueDate) {
+          const effectiveEnd = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+          const effectiveStart = taskStart > now ? taskStart : now;
+
+          if (effectiveStart > periodEnd || effectiveEnd < periodStart) return sum;
+
+          const durationDays = Math.max(1, Math.ceil((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)));
+          const dailyRate = hours / durationDays;
+
+          const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+          const overlapEnd = new Date(Math.min(effectiveEnd.getTime(), periodEnd.getTime()));
+          const overlapDays = Math.max(0, Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
           return sum + (dailyRate * overlapDays);
-        }, 0);
+        }
+
+        // CASE 3: Task has a FUTURE due date - spread from now until due date
+        const effectiveStart = taskStart > now ? taskStart : now;
+        if (effectiveStart > periodEnd) return sum;
+
+        const remainingDurationMs = taskDueDate.getTime() - effectiveStart.getTime();
+        const remainingDurationDays = Math.max(1, Math.ceil(remainingDurationMs / (1000 * 60 * 60 * 24)));
+        const dailyRate = hours / remainingDurationDays;
+
+        const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+        const overlapEnd = new Date(Math.min(taskDueDate.getTime(), periodEnd.getTime()));
+        const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
+        const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
+
+        return sum + (dailyRate * overlapDays);
+      }, 0);
 
       // Add project-level estimates for projects with no tasks
       if (projectsData.data) {
@@ -260,20 +323,49 @@ export async function GET(request: NextRequest) {
 
           if (!projectHasTasks && project.estimated_hours) {
             const projectStart = project.start_date ? new Date(project.start_date) : new Date();
-            const projectEnd = project.end_date ? new Date(project.end_date) : new Date('2099-12-31');
+            const projectDueDate = project.end_date ? new Date(project.end_date) : null;
+            const estimatedHours = project.estimated_hours;
 
-            if (projectStart <= periodEnd && projectEnd >= periodStart) {
-              const projectDurationMs = projectEnd.getTime() - projectStart.getTime();
-              const projectDurationDays = Math.max(1, Math.ceil(projectDurationMs / (1000 * 60 * 60 * 24)) + 1);
-              const dailyRate = project.estimated_hours / projectDurationDays;
-
-              const overlapStart = new Date(Math.max(projectStart.getTime(), periodStart.getTime()));
-              const overlapEnd = new Date(Math.min(projectEnd.getTime(), periodEnd.getTime()));
-              const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
-              const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
-
-              totalAllocated += dailyRate * overlapDays;
+            // CASE 1: Project is OVERDUE
+            if (projectDueDate && projectDueDate < now) {
+              if (periodStart <= now && periodEnd >= now) {
+                totalAllocated += estimatedHours;
+              }
+              continue;
             }
+
+            // CASE 2: No due date - spread over 90 days from now
+            if (!projectDueDate) {
+              const effectiveEnd = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+              const effectiveStart = projectStart > now ? projectStart : now;
+
+              if (effectiveStart <= periodEnd && effectiveEnd >= periodStart) {
+                const durationDays = Math.max(1, Math.ceil((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)));
+                const dailyRate = estimatedHours / durationDays;
+
+                const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+                const overlapEnd = new Date(Math.min(effectiveEnd.getTime(), periodEnd.getTime()));
+                const overlapDays = Math.max(0, Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+                totalAllocated += dailyRate * overlapDays;
+              }
+              continue;
+            }
+
+            // CASE 3: Future due date - spread from now until due date
+            const effectiveStart = projectStart > now ? projectStart : now;
+            if (effectiveStart > periodEnd) continue;
+
+            const remainingDurationMs = projectDueDate.getTime() - effectiveStart.getTime();
+            const remainingDurationDays = Math.max(1, Math.ceil(remainingDurationMs / (1000 * 60 * 60 * 24)));
+            const dailyRate = estimatedHours / remainingDurationDays;
+
+            const overlapStart = new Date(Math.max(effectiveStart.getTime(), periodStart.getTime()));
+            const overlapEnd = new Date(Math.min(projectDueDate.getTime(), periodEnd.getTime()));
+            const overlapMs = overlapEnd.getTime() - overlapStart.getTime();
+            const overlapDays = Math.max(0, Math.ceil(overlapMs / (1000 * 60 * 60 * 24)) + 1);
+
+            totalAllocated += dailyRate * overlapDays;
           }
         }
       }
@@ -288,16 +380,30 @@ export async function GET(request: NextRequest) {
 
       const utilization = totalAvailable > 0 ? Math.round((totalActual / totalAvailable) * 100) : 0;
 
+      // Ensure all values are valid finite numbers (NaN/Infinity breaks chart lines)
+      const safeAvailable = Number.isFinite(totalAvailable) ? Math.round(totalAvailable * 10) / 10 : 0;
+      const safeAllocated = Number.isFinite(totalAllocated) ? Math.round(totalAllocated * 10) / 10 : 0;
+      const safeActual = Number.isFinite(totalActual) ? Math.round(totalActual * 10) / 10 : 0;
+      const safeUtilization = Number.isFinite(utilization) ? utilization : 0;
+
       return {
         label: range.label,
         startDate: range.startDate,
         endDate: range.endDate,
-        available: Math.round(totalAvailable * 10) / 10,
-        allocated: Math.round(totalAllocated * 10) / 10,
-        actual: Math.round(totalActual * 10) / 10,
-        utilization,
+        available: safeAvailable,
+        allocated: safeAllocated,
+        actual: safeActual,
+        utilization: safeUtilization,
       };
     });
+
+    // Log final computed data
+    console.log('[Capacity API] Computed', dataPoints.length, 'data points');
+    const hasNonZero = dataPoints.some(dp => dp.available > 0 || dp.allocated > 0 || dp.actual > 0);
+    console.log('[Capacity API] Has non-zero data:', hasNonZero);
+    if (dataPoints.length > 0) {
+      console.log('[Capacity API] Sample data point:', JSON.stringify(dataPoints[0]));
+    }
 
     return NextResponse.json({
       success: true,

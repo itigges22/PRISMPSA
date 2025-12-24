@@ -41,35 +41,24 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query based on permissions
-    // Use explicit foreign key hint to resolve relationship ambiguity
+    // Simplified query - workflow_history relationship is optional
     let query = supabase
       .from('project_updates')
       .select(`
-        *,
-        user_profiles:user_profiles(id, name, email, image),
-        projects:projects(
+        id,
+        project_id,
+        content,
+        created_by,
+        workflow_history_id,
+        created_at,
+        updated_at,
+        user_profiles:created_by(id, name, email, image),
+        projects:project_id(
           id,
           name,
           status,
           priority,
-          accounts!projects_account_id_fkey(id, name)
-        ),
-        workflow_history:workflow_history!project_updates_workflow_history_id_fkey(
-          id,
-          from_node_id,
-          approval_decision,
-          workflow_nodes:workflow_nodes!workflow_history_from_node_id_fkey(
-            id,
-            label,
-            node_type
-          ),
-          workflow_instances:workflow_instances(
-            id,
-            workflow_templates(
-              id,
-              name
-            )
-          )
+          accounts:account_id(id, name)
         )
       `);
 

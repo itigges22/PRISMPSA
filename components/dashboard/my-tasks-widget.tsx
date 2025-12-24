@@ -1,0 +1,178 @@
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CheckSquare, AlertCircle, Clock, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import { format, parseISO, isToday, isTomorrow, differenceInDays } from 'date-fns';
+
+interface UrgentTask {
+  id: string;
+  name: string;
+  projectName: string;
+  dueDate: string;
+  status: string;
+}
+
+interface TasksData {
+  inProgress: number;
+  dueThisWeek: number;
+  overdue: number;
+  completedThisWeek: number;
+  urgent: UrgentTask[];
+}
+
+interface MyTasksWidgetProps {
+  data: TasksData | null;
+  isLoading: boolean;
+}
+
+function formatDueDate(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return 'Today';
+  if (isTomorrow(date)) return 'Tomorrow';
+  const daysUntil = differenceInDays(date, new Date());
+  if (daysUntil < 0) return `${Math.abs(daysUntil)}d overdue`;
+  if (daysUntil <= 7) return `${daysUntil}d`;
+  return format(date, 'MMM d');
+}
+
+function getDueDateColor(dateStr: string): string {
+  const date = parseISO(dateStr);
+  const daysUntil = differenceInDays(date, new Date());
+  if (daysUntil < 0) return 'text-red-600 bg-red-50 dark:bg-red-950/50';
+  if (daysUntil === 0) return 'text-amber-600 bg-amber-50 dark:bg-amber-950/50';
+  if (daysUntil <= 2) return 'text-amber-500 bg-amber-50 dark:bg-amber-950/30';
+  return 'text-muted-foreground bg-muted';
+}
+
+export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <Skeleton className="h-5 w-24" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CheckSquare className="h-4 w-4 text-purple-500" />
+            My Tasks
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No task data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const hasNoTasks = data.inProgress === 0 && data.dueThisWeek === 0 &&
+                     data.overdue === 0 && data.completedThisWeek === 0;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="h-4 w-4 text-purple-500" />
+            My Tasks
+          </div>
+          <Link href="/projects" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+            View All <ExternalLink className="h-3 w-3" />
+          </Link>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {hasNoTasks ? (
+          <div className="text-center py-4 text-sm text-muted-foreground">
+            No tasks assigned
+          </div>
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-blue-500" />
+                  <span className="text-xs text-muted-foreground">In Progress</span>
+                </div>
+                <p className="text-xl font-bold mt-0.5">{data.inProgress}</p>
+              </div>
+
+              <div className={`rounded-lg p-2.5 ${data.overdue > 0 ? 'bg-red-50 dark:bg-red-950/30' : 'bg-muted/50'}`}>
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className={`h-3.5 w-3.5 ${data.overdue > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+                  <span className="text-xs text-muted-foreground">Overdue</span>
+                </div>
+                <p className={`text-xl font-bold mt-0.5 ${data.overdue > 0 ? 'text-red-600' : ''}`}>
+                  {data.overdue}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-xs text-muted-foreground">Due This Week</span>
+                </div>
+                <p className="text-xl font-bold mt-0.5">{data.dueThisWeek}</p>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                  <span className="text-xs text-muted-foreground">Completed</span>
+                </div>
+                <p className="text-xl font-bold mt-0.5">{data.completedThisWeek}</p>
+              </div>
+            </div>
+
+            {/* Upcoming Deadlines */}
+            {data.urgent.length > 0 && (
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-2">Upcoming Deadlines</p>
+                <div className="space-y-1.5">
+                  {data.urgent.slice(0, 3).map((task) => (
+                    <Link
+                      key={task.id}
+                      href={`/projects?task=${task.id}`}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate group-hover:text-primary">
+                          {task.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {task.projectName}
+                        </p>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded ml-2 ${getDueDateColor(task.dueDate)}`}>
+                        {formatDueDate(task.dueDate)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default MyTasksWidget;

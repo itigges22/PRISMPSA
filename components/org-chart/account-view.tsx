@@ -16,6 +16,16 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { UserWithRoles } from '@/lib/rbac-types';
 import { Permission } from '@/lib/permissions';
@@ -117,6 +127,8 @@ function AccountCard({
   const [updatingManager, setUpdatingManager] = useState(false);
   const [assigningUserId, setAssigningUserId] = useState<string | null>(null);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [removeUserDialogOpen, setRemoveUserDialogOpen] = useState(false);
+  const [userToRemove, setUserToRemove] = useState<string | null>(null);
 
   // Check permissions
   useEffect(() => {
@@ -226,19 +238,23 @@ function AccountCard({
     }
   };
 
-  const handleRemoveUser = async (userId: string) => {
+  const handleRemoveUser = (userId: string) => {
     if (isReadOnly || !canRemoveUsers) {
       toast.error('You do not have permission to remove users from accounts');
       return;
     }
 
-    if (!confirm('Are you sure you want to remove this user from the account?')) {
-      return;
-    }
+    setUserToRemove(userId);
+    setRemoveUserDialogOpen(true);
+  };
 
-    setRemovingUserId(userId);
+  const confirmRemoveUser = async () => {
+    if (!userToRemove) return;
+
+    setRemoveUserDialogOpen(false);
+    setRemovingUserId(userToRemove);
     try {
-      const response = await fetch(`/api/accounts/${account.id}/members/${userId}`, {
+      const response = await fetch(`/api/accounts/${account.id}/members/${userToRemove}`, {
         method: 'DELETE',
       });
 
@@ -249,13 +265,14 @@ function AccountCard({
 
       toast.success('User removed from account successfully');
       // Trigger parent reload - this will update the UI properly
-      onUserAssign?.(userId, account.id);
+      onUserAssign?.(userToRemove, account.id);
     } catch (error: unknown) {
       console.error('Error removing user:', error);
       const err = error as { message?: string };
       toast.error(err.message || 'Failed to remove user from account');
     } finally {
       setRemovingUserId(null);
+      setUserToRemove(null);
     }
   };
 
@@ -541,6 +558,23 @@ function AccountCard({
           </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={removeUserDialogOpen} onOpenChange={setRemoveUserDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this user from the account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemoveUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

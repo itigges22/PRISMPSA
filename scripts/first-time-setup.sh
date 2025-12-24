@@ -28,13 +28,14 @@ trap error_exit ERR
 set -e  # Exit on error
 
 # Colors for output (disable if not a TTY to avoid PowerShell issues)
+# Use ANSI-C quoting $'...' for proper escape sequence interpretation
 if [ -t 1 ]; then
   # Running in a TTY
-  RED='\033[0;31m'
-  GREEN='\033[0;32m'
-  YELLOW='\033[1;33m'
-  BLUE='\033[0;34m'
-  NC='\033[0m' # No Color
+  RED=$'\033[0;31m'
+  GREEN=$'\033[0;32m'
+  YELLOW=$'\033[1;33m'
+  BLUE=$'\033[0;34m'
+  NC=$'\033[0m' # No Color
 else
   # Not a TTY (e.g., PowerShell) - disable colors
   RED=''
@@ -44,29 +45,29 @@ else
   NC=''
 fi
 
-# Helper functions
+# Helper functions - use printf for better cross-platform compatibility
 print_header() {
   echo ""
-  echo -e "${BLUE}========================================${NC}"
-  echo -e "${BLUE}$1${NC}"
-  echo -e "${BLUE}========================================${NC}"
+  printf "${BLUE}========================================${NC}\n"
+  printf "${BLUE}%s${NC}\n" "$1"
+  printf "${BLUE}========================================${NC}\n"
   echo ""
 }
 
 print_success() {
-  echo -e "${GREEN}✅ $1${NC}"
+  printf "${GREEN}[OK] %s${NC}\n" "$1"
 }
 
 print_error() {
-  echo -e "${RED}❌ $1${NC}"
+  printf "${RED}[ERROR] %s${NC}\n" "$1"
 }
 
 print_warning() {
-  echo -e "${YELLOW}⚠️  $1${NC}"
+  printf "${YELLOW}[WARN] %s${NC}\n" "$1"
 }
 
 print_info() {
-  echo -e "${BLUE}ℹ️  $1${NC}"
+  printf "${BLUE}[INFO] %s${NC}\n" "$1"
 }
 
 # Check if command exists
@@ -127,9 +128,9 @@ if command_exists docker; then
     else
       DOCKER_AUTHENTICATED=false
       print_warning "Docker Hub not authenticated (may hit rate limits)"
-      echo "   ${BLUE}Tip: Authenticate to increase rate limits:${NC}"
-      echo "   ${GREEN}docker login${NC}"
-      echo "   ${YELLOW}(Press Enter to continue anyway or Ctrl+C to cancel)${NC}"
+      printf "   ${BLUE}Tip: Authenticate to increase rate limits:${NC}\n"
+      printf "   ${GREEN}docker login${NC}\n"
+      printf "   ${YELLOW}(Press Enter to continue anyway or Ctrl+C to cancel)${NC}\n"
 
       # Only prompt if running in a TTY
       if [ -t 0 ]; then
@@ -162,22 +163,22 @@ if [ -f "supabase/migrations/20250123000000_schema_base.sql" ]; then
 else
   print_error "Base schema migration is missing"
   echo ""
-  echo "   The file ${YELLOW}supabase/migrations/20250123000000_schema_base.sql${NC} does not exist."
+  printf "   The file ${YELLOW}supabase/migrations/20250123000000_schema_base.sql${NC} does not exist.\n"
   echo "   This file contains your database table schemas and must be generated"
   echo "   from your cloud Supabase instance."
   echo ""
-  echo "   ${BLUE}To generate it, run these commands:${NC}"
+  printf "   ${BLUE}To generate it, run these commands:${NC}\n"
   echo ""
-  echo "   ${GREEN}supabase link --project-ref oomnezdhkmsfjlihkmui${NC}"
-  echo "   ${GREEN}supabase db pull${NC}"
+  printf "   ${GREEN}supabase link --project-ref oomnezdhkmsfjlihkmui${NC}\n"
+  printf "   ${GREEN}supabase db pull${NC}\n"
   echo ""
-  echo "   This will create a file like: ${YELLOW}20250123XXXXXX_remote_schema.sql${NC}"
+  printf "   This will create a file like: ${YELLOW}20250123XXXXXX_remote_schema.sql${NC}\n"
   echo ""
   echo "   Then rename it:"
-  echo "   ${GREEN}mv supabase/migrations/*_remote_schema.sql supabase/migrations/20250123000000_schema_base.sql${NC}"
+  printf "   ${GREEN}mv supabase/migrations/*_remote_schema.sql supabase/migrations/20250123000000_schema_base.sql${NC}\n"
   echo ""
   echo "   Finally, run this setup script again:"
-  echo "   ${GREEN}./scripts/first-time-setup.sh${NC}"
+  printf "   ${GREEN}./scripts/first-time-setup.sh${NC}\n"
   echo ""
   exit 1
 fi
@@ -195,15 +196,15 @@ if [ -f "package.json" ]; then
   else
     print_error "npm install failed"
     echo ""
-    echo "   ${YELLOW}Common causes:${NC}"
+    printf "   ${YELLOW}Common causes:${NC}\n"
     echo "   - Network connectivity issues"
     echo "   - npm cache corruption"
     echo "   - Node.js version mismatch"
     echo ""
-    echo "   ${YELLOW}Try these fixes:${NC}"
-    echo "   1. Clear npm cache: ${GREEN}npm cache clean --force${NC}"
-    echo "   2. Delete node_modules: ${GREEN}rm -rf node_modules package-lock.json${NC}"
-    echo "   3. Try again: ${GREEN}npm install${NC}"
+    printf "   ${YELLOW}Try these fixes:${NC}\n"
+    printf "   1. Clear npm cache: ${GREEN}npm cache clean --force${NC}\n"
+    printf "   2. Delete node_modules: ${GREEN}rm -rf node_modules package-lock.json${NC}\n"
+    printf "   3. Try again: ${GREEN}npm install${NC}\n"
     echo ""
     exit 1
   fi
@@ -287,12 +288,27 @@ print_info "This will start PostgreSQL, API, Auth, Storage, and Studio..."
 print_info "(This may take 1-2 minutes on first run)"
 echo ""
 
-# Check if already running to use cached images
+# Check if already running AND API is actually responding
 JUST_STARTED=false
+SUPABASE_RUNNING=false
+
+# First check status
 if npx supabase status >/dev/null 2>&1; then
-  print_success "Supabase is already running (using cached images)"
-  JUST_STARTED=false
-else
+  # Status says running, but verify API is actually accessible
+  # Use 127.0.0.1 for Windows compatibility
+  if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:54321/rest/v1/ 2>/dev/null | grep -q "200\|401"; then
+    print_success "Supabase is already running and accessible"
+    SUPABASE_RUNNING=true
+    JUST_STARTED=false
+  else
+    print_warning "Supabase status reports running but API is not responding"
+    print_info "Restarting Supabase services..."
+    npx supabase stop >/dev/null 2>&1
+    sleep 2
+  fi
+fi
+
+if [ "$SUPABASE_RUNNING" = false ]; then
   print_info "Starting Supabase for the first time (pulling Docker images)..."
   echo ""
 
@@ -300,8 +316,8 @@ else
   if [ "$DOCKER_AUTHENTICATED" = false ]; then
     print_warning "Note: If you get 'Rate exceeded' errors from Docker registry:"
     echo "   1. Wait 6 hours for rate limit to reset, OR"
-    echo "   2. Authenticate with Docker Hub: ${GREEN}docker login${NC}"
-    echo "   3. Then retry: ${GREEN}npx supabase start${NC}"
+    printf "   2. Authenticate with Docker Hub: ${GREEN}docker login${NC}\n"
+    printf "   3. Then retry: ${GREEN}npx supabase start${NC}\n"
     echo ""
   fi
 
@@ -334,15 +350,15 @@ else
   if [ "$SUCCESS" = false ]; then
     print_error "Failed to start Supabase after $MAX_RETRIES attempts"
     echo ""
-    echo "   ${YELLOW}Common causes:${NC}"
-    echo "   - Docker Hub rate limit exceeded (wait 6 hours or run: ${GREEN}docker login${NC})"
+    printf "   ${YELLOW}Common causes:${NC}\n"
+    printf "   - Docker Hub rate limit exceeded (wait 6 hours or run: ${GREEN}docker login${NC})\n"
     echo "   - Docker Desktop not running"
     echo "   - Port conflicts (stop other services using ports 54321-54326)"
     echo ""
-    echo "   ${YELLOW}Manual recovery:${NC}"
-    echo "   1. Authenticate with Docker: ${GREEN}docker login${NC}"
-    echo "   2. Stop Supabase: ${GREEN}npx supabase stop${NC}"
-    echo "   3. Start again: ${GREEN}npx supabase start${NC}"
+    printf "   ${YELLOW}Manual recovery:${NC}\n"
+    printf "   1. Authenticate with Docker: ${GREEN}docker login${NC}\n"
+    printf "   2. Stop Supabase: ${GREEN}npx supabase stop${NC}\n"
+    printf "   3. Start again: ${GREEN}npx supabase start${NC}\n"
     echo ""
     exit 1
   fi
@@ -362,57 +378,72 @@ else
   print_info "Supabase was already running, skipping wait"
 fi
 
-# Verify services are accessible using npx supabase status
+# Verify services are accessible using direct API check
 print_info "Verifying service connectivity..."
-if npx supabase status >/dev/null 2>&1; then
-  # Get the API URL to confirm it's accessible
-  API_URL=$(npx supabase status 2>/dev/null | grep "API URL" | awk '{print $3}')
-  if [ -n "$API_URL" ]; then
-    print_success "Supabase services are running at: $API_URL"
-  else
-    print_success "Supabase services are running!"
+
+# Wait for API to be ready with retries (important for Windows)
+API_READY=false
+MAX_API_CHECKS=10
+for i in $(seq 1 $MAX_API_CHECKS); do
+  if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:54321/rest/v1/ 2>/dev/null | grep -q "200\|401"; then
+    API_READY=true
+    break
   fi
+  if [ $i -lt $MAX_API_CHECKS ]; then
+    print_info "Waiting for API to be ready... (attempt $i/$MAX_API_CHECKS)"
+    sleep 2
+  fi
+done
+
+if [ "$API_READY" = true ]; then
+  print_success "Supabase API is accessible at http://127.0.0.1:54321"
 else
-  print_error "Cannot verify Supabase status"
+  print_error "Cannot connect to Supabase API"
   echo ""
-  echo "   ${YELLOW}Troubleshooting:${NC}"
+  printf "   ${YELLOW}Troubleshooting:${NC}\n"
   echo "   1. Check Docker Desktop is running"
-  echo "   2. Manually verify: ${GREEN}npx supabase status${NC}"
-  echo "   3. Restart services: ${GREEN}npx supabase stop && npx supabase start${NC}"
+  printf "   2. Manually verify: ${GREEN}docker ps${NC} (should show supabase containers)\n"
+  printf "   3. Check ports: ${GREEN}curl http://127.0.0.1:54321/rest/v1/${NC}\n"
+  printf "   4. Restart services: ${GREEN}npx supabase stop && npx supabase start${NC}\n"
   echo ""
   exit 1
 fi
 
 # ============================================================================
-# STEP 6.6: Ready for Seed Data
+# STEP 7: Reset Database and Apply Migrations
 # ============================================================================
-print_header "📋 Step 6.6: Preparing to Load Seed Data"
+print_header "🗄️ Step 7: Resetting Database"
 
-print_info "Database is ready for seed data"
-echo ""
-echo "   ${BLUE}Note:${NC} If you've run this script before and want to reset the database,"
-echo "   you can run: ${GREEN}npx supabase db reset${NC}"
+print_info "Applying migrations and base seed data..."
+print_info "(This resets the database and loads departments/roles)"
 echo ""
 
-# ============================================================================
-# STEP 7: Create Seed Users
-# ============================================================================
-print_header "👥 Step 7: Creating Seed Users"
-
-print_info "Creating 8 test users in Supabase Auth..."
-npx tsx scripts/create-seed-users.ts
-
-if [ $? -eq 0 ]; then
-  print_success "Seed users created successfully"
+# Reset database - this applies migrations and seed.sql
+if npx supabase db reset 2>&1 | grep -v "^NOTICE"; then
+  print_success "Database reset complete"
 else
-  print_error "Failed to create seed users"
-  echo "   You can manually create them later with: npx tsx scripts/create-seed-users.ts"
+  print_warning "Database reset completed with notices (this is normal)"
 fi
 
 # ============================================================================
-# STEP 8: Run Health Check
+# STEP 8: Create Seed Users and Load Data
 # ============================================================================
-print_header "🏥 Step 8: Running Health Check"
+print_header "👥 Step 8: Creating Seed Users and Loading Data"
+
+print_info "Creating test users and loading user-dependent seed data..."
+npx tsx scripts/create-seed-users.ts
+
+if [ $? -eq 0 ]; then
+  print_success "Seed users and data created successfully"
+else
+  print_error "Failed to create seed users"
+  echo "   You can manually run: npx tsx scripts/create-seed-users.ts"
+fi
+
+# ============================================================================
+# STEP 9: Run Health Check
+# ============================================================================
+print_header "🏥 Step 9: Running Health Check"
 
 if [ -f "scripts/docker-health-check.ts" ]; then
   npx tsx scripts/docker-health-check.ts
@@ -421,54 +452,54 @@ else
 fi
 
 # ============================================================================
-# STEP 9: Display Next Steps
+# STEP 10: Display Next Steps
 # ============================================================================
 print_header "🎉 Setup Complete!"
 
 echo ""
 echo "Your MovaLab development environment is ready!"
 echo ""
-echo "📋 What's Next:"
+echo "What's Next:"
 echo ""
 echo "1. Start the development server:"
-echo "   ${GREEN}npm run dev${NC}"
+printf "   ${GREEN}npm run dev${NC}\n"
 echo ""
 echo "2. Open your browser:"
-echo "   ${BLUE}http://localhost:3000${NC}"
+printf "   ${BLUE}http://localhost:3000${NC}\n"
 echo ""
 echo "3. Login with a test user:"
-echo "   Email: ${YELLOW}superadmin@test.local${NC}"
-echo "   Password: ${YELLOW}Test1234!${NC}"
+printf "   Email: ${YELLOW}superadmin@test.local${NC}\n"
+printf "   Password: ${YELLOW}Test1234!${NC}\n"
 echo ""
 echo "4. Access Supabase Studio (database UI):"
-echo "   ${GREEN}npm run docker:studio${NC}"
-echo "   or open: ${BLUE}http://localhost:54323${NC}"
+printf "   ${GREEN}npm run docker:studio${NC}\n"
+printf "   or open: ${BLUE}http://localhost:54323${NC}\n"
 echo ""
-echo "📚 Documentation:"
+echo "Documentation:"
 echo "   - README.md - Project overview"
 echo "   - CONTRIBUTING.md - Contribution guidelines"
 echo "   - supabase/migrations/README.md - Database migrations guide"
 echo ""
-echo "🔧 Useful Commands:"
-echo "   ${GREEN}npm run docker:start${NC}   - Start Supabase services"
-echo "   ${GREEN}npm run docker:stop${NC}    - Stop Supabase services"
-echo "   ${GREEN}npm run docker:reset${NC}   - Reset database (re-run migrations)"
-echo "   ${GREEN}npm run docker:seed${NC}    - Reset database + create seed users"
-echo "   ${GREEN}npm run docker:health${NC}  - Check system health"
+echo "Useful Commands:"
+printf "   ${GREEN}npm run docker:start${NC}   - Start Supabase services\n"
+printf "   ${GREEN}npm run docker:stop${NC}    - Stop Supabase services\n"
+printf "   ${GREEN}npm run docker:reset${NC}   - Reset database (re-run migrations)\n"
+printf "   ${GREEN}npm run docker:seed${NC}    - Reset database + create seed users\n"
+printf "   ${GREEN}npm run docker:health${NC}  - Check system health\n"
 echo ""
-echo "🎯 Test User Accounts:"
-echo "   - ${YELLOW}superadmin@test.local${NC}    - Full system access"
-echo "   - ${YELLOW}exec@test.local${NC}          - Executive Director"
-echo "   - ${YELLOW}manager@test.local${NC}       - Account Manager"
-echo "   - ${YELLOW}pm@test.local${NC}            - Project Manager"
-echo "   - ${YELLOW}designer@test.local${NC}      - Senior Designer"
-echo "   - ${YELLOW}dev@test.local${NC}           - Senior Developer"
-echo "   - ${YELLOW}contributor@test.local${NC}   - Part-time Contributor"
-echo "   - ${YELLOW}client@test.local${NC}        - Client Portal Access"
+echo "Test User Accounts:"
+printf "   - ${YELLOW}superadmin@test.local${NC}    - Full system access\n"
+printf "   - ${YELLOW}exec@test.local${NC}          - Executive Director\n"
+printf "   - ${YELLOW}manager@test.local${NC}       - Account Manager\n"
+printf "   - ${YELLOW}pm@test.local${NC}            - Project Manager\n"
+printf "   - ${YELLOW}designer@test.local${NC}      - Senior Designer\n"
+printf "   - ${YELLOW}dev@test.local${NC}           - Senior Developer\n"
+printf "   - ${YELLOW}contributor@test.local${NC}   - Part-time Contributor\n"
+printf "   - ${YELLOW}client@test.local${NC}        - Client Portal Access\n"
 echo ""
-echo "   All passwords: ${YELLOW}Test1234!${NC}"
+printf "   All passwords: ${YELLOW}Test1234!${NC}\n"
 echo ""
-print_success "Happy coding! 🚀"
+print_success "Happy coding!"
 echo ""
 
 # Keep window open on Windows

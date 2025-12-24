@@ -297,7 +297,7 @@ export function AccountOverview({ account, metrics, urgentItems, userProfile }: 
           `)
           .eq('account_id', accountId)
           .eq('status', 'complete')
-          .order('completed_at', { ascending: false });
+          .order('updated_at', { ascending: false });
 
         if (error) {
           console.error('Failed to load finished projects:', error);
