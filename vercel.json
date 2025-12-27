@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/reset-demo-data",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
