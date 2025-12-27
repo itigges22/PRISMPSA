@@ -4,6 +4,7 @@ import { logger } from '@/lib/debug-logger';
 import { roleManagementService } from '@/lib/role-management-service';
 import { requireAuthAndPermission, handleGuardError } from '@/lib/server-guards';
 import { Permission } from '@/lib/permissions';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 export async function DELETE(
   request: NextRequest,
@@ -13,6 +14,10 @@ export async function DELETE(
   const { roleId } = await params;
 
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('delete_role');
+    if (blocked) return blocked;
+
     // Check authentication and permission
     await requireAuthAndPermission(Permission.MANAGE_USER_ROLES, {}, request);
     logger.info('API DELETE /api/roles/[roleId]', { 

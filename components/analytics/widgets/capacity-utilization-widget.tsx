@@ -48,7 +48,7 @@ export function CapacityUtilizationWidget() {
   const capacityData = data?.data || [];
 
   // Calculate summary stats
-  const currentPeriod = capacityData.length > 0 ? capacityData[Math.floor(capacityData.length / 2)] : null;
+  const _currentPeriod = capacityData.length > 0 ? capacityData[Math.floor(capacityData.length / 2)] : null;
   const avgUtilization = capacityData.length > 0
     ? Math.round(capacityData.reduce((sum, d) => sum + d.utilization, 0) / capacityData.length)
     : 0;

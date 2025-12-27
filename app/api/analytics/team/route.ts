@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient, getUserProfileFromRequest } from '@/lib/supabase-server';
-import { subDays, format, startOfWeek, eachDayOfInterval, getDay } from 'date-fns';
+import { subDays, format, startOfWeek, getDay } from 'date-fns';
 
 interface ErrorWithMessage extends Error {
   message: string;

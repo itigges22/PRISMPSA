@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     // Aggregate by project
     const projectMap = new Map<string, ProjectTime>();
 
-    timeEntries?.forEach((entry: any, index: number) => {
+    timeEntries?.forEach((entry: any) => {
       const projectId = entry.project_id;
       const project = Array.isArray(entry.projects) ? entry.projects[0] : entry.projects;
 

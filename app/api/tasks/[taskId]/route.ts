@@ -4,6 +4,7 @@ import { hasPermission, isSuperadmin } from '@/lib/rbac'
 import { Permission } from '@/lib/permissions'
 import { taskServiceDB, UpdateTaskData } from '@/lib/task-service-db'
 import type { UserWithRoles } from '@/lib/rbac-types'
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard'
 
 // Helper function to check if user has access to a project
 async function userHasProjectAccess(supabase: any, userId: string, projectId: string, userProfile: UserWithRoles): Promise<boolean> {
@@ -255,6 +256,10 @@ export async function DELETE(
   const { taskId } = await params;
 
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('delete_task');
+    if (blocked) return blocked;
+
     const supabase = createApiSupabaseClient(request)
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })

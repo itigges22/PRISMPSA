@@ -32,7 +32,7 @@ export function DepartmentList({
   departments,
   canCreateDepartments,
   canManageDepartments,
-  userProfile,
+  userProfile: _userProfile,
   initialDepartmentMetrics
 }: DepartmentListProps) {
   // Departments are already filtered server-side based on permissions

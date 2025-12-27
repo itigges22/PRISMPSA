@@ -106,6 +106,16 @@ const TEST_USERS = [
     role_id: 'ffffffff-ffff-ffff-ffff-ffffffffffff', // Project Manager
   },
   {
+    id: '11111111-1111-1111-1111-000000000009',
+    email: 'admin@test.local',
+    name: 'Andy Admin',
+    password: 'Test1234!',
+    is_superadmin: false,
+    bio: 'System Administrator managing workflows and user roles',
+    skills: ['system-administration', 'workflow-design', 'user-management', 'analytics'],
+    role_id: '77777777-7777-7777-7777-777777777777', // Admin
+  },
+  {
     id: '11111111-1111-1111-1111-000000000005',
     email: 'designer@test.local',
     name: 'Dana Designer',

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient, getUserProfileFromRequest } from '@/lib/supabase-server';
 import { hasPermission } from '@/lib/permission-checker';
 import { Permission } from '@/lib/permissions';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 // Type definitions
 interface ErrorWithMessage extends Error {
@@ -105,6 +106,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('delete_time_entry');
+    if (blocked) return blocked;
+
     const { id } = await params;
     const supabase = createApiSupabaseClient(request);
 

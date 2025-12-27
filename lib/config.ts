@@ -11,6 +11,17 @@ export const config = {
   isProduction: process.env.NODE_ENV === 'production',
   isTest: process.env.NODE_ENV === 'test',
 
+  // Demo mode configuration
+  demo: {
+    // Enable demo mode with quick-login and restricted destructive actions
+    enabled:
+      process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
+      process.env.DEMO_MODE === 'true',
+
+    // Show demo banner at top of page
+    showBanner: process.env.NEXT_PUBLIC_DEMO_MODE === 'true',
+  },
+
   // Logging configuration
   logging: {
     // Log level: 'debug' | 'info' | 'warn' | 'error'
@@ -102,4 +113,4 @@ export function getConfig<K extends keyof Config>(key: K): Config[K] {
 }
 
 // Export individual sections for convenience
-export const { logging, rateLimit, errors, security, validation } = config;
+export const { demo, logging, rateLimit, errors, security, validation } = config;

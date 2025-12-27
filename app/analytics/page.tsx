@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { RoleGuard } from '@/components/role-guard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
 import {
   LayoutDashboard,
   FolderKanban,

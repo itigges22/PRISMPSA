@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient, getUserProfileFromRequest } from '@/lib/supabase-server';
-import { startOfWeek, startOfMonth, endOfMonth, subDays, subMonths, format } from 'date-fns';
+import { startOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
 
 interface ErrorWithMessage extends Error {
   message: string;
@@ -88,7 +88,6 @@ export async function GET(request: NextRequest) {
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
-    const thirtyDaysAgo = subDays(now, 30);
 
     // Fetch all data in parallel for performance
     const [

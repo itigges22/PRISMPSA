@@ -14,11 +14,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
 } from 'recharts';
 import { WidgetBase, DateRange, StatCard, WidgetEmptyState } from './widget-base';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

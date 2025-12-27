@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient, getUserProfileFromRequest } from '@/lib/supabase-server';
-import { subDays, subMonths, format, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek } from 'date-fns';
+import { subDays, format, eachDayOfInterval, eachWeekOfInterval } from 'date-fns';
 
 interface ErrorWithMessage extends Error {
   message: string;
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     const projects = projectsData.data || [];
-    const tasks = tasksData.data || [];
+    const _tasks = tasksData.data || [];
     const timeEntries = timeEntriesData.data || [];
 
     // Calculate summary metrics

@@ -2759,8 +2759,8 @@ export default function ProjectDetailPage() {
                     // Logged hours from tasks + project-level entries
                     const taskActualHours = tasks.reduce((sum, task) => sum + (task.actual_hours || 0), 0)
                     const totalLoggedHours = taskActualHours + projectLevelHours
-                    // Remaining hours to log on tasks
-                    const remainingTaskHours = Math.max(0, taskEstimatedSum - totalLoggedHours)
+                    // Remaining hours to log on tasks (kept for potential future use)
+                    const _remainingTaskHours = Math.max(0, taskEstimatedSum - totalLoggedHours)
 
                     // Calculate percentages based on project estimate
                     const loggedPercent = projectEstimate > 0 ? (totalLoggedHours / projectEstimate) * 100 : 0

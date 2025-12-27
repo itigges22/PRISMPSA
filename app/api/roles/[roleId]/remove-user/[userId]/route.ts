@@ -2,14 +2,19 @@ import { NextResponse, NextRequest } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
 import { requireAuthAndPermission, handleGuardError } from '@/lib/server-guards';
 import { Permission } from '@/lib/permissions';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ roleId: string; userId: string }> }
 ) {
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('remove_user');
+    if (blocked) return blocked;
+
     const { roleId, userId } = await params;
-    
+
     // Check authentication and permission
     const userProfile = await requireAuthAndPermission(Permission.MANAGE_USER_ROLES, {}, request);
     

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { signInWithEmail, signUpWithEmail } from "@/lib/auth"
+import { isDemoMode } from "@/lib/demo-mode"
 
 interface LoginFormProps extends React.ComponentProps<"div"> {
   mode?: 'login' | 'signup'
@@ -191,33 +192,36 @@ export function LoginForm({
                   {isLoading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Login')}
                 </Button>
                 
-                <FieldDescription className="text-center">
-                  {isSignUp ? (
-                    <>
-                      Already have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => { setIsSignUp(false); }}
-                        className="underline-offset-4 hover:underline"
-                        disabled={isLoading}
-                      >
-                        Sign in
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      Don&apos;t have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => { setIsSignUp(true); }}
-                        className="underline-offset-4 hover:underline"
-                        disabled={isLoading}
-                      >
-                        Sign up
-                      </button>
-                    </>
-                  )}
-                </FieldDescription>
+                {/* Hide signup toggle in demo mode */}
+                {!isDemoMode() && (
+                  <FieldDescription className="text-center">
+                    {isSignUp ? (
+                      <>
+                        Already have an account?{' '}
+                        <button
+                          type="button"
+                          onClick={() => { setIsSignUp(false); }}
+                          className="underline-offset-4 hover:underline"
+                          disabled={isLoading}
+                        >
+                          Sign in
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        Don&apos;t have an account?{' '}
+                        <button
+                          type="button"
+                          onClick={() => { setIsSignUp(true); }}
+                          className="underline-offset-4 hover:underline"
+                          disabled={isLoading}
+                        >
+                          Sign up
+                        </button>
+                      </>
+                    )}
+                  </FieldDescription>
+                )}
               </Field>
             </FieldGroup>
           </form>

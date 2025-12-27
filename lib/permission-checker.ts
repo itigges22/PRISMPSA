@@ -445,29 +445,7 @@ export async function checkPermissionHybrid(
       return cached.result;
     }
 
-    // 4. Check base permission (standardized - no special cases)
-    const hasBase = await hasBasePermission(userProfile, permission, supabaseClient);
-
-    if (!hasBase) {
-      // No base permission = no access
-      const duration = Date.now() - startTime;
-      permissionCache.set(cacheKey, { result: false, timestamp: Date.now() });
-      permissionCheck(permission, (userProfile as any).id, false, { reason: 'no_base_permission', duration });
-      return false;
-    }
-
-    // 5. If no context provided, base permission is sufficient
-    if (!context || Object.keys(context).length === 0) {
-      const duration = Date.now() - startTime;
-      permissionCache.set(cacheKey, { result: true, timestamp: Date.now() });
-      permissionCheck(permission, (userProfile as any).id, true, { reason: 'base_permission', duration });
-      return true;
-    }
-
-    // 6. Context-aware checks
-    let hasAccess = false;
-
-    // Check for override permissions first (they bypass context checks)
+    // 4. Define override permissions map (used for both base check fallback and context bypass)
     const overridePermissions: Partial<Record<Permission, Permission[]>> = {
       // Projects
       [Permission.VIEW_PROJECTS]: [Permission.VIEW_ALL_PROJECTS],
@@ -502,23 +480,49 @@ export async function checkPermissionHybrid(
       [Permission.VIEW_TEAM_CAPACITY]: [Permission.VIEW_ALL_CAPACITY],
     } as Record<string, unknown>;
 
-    const overrides = overridePermissions[permission] || [];
-    for (const override of overrides) {
-      if (await hasBasePermission(userProfile, override, supabaseClient)) {
-        hasAccess = true;
-        break;
+    // 5. Check base permission OR override permission
+    const hasBase = await hasBasePermission(userProfile, permission, supabaseClient);
+
+    // If no base permission, check for override permissions (e.g., VIEW_ALL_PROJECTS implies VIEW_PROJECTS)
+    let hasOverride = false;
+    if (!hasBase) {
+      const overrides = overridePermissions[permission] || [];
+      for (const override of overrides) {
+        if (await hasBasePermission(userProfile, override, supabaseClient)) {
+          hasOverride = true;
+          break;
+        }
       }
     }
 
-    // If override permission granted access, we're done
-    if (hasAccess) {
+    // If neither base nor override permission, deny access
+    if (!hasBase && !hasOverride) {
+      const duration = Date.now() - startTime;
+      permissionCache.set(cacheKey, { result: false, timestamp: Date.now() });
+      permissionCheck(permission, (userProfile as any).id, false, { reason: 'no_base_permission', duration });
+      return false;
+    }
+
+    // 6. If override permission, grant access (overrides bypass context checks)
+    if (hasOverride) {
       const duration = Date.now() - startTime;
       permissionCache.set(cacheKey, { result: true, timestamp: Date.now() });
       permissionCheck(permission, (userProfile as any).id, true, { reason: 'override_permission', duration });
       return true;
     }
 
-    // 7. Check context-specific access (standardized - all permissions require context validation)
+    // 7. If no context provided, base permission is sufficient
+    if (!context || Object.keys(context).length === 0) {
+      const duration = Date.now() - startTime;
+      permissionCache.set(cacheKey, { result: true, timestamp: Date.now() });
+      permissionCheck(permission, (userProfile as any).id, true, { reason: 'base_permission', duration });
+      return true;
+    }
+
+    // 8. Context-aware checks (only reached if user has base permission but no override)
+    let hasAccess = false;
+
+    // 9. Check context-specific access (standardized - all permissions require context validation)
     if (context.workflowInstanceId) {
       // Workflow context: Check if user is assigned to current workflow node
       // EXECUTE_WORKFLOWS requires node assignment unless user has override permission

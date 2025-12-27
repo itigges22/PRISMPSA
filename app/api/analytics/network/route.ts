@@ -100,9 +100,9 @@ export async function GET(request: NextRequest) {
     const users = usersData.data || [];
     let projects = projectsData.data || [];
     let accounts = accountsData.data || [];
-    const departments = departmentsData.data || [];
+    const _departments = departmentsData.data || [];
     const projectAssignments = projectAssignmentsData.data || [];
-    const accountMembers = accountMembersData.data || [];
+    const _accountMembers = accountMembersData.data || [];
     const timeEntries = timeEntriesData.data || [];
     const roles = rolesData.data || [];
     const userRoles = userRolesData.data || [];
@@ -116,7 +116,6 @@ export async function GET(request: NextRequest) {
     // Apply filters
     if (accountFilter) {
       const accountProjects = projects.filter((p: any) => p.account_id === accountFilter);
-      const projectIds = accountProjects.map((p: any) => p.id);
       projects = accountProjects;
       accounts = accounts.filter((a: any) => a.id === accountFilter);
     }

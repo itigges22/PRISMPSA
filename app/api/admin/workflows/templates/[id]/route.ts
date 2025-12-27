@@ -8,6 +8,7 @@ import {
   deleteWorkflowTemplate
 } from '@/lib/workflow-service';
 import { validateRequestBody, updateWorkflowTemplateSchema } from '@/lib/validation-schemas';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 // Type definitions
 // GET /api/admin/workflows/templates/[id] - Get workflow template with nodes and connections
@@ -201,8 +202,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('delete_workflow');
+    if (blocked) return blocked;
+
     const supabase = createApiSupabaseClient(request);
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

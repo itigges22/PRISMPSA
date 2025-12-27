@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import useSWR from 'swr';
 import {
   ReactFlow,
@@ -18,9 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { WidgetBase, StatCard, WidgetEmptyState } from './widget-base';
 import { NetworkNode } from '../network/network-node';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, FolderKanban, Building2, GitBranch, RefreshCw, Maximize2 } from 'lucide-react';
+import { Users, FolderKanban, Building2, GitBranch } from 'lucide-react';
 
 interface NetworkNodeData {
   id: string;
@@ -156,12 +154,12 @@ function calculateLayout(
 }
 
 function NetworkGraphContent() {
-  const [layout, setLayout] = useState<'hierarchical' | 'force'>('hierarchical');
+  const [_layout, _setLayout] = useState<'hierarchical' | 'force'>('hierarchical');
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
-  const { data, error, isLoading, mutate } = useSWR<{ success: boolean; data: NetworkData }>(
+  const { data, error, isLoading, mutate: _mutate } = useSWR<{ success: boolean; data: NetworkData }>(
     '/api/analytics/network',
     fetcher,
     {

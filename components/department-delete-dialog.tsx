@@ -9,6 +9,7 @@ import { Trash2, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { hasPermission } from '@/lib/rbac'
 import { Permission } from '@/lib/permissions'
+import { isActionBlocked, getBlockedActionMessage } from '@/lib/demo-mode'
 
 interface DepartmentDeleteDialogProps {
   departmentId: string
@@ -41,12 +42,19 @@ export default function DepartmentDeleteDialog({
   }, [userProfile, departmentId]);
 
   const handleDelete = async () => {
+    // Block delete in demo mode
+    if (isActionBlocked('delete_department')) {
+      toast.error(getBlockedActionMessage('delete_department'));
+      setOpen(false);
+      return;
+    }
+
     if (!canDeleteDepartment) {
       toast.error('You do not have permission to delete departments.');
       setOpen(false);
       return;
     }
-    
+
     setLoading(true)
     try {
       const success = await departmentClientService.deleteDepartment(departmentId)

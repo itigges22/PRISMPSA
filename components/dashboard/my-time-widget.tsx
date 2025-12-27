@@ -18,7 +18,7 @@ interface MyTimeWidgetProps {
   isLoading: boolean;
 }
 
-function getProgressColor(percentage: number): string {
+function _getProgressColor(percentage: number): string {
   if (percentage >= 100) return 'bg-green-500';
   if (percentage >= 75) return 'bg-blue-500';
   if (percentage >= 50) return 'bg-amber-500';

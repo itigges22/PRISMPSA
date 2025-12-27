@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import useSWR from 'swr';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface ProjectTime {
   projectId: string;
@@ -120,7 +120,7 @@ export function TimeByProjectWidget() {
                     outerRadius={70}
                     paddingAngle={2}
                   >
-                    {projects.map((project, index) => (
+                    {projects.map((project) => (
                       <Cell key={project.projectId} fill={project.color} />
                     ))}
                   </Pie>

@@ -74,9 +74,9 @@ const navigationItems: NavigationItem[] = [
     name: 'Analytics',
     href: '/analytics',
     icon: BarChart3,
-    // Phase 9: Viewing own analytics is implicit - all users can access
-    // VIEW_ALL_ANALYTICS determines if they see org-wide data
-    allowUnassigned: false, // Explicitly disallow for unassigned users
+    // Org-level analytics requires VIEW_ALL_ANALYTICS permission
+    permission: Permission.VIEW_ALL_ANALYTICS,
+    allowUnassigned: false,
   },
   {
     name: 'Profile',
@@ -385,7 +385,7 @@ export function Navigation() {
                   (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
               // Skip items that are grouped under Admin dropdown
-              if (['Profile', 'Pending Users', 'Workflows', 'Forms'].includes(item.name)) {
+              if (['Profile', 'Pending Users', 'Workflows', 'Forms', 'Analytics'].includes(item.name)) {
                 return null;
               }
 
@@ -441,7 +441,7 @@ export function Navigation() {
               // Special handling for Admin dropdown with sub-items
               if (item.name === 'Admin') {
                 const adminSubItems = visibleItems.filter((i: any) =>
-                  ['Pending Users', 'Workflows', 'Forms'].includes(i.name)
+                  ['Pending Users', 'Workflows', 'Forms', 'Analytics'].includes(i.name)
                 );
                 const isAdminActive = pathname === '/admin' || pathname.startsWith('/admin/');
                 return (

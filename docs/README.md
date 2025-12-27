@@ -1,5 +1,15 @@
 # MovaLab Documentation
 
+## Getting Started
+
+| Document | Description |
+|----------|-------------|
+| [FIRST_TIME_SETUP.md](./FIRST_TIME_SETUP.md) | **Cloud deployment setup** - How to create the first superadmin account |
+| [DEMO_MODE.md](./DEMO_MODE.md) | **Local development** - Running MovaLab with Docker and demo data |
+| [docker-setup.md](./docker-setup.md) | Docker environment configuration |
+
+---
+
 ## Folder Structure
 
 ### `/architecture`

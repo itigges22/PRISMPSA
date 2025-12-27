@@ -7,6 +7,7 @@
 -- - exec@test.local - Executive Director
 -- - manager@test.local - Account Manager
 -- - pm@test.local - Project Manager
+-- - admin@test.local - Admin (workflows, roles, analytics)
 -- - designer@test.local - Senior Designer
 -- - dev@test.local - Senior Developer
 -- - contributor@test.local - Contributor (part-time)
@@ -123,7 +124,26 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "execute_workflows": true,
     "edit_own_availability": true,
     "view_departments": true
-  }'::jsonb, FALSE, 60, 'Manages individual projects');
+  }'::jsonb, FALSE, 60, 'Manages individual projects'),
+
+('77777777-7777-7777-7777-777777777777', 'Admin', '11111111-1111-1111-1111-111111111111',
+  '{
+    "manage_user_roles": true,
+    "manage_workflows": true,
+    "manage_all_workflows": true,
+    "execute_any_workflow": true,
+    "view_all_projects": true,
+    "view_all_accounts": true,
+    "view_all_departments": true,
+    "view_all_time_entries": true,
+    "view_all_analytics": true,
+    "view_all_department_analytics": true,
+    "view_all_account_analytics": true,
+    "view_all_capacity": true,
+    "view_all_updates": true,
+    "manage_newsletters": true,
+    "view_newsletters": true
+  }'::jsonb, FALSE, 80, 'System administrator with full read access and workflow management');
 
 -- Design Roles
 INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarchy_level, description) VALUES

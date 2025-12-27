@@ -113,7 +113,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 export default function DashboardPage() {
   const { userProfile } = useAuth()
   const [showCustomizeModal, setShowCustomizeModal] = useState(false)
-  const [capacityRefreshKey, setCapacityRefreshKey] = useState(0)
+  const [capacityRefreshKey, _setCapacityRefreshKey] = useState(0)
 
   // Fetch dashboard preferences
   const { data: preferencesData, mutate: mutatePreferences } = useSWR<PreferencesResponse>(
@@ -190,7 +190,7 @@ export default function DashboardPage() {
               Welcome back, {firstName}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Here's what's happening with your projects
+              Here&apos;s what&apos;s happening with your projects
             </p>
           </div>
           <Button

@@ -8,6 +8,7 @@ import { createApiSupabaseClient, getUserProfileFromRequest } from '@/lib/supaba
 import { timeEntryService } from '@/lib/services/time-entry-service';
 import { hasPermission } from '@/lib/permission-checker';
 import { Permission } from '@/lib/permissions';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 // Type definitions
 interface ErrorWithMessage extends Error {
@@ -302,6 +303,10 @@ console.error('Error in PATCH /api/time-entries:', error);
  */
 export async function DELETE(request: NextRequest) {
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('delete_time_entry');
+    if (blocked) return blocked;
+
     const supabase = createApiSupabaseClient(request);
     if (!supabase) {
       return NextResponse.json(

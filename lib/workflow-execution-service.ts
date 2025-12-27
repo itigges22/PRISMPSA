@@ -2284,7 +2284,7 @@ export async function progressWorkflowStep(
       // This handles the "anyone on project if no one assigned" requirement
       if (!hasNodeAssignment && currentNode) {
         // Check if there are ANY assignments to this node
-        const { data: anyAssignments, count } = await supabase
+        const { count } = await supabase
           .from('workflow_node_assignments')
           .select('id', { count: 'exact', head: true })
           .eq('workflow_instance_id', workflowInstanceId)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
 import { hasPermission, isSuperadmin } from '@/lib/rbac';
 import { Permission } from '@/lib/permissions';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 /**
  * GET /api/projects/[projectId]
@@ -234,6 +235,10 @@ export async function DELETE(
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('delete_project');
+    if (blocked) return blocked;
+
     const { projectId } = await params;
     const supabase = createApiSupabaseClient(request);
     if (!supabase) {

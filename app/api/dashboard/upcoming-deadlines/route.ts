@@ -43,8 +43,7 @@ export async function GET(request: NextRequest) {
 
     const userId = userProfile.id;
     const now = new Date();
-    const twoWeeksFromNow = addDays(now, 14);
-    const futureStr = format(twoWeeksFromNow, 'yyyy-MM-dd');
+    const _twoWeeksFromNow = addDays(now, 14);
 
     // Get tasks assigned to user with due dates (including overdue - no max date filter)
     const { data: tasks, error: tasksError } = await supabase

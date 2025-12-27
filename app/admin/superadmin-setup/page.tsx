@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Shield, UserPlus, UserMinus, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react'
+import { Shield, UserPlus, UserMinus, CheckCircle, AlertCircle, ArrowLeft, Lock } from 'lucide-react'
 import { isSuperadmin } from '@/lib/rbac'
+import { isDemoMode } from '@/lib/demo-mode'
 import { assignSuperadminRoleByEmail, checkSuperadminRoleByEmail, removeSuperadminRoleByEmail } from '@/lib/superadmin-utils'
 import { testDatabaseConnection } from '@/lib/test-database'
 
@@ -68,6 +69,27 @@ export default function SuperadminSetupPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
           <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
         </div>
+      </div>
+    )
+  }
+
+  // Block superadmin setup in demo mode
+  if (isDemoMode()) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Lock className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Demo Mode Active</h1>
+            <p className="text-gray-600 mb-4">
+              Superadmin management is disabled in demo mode to protect the demo environment.
+            </p>
+            <Button onClick={() => router.push('/admin')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Return to Admin
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }

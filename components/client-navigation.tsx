@@ -27,7 +27,8 @@ import {
   Settings,
   GitBranch,
   Shield,
-  Clock
+  Clock,
+  BarChart3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isSuperadmin, isUnassigned, hasPermission } from '@/lib/rbac'
@@ -80,6 +81,7 @@ export function ClientNavigation() {
     navigationItems.filter((item: any) => item.allowUnassigned === true)
   )
   const [permissionsChecked, setPermissionsChecked] = useState(false)
+  const [hasAdminAccess, setHasAdminAccess] = useState(false)
   const { userProfile, signOut, loading } = useAuth()
   const pathname = usePathname()
 
@@ -135,12 +137,13 @@ export function ClientNavigation() {
     if (!isMounted || loading || !userProfile) {
       setVisibleItems(navigationItems.filter((item: any) => item.allowUnassigned === true))
       setPermissionsChecked(false)
+      setHasAdminAccess(false)
       return
     }
 
     async function filterItems() {
       setPermissionsChecked(false)
-      
+
       const isActuallyUnassigned = isUnassigned(userProfile)
       const userIsSuperadmin = isSuperadmin(userProfile)
 
@@ -151,9 +154,10 @@ export function ClientNavigation() {
         userIsSuperadmin,
       })
 
-      // Superadmin sees everything
+      // Superadmin sees everything including admin
       if (userIsSuperadmin) {
         setVisibleItems(navigationItems)
+        setHasAdminAccess(true)
         setPermissionsChecked(true)
         return
       }
@@ -163,6 +167,7 @@ export function ClientNavigation() {
         const allowedItems = navigationItems.filter((item: any) => item.allowUnassigned === true)
         console.log('✅ ClientNavigation: Unassigned user - showing only Welcome')
         setVisibleItems(allowedItems)
+        setHasAdminAccess(false)
         setPermissionsChecked(true)
         return
       }
@@ -212,13 +217,36 @@ export function ClientNavigation() {
         }
       }
 
+      // Check if user has any admin-level permissions
+      const adminPermissions = [
+        Permission.MANAGE_USER_ROLES,
+        Permission.MANAGE_USERS_IN_ACCOUNTS,
+        Permission.MANAGE_USERS_IN_DEPARTMENTS,
+        Permission.MANAGE_USERS,
+        Permission.MANAGE_DEPARTMENTS,
+        Permission.MANAGE_ACCOUNTS,
+        Permission.VIEW_ALL_ANALYTICS,
+        Permission.MANAGE_WORKFLOWS,
+        Permission.MANAGE_ALL_WORKFLOWS,
+      ]
+
+      let userHasAdminAccess = false
+      for (const perm of adminPermissions) {
+        if (await hasPermission(userProfile, perm)) {
+          userHasAdminAccess = true
+          break
+        }
+      }
+
       console.log('✅ ClientNavigation filter complete:', {
         userId: (userProfile as any)?.id,
         visibleItems: filtered.map((i: any) => i.name),
-        filteredCount: filtered.length
+        filteredCount: filtered.length,
+        hasAdminAccess: userHasAdminAccess
       })
 
       setVisibleItems(filtered)
+      setHasAdminAccess(userHasAdminAccess)
       setPermissionsChecked(true)
     }
 
@@ -374,7 +402,7 @@ export function ClientNavigation() {
                 )}
                 
                 {/* Admin dropdown for users with admin access */}
-                {userProfile && isSuperadmin(userProfile) && (
+                {userProfile && hasAdminAccess && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -416,6 +444,12 @@ export function ClientNavigation() {
                         <Link href="/admin/time-tracking" className="flex items-center">
                           <Clock className="mr-2 h-4 w-4" />
                           <span>Time Tracking</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/analytics" className="flex items-center">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          <span>Analytics</span>
                         </Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -662,7 +696,7 @@ export function ClientNavigation() {
                   )}
 
                   {/* Admin section for mobile */}
-                  {userProfile && isSuperadmin(userProfile) && (
+                  {userProfile && hasAdminAccess && (
                     <div className="pt-2 border-t">
                       <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</p>
                       <Link
@@ -716,6 +750,19 @@ export function ClientNavigation() {
                       >
                         <Clock className="w-4 h-4" />
                         <span>Time Tracking</span>
+                      </Link>
+                      <Link
+                        href="/analytics"
+                        className={cn(
+                          'flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                          pathname === '/analytics'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        )}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                        <span>Analytics</span>
                       </Link>
                     </div>
                   )}

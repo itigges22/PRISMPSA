@@ -34,6 +34,7 @@ import { RoleGuard } from '@/components/role-guard';
 import { Permission } from '@/lib/permissions';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { isUnassigned, hasPermission } from '@/lib/rbac';
+import { isActionBlocked, getBlockedActionMessage } from '@/lib/demo-mode';
 
 interface Department {
   id: string;
@@ -274,6 +275,14 @@ export default function RoleManagementPage() {
 
   async function confirmDeleteRole() {
     if (!roleToDelete) return;
+
+    // Block delete in demo mode
+    if (isActionBlocked('delete_role')) {
+      toast.error(getBlockedActionMessage('delete_role'));
+      setDeleteDialogOpen(false);
+      setRoleToDelete(null);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/roles/${roleToDelete}`, {

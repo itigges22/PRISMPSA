@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { newsletterService, Newsletter } from '@/lib/newsletter-service'
 import { toast } from 'sonner'
 import { AlertTriangle, Trash2 } from 'lucide-react'
+import { isActionBlocked, getBlockedActionMessage } from '@/lib/demo-mode'
 
 interface NewsletterDeleteDialogProps {
   newsletter: Newsletter | null
@@ -24,6 +25,13 @@ export default function NewsletterDeleteDialog({
 
   const handleDelete = async () => {
     if (!newsletter) return
+
+    // Block delete in demo mode
+    if (isActionBlocked('delete_newsletter')) {
+      toast.error(getBlockedActionMessage('delete_newsletter'));
+      setOpen(false);
+      return;
+    }
 
     setLoading(true)
     try {

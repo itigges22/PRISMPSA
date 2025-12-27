@@ -4,6 +4,8 @@ import { Suspense, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { LoginForm } from "@/components/login-form"
+import { DemoLoginForm } from "@/components/demo-login-form"
+import { isDemoMode } from "@/lib/demo-mode"
 
 export default function Page() {
   const { user, loading } = useAuth()
@@ -45,11 +47,13 @@ export default function Page() {
   }
 
   // User is not authenticated, show login form
+  const demoMode = isDemoMode()
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
+      <div className={demoMode ? "w-full max-w-2xl" : "w-full max-w-sm"}>
         <Suspense fallback={<div>Loading...</div>}>
-          <LoginForm />
+          {demoMode ? <DemoLoginForm /> : <LoginForm />}
         </Suspense>
       </div>
     </div>

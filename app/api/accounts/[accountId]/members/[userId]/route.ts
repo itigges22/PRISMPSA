@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiSupabaseClient } from '@/lib/supabase-server';
 import { requireAuthAndPermission } from '@/lib/server-guards';
 import { Permission } from '@/lib/permissions';
+import { checkDemoModeForDestructiveAction } from '@/lib/api-demo-guard';
 
 /**
  * DELETE /api/accounts/[accountId]/members/[userId]
@@ -12,8 +13,12 @@ export async function DELETE(
   { params }: { params: Promise<{ accountId: string; userId: string }> }
 ) {
   try {
+    // Block in demo mode
+    const blocked = checkDemoModeForDestructiveAction('remove_account_member');
+    if (blocked) return blocked;
+
     const { accountId, userId } = await params;
-    
+
     // Require permission to remove users from accounts
     await requireAuthAndPermission(Permission.MANAGE_USERS_IN_ACCOUNTS, {}, request);
     

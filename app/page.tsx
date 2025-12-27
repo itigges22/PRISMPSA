@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { LoginForm } from "@/components/login-form"
+import { DemoLoginForm } from "@/components/demo-login-form"
+import { isDemoMode } from "@/lib/demo-mode"
 
 export default function Home() {
   const { user, userProfile, loading } = useAuth()
@@ -45,19 +47,23 @@ export default function Home() {
   }
 
   // User is not authenticated, show login form
+  const demoMode = isDemoMode()
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to MovaLab
-          </h1>
-          <p className="text-gray-600">
-            Professional Service Automation Platform
-          </p>
-        </div>
-        
-        <LoginForm />
+      <div className={demoMode ? "w-full max-w-2xl" : "max-w-md w-full"}>
+        {!demoMode && (
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome to MovaLab
+            </h1>
+            <p className="text-gray-600">
+              Professional Service Automation Platform
+            </p>
+          </div>
+        )}
+
+        {demoMode ? <DemoLoginForm /> : <LoginForm />}
       </div>
     </div>
   )
