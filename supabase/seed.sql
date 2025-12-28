@@ -87,12 +87,20 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "view_all_departments": true,
     "manage_departments": true,
     "view_all_updates": true,
+    "manage_updates": true,
+    "view_issues": true,
+    "manage_issues": true,
     "view_all_analytics": true,
     "view_all_department_analytics": true,
     "view_all_account_analytics": true,
     "view_all_capacity": true,
     "manage_all_workflows": true,
-    "execute_any_workflow": true
+    "execute_any_workflow": true,
+    "manage_time": true,
+    "view_time_entries": true,
+    "view_all_time_entries": true,
+    "edit_own_availability": true,
+    "view_newsletters": true
   }'::jsonb, FALSE, 90, 'C-level executive'),
 
 ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Account Manager', '11111111-1111-1111-1111-111111111111',
@@ -107,7 +115,12 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "view_updates": true,
     "manage_issues": true,
     "view_issues": true,
-    "execute_workflows": true
+    "execute_workflows": true,
+    "manage_time": true,
+    "view_time_entries": true,
+    "edit_own_availability": true,
+    "view_newsletters": true,
+    "view_departments": true
   }'::jsonb, FALSE, 70, 'Manages client accounts'),
 
 ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Project Manager', '11111111-1111-1111-1111-111111111111',
@@ -123,7 +136,8 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "view_time_entries": true,
     "execute_workflows": true,
     "edit_own_availability": true,
-    "view_departments": true
+    "view_departments": true,
+    "view_newsletters": true
   }'::jsonb, FALSE, 60, 'Manages individual projects'),
 
 ('77777777-7777-7777-7777-777777777777', 'Admin', '11111111-1111-1111-1111-111111111111',
@@ -142,7 +156,12 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "view_all_capacity": true,
     "view_all_updates": true,
     "manage_newsletters": true,
-    "view_newsletters": true
+    "view_newsletters": true,
+    "manage_time": true,
+    "edit_own_availability": true,
+    "manage_accounts": true,
+    "manage_projects": true,
+    "manage_departments": true
   }'::jsonb, FALSE, 80, 'System administrator with full read access and workflow management');
 
 -- Design Roles
@@ -153,7 +172,12 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "manage_updates": true,
     "view_updates": true,
     "manage_deliverables": true,
-    "execute_workflows": true
+    "execute_workflows": true,
+    "manage_time": true,
+    "view_time_entries": true,
+    "edit_own_availability": true,
+    "view_newsletters": true,
+    "view_departments": true
   }'::jsonb, FALSE, 50, 'Lead creative designer'),
 
 ('20202020-2020-2020-2020-202020202020', 'Junior Designer', '33333333-3333-3333-3333-333333333333',
@@ -170,7 +194,12 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
     "view_projects": true,
     "manage_updates": true,
     "view_updates": true,
-    "execute_workflows": true
+    "execute_workflows": true,
+    "manage_time": true,
+    "view_time_entries": true,
+    "edit_own_availability": true,
+    "view_newsletters": true,
+    "view_departments": true
   }'::jsonb, FALSE, 50, 'Senior software engineer'),
 
 ('40404040-4040-4040-4040-404040404040', 'Junior Developer', '44444444-4444-4444-4444-444444444444',

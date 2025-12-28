@@ -10,11 +10,37 @@ import {
   Crown,
   Clock,
   Database,
-  Activity
+  Activity,
+  Loader2,
+  BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { isSuperadmin } from '@/lib/rbac';
+import { Permission } from '@/lib/permissions';
+import { useMemo } from 'react';
 
 export default function AdminHubPage() {
+  const { userProfile, loading } = useAuth();
+
+  // Get user permissions from their roles
+  const userPermissions = useMemo(() => {
+    if (!userProfile?.user_roles) return new Set<string>();
+    const perms = new Set<string>();
+    for (const ur of userProfile.user_roles) {
+      const rolePerms = ur.roles?.permissions as Record<string, boolean> | undefined;
+      if (rolePerms) {
+        Object.entries(rolePerms).forEach(([perm, enabled]) => {
+          if (enabled) perms.add(perm);
+        });
+      }
+    }
+    return perms;
+  }, [userProfile]);
+
+  const hasPermission = (perm: Permission) => userPermissions.has(perm);
+  const hasAnyPermission = (perms: Permission[]) => perms.some(p => userPermissions.has(p));
+  const isSuperadminUser = userProfile ? isSuperadmin(userProfile) : false;
   const userManagementFeatures = [
     {
       title: 'Role Management',
@@ -29,6 +55,9 @@ export default function AdminHubPage() {
         'User role assignments',
         'Department-based roles',
       ],
+      requiredPermission: Permission.MANAGE_USER_ROLES,
+      anyPermission: null,
+      superadminOnly: false,
     },
     {
       title: 'Superadmin Setup',
@@ -43,6 +72,9 @@ export default function AdminHubPage() {
         'Global settings',
         'Platform administration',
       ],
+      requiredPermission: null,
+      anyPermission: null,
+      superadminOnly: true,
     },
     {
       title: 'Time Tracking Admin',
@@ -57,6 +89,9 @@ export default function AdminHubPage() {
         'Reporting & analytics',
         'Policy management',
       ],
+      requiredPermission: Permission.VIEW_ALL_TIME_ENTRIES,
+      anyPermission: null,
+      superadminOnly: false,
     },
   ];
 
@@ -74,6 +109,9 @@ export default function AdminHubPage() {
         'Client approval nodes',
         'Conditional branching',
       ],
+      requiredPermission: null,
+      anyPermission: [Permission.MANAGE_WORKFLOWS, Permission.MANAGE_ALL_WORKFLOWS],
+      superadminOnly: false,
     },
     {
       title: 'Client Portal',
@@ -88,6 +126,26 @@ export default function AdminHubPage() {
         'Client approval workflows',
         'Satisfaction ratings & feedback',
       ],
+      requiredPermission: Permission.MANAGE_CLIENT_INVITES,
+      anyPermission: null,
+      superadminOnly: false,
+    },
+    {
+      title: 'Organization Analytics',
+      description: 'View organization-wide analytics including project performance, team utilization, and workflow metrics.',
+      icon: BarChart3,
+      href: '/analytics',
+      color: 'text-emerald-600 bg-emerald-50',
+      borderColor: 'border-emerald-200',
+      features: [
+        'Project performance metrics',
+        'Team utilization reports',
+        'Time tracking analytics',
+        'Workflow efficiency data',
+      ],
+      requiredPermission: null,
+      anyPermission: [Permission.VIEW_ALL_ANALYTICS, Permission.VIEW_ALL_DEPARTMENT_ANALYTICS, Permission.VIEW_ALL_ACCOUNT_ANALYTICS],
+      superadminOnly: false,
     },
   ];
 
@@ -105,6 +163,9 @@ export default function AdminHubPage() {
         'Data operations',
         'System diagnostics',
       ],
+      requiredPermission: null,
+      anyPermission: null,
+      superadminOnly: true,
     },
     {
       title: 'RBAC Diagnostics',
@@ -119,8 +180,41 @@ export default function AdminHubPage() {
         'Role analysis',
         'Security auditing',
       ],
+      requiredPermission: null,
+      anyPermission: null,
+      superadminOnly: true,
     },
   ];
+
+  // Helper function to check if user can access a feature
+  const canAccessFeature = (feature: { requiredPermission: Permission | null; anyPermission?: Permission[] | null; superadminOnly: boolean }) => {
+    if (feature.superadminOnly) {
+      return isSuperadminUser;
+    }
+    // Check anyPermission array first (like nav dropdown)
+    if (feature.anyPermission && feature.anyPermission.length > 0) {
+      return isSuperadminUser || hasAnyPermission(feature.anyPermission);
+    }
+    // Fall back to single permission check
+    if (feature.requiredPermission) {
+      return isSuperadminUser || hasPermission(feature.requiredPermission);
+    }
+    return true;
+  };
+
+  // Filter features based on permissions
+  const visibleUserManagement = userManagementFeatures.filter(canAccessFeature);
+  const visibleWorkflowClient = workflowClientFeatures.filter(canAccessFeature);
+  const visibleSystemSettings = systemSettingsFeatures.filter(canAccessFeature);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -132,10 +226,11 @@ export default function AdminHubPage() {
       </div>
 
       {/* User Management */}
+      {visibleUserManagement.length > 0 && (
       <div>
         <h2 className="text-2xl font-semibold mb-4">User Management</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {userManagementFeatures.map((feature:any) => {
+          {visibleUserManagement.map((feature:any) => {
             const Icon = feature.icon;
             return (
               <Card key={feature.title} className={`hover:shadow-lg transition-shadow ${feature.borderColor}`}>
@@ -169,12 +264,14 @@ export default function AdminHubPage() {
           })}
         </div>
       </div>
+      )}
 
       {/* Workflow & Client Management */}
+      {visibleWorkflowClient.length > 0 && (
       <div>
         <h2 className="text-2xl font-semibold mb-4">Workflow & Client Management</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {workflowClientFeatures.map((feature:any) => {
+          {visibleWorkflowClient.map((feature:any) => {
             const Icon = feature.icon;
             return (
               <Card key={feature.title} className={`hover:shadow-lg transition-shadow ${feature.borderColor}`}>
@@ -208,12 +305,14 @@ export default function AdminHubPage() {
           })}
         </div>
       </div>
+      )}
 
-      {/* System Settings */}
+      {/* System Settings - Superadmin Only */}
+      {visibleSystemSettings.length > 0 && (
       <div>
         <h2 className="text-2xl font-semibold mb-4">System Settings</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {systemSettingsFeatures.map((feature:any) => {
+          {visibleSystemSettings.map((feature:any) => {
             const Icon = feature.icon;
             return (
               <Card key={feature.title} className={`hover:shadow-lg transition-shadow ${feature.borderColor}`}>
@@ -247,6 +346,7 @@ export default function AdminHubPage() {
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

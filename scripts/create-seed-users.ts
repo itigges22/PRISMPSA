@@ -411,16 +411,35 @@ async function loadSeedData(supabase: SupabaseClient) {
   // Tasks
   console.log('   Loading tasks...');
   await supabase.from('tasks').upsert([
-    { id: 'cccccccc-dddd-eeee-ffff-000000000001', name: 'Homepage Design Mockup', description: 'Create high-fidelity homepage design', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'high', estimated_hours: 16, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000002', name: 'About Page Design', description: 'Design company about page', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'done', priority: 'medium', estimated_hours: 8, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000003', name: 'Frontend Implementation', description: 'Implement React components', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'todo', priority: 'high', estimated_hours: 40, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000004' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000004', name: 'User Authentication', description: 'Implement login and signup', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'done', priority: 'urgent', estimated_hours: 24, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000006' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000005', name: 'Dashboard Screen', description: 'Main dashboard UI', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'in_progress', priority: 'high', estimated_hours: 20, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000006' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000006', name: 'Profile Settings', description: 'User profile management', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'todo', priority: 'medium', estimated_hours: 16, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000006' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000007', name: 'Content Calendar', description: 'Q1 social media content calendar', project_id: 'ffffffff-0001-0002-0003-000000000002', status: 'done', priority: 'high', estimated_hours: 12, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000008', name: 'Email Campaign Design', description: 'Newsletter template design', project_id: 'ffffffff-0001-0002-0003-000000000002', status: 'in_progress', priority: 'medium', estimated_hours: 8, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000009', name: 'Logo Design', description: 'Create 3 logo concepts', project_id: 'ffffffff-0001-0002-0003-000000000004', status: 'done', priority: 'urgent', estimated_hours: 20, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000005' },
-    { id: 'cccccccc-dddd-eeee-ffff-000000000010', name: 'Brand Guidelines', description: 'Document brand colors, fonts, usage', project_id: 'ffffffff-0001-0002-0003-000000000004', status: 'review', priority: 'high', estimated_hours: 12, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000005' },
+    // Designer tasks (user 5)
+    { id: 'cccccccc-dddd-eeee-ffff-000000000001', name: 'Homepage Design Mockup', description: 'Create high-fidelity homepage design', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'high', estimated_hours: 16, remaining_hours: 8, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-02-15' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000002', name: 'About Page Design', description: 'Design company about page', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'done', priority: 'medium', estimated_hours: 8, remaining_hours: 0, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000007', name: 'Content Calendar', description: 'Q1 social media content calendar', project_id: 'ffffffff-0001-0002-0003-000000000002', status: 'done', priority: 'high', estimated_hours: 12, remaining_hours: 0, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000008', name: 'Email Campaign Design', description: 'Newsletter template design', project_id: 'ffffffff-0001-0002-0003-000000000002', status: 'in_progress', priority: 'medium', estimated_hours: 8, remaining_hours: 4, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-02-10' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000009', name: 'Logo Design', description: 'Create 3 logo concepts', project_id: 'ffffffff-0001-0002-0003-000000000004', status: 'done', priority: 'urgent', estimated_hours: 20, remaining_hours: 0, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000005' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000010', name: 'Brand Guidelines', description: 'Document brand colors, fonts, usage', project_id: 'ffffffff-0001-0002-0003-000000000004', status: 'review', priority: 'high', estimated_hours: 12, remaining_hours: 3, assigned_to: '11111111-1111-1111-1111-000000000005', created_by: '11111111-1111-1111-1111-000000000005', due_date: '2025-02-05' },
+    // Developer tasks (user 6)
+    { id: 'cccccccc-dddd-eeee-ffff-000000000003', name: 'Frontend Implementation', description: 'Implement React components', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'todo', priority: 'high', estimated_hours: 40, remaining_hours: 40, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-03-01' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000004', name: 'User Authentication', description: 'Implement login and signup', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'done', priority: 'urgent', estimated_hours: 24, remaining_hours: 0, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000006' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000005', name: 'Dashboard Screen', description: 'Main dashboard UI', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'in_progress', priority: 'high', estimated_hours: 20, remaining_hours: 10, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000006', due_date: '2025-02-20' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000006', name: 'Profile Settings', description: 'User profile management', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'todo', priority: 'medium', estimated_hours: 16, remaining_hours: 16, assigned_to: '11111111-1111-1111-1111-000000000006', created_by: '11111111-1111-1111-1111-000000000006', due_date: '2025-02-28' },
+    // Alex Executive tasks (user 2) - strategic and review tasks
+    { id: 'cccccccc-dddd-eeee-ffff-000000000011', name: 'Quarterly Strategy Review', description: 'Review and approve Q1 project portfolio', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'high', estimated_hours: 8, remaining_hours: 4, assigned_to: '11111111-1111-1111-1111-000000000002', created_by: '11111111-1111-1111-1111-000000000002', due_date: '2025-01-31' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000012', name: 'Client Executive Briefing', description: 'Prepare Acme Corp executive presentation', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'todo', priority: 'urgent', estimated_hours: 6, remaining_hours: 6, assigned_to: '11111111-1111-1111-1111-000000000002', created_by: '11111111-1111-1111-1111-000000000002', due_date: '2025-02-03' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000013', name: 'Budget Approval', description: 'Finalize Mobile App MVP budget allocation', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'review', priority: 'high', estimated_hours: 4, remaining_hours: 2, assigned_to: '11111111-1111-1111-1111-000000000002', created_by: '11111111-1111-1111-1111-000000000002', due_date: '2025-02-07' },
+    // Morgan Manager tasks (user 3) - account management tasks
+    { id: 'cccccccc-dddd-eeee-ffff-000000000014', name: 'Acme Account Review', description: 'Monthly account health assessment', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'high', estimated_hours: 6, remaining_hours: 3, assigned_to: '11111111-1111-1111-1111-000000000003', created_by: '11111111-1111-1111-1111-000000000003', due_date: '2025-01-30' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000015', name: 'StartupXYZ Onboarding', description: 'Complete client onboarding checklist', project_id: 'ffffffff-0001-0002-0003-000000000003', status: 'todo', priority: 'medium', estimated_hours: 10, remaining_hours: 10, assigned_to: '11111111-1111-1111-1111-000000000003', created_by: '11111111-1111-1111-1111-000000000003', due_date: '2025-02-14' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000016', name: 'Upsell Proposal', description: 'Prepare premium tier upgrade proposal', project_id: 'ffffffff-0001-0002-0003-000000000002', status: 'in_progress', priority: 'medium', estimated_hours: 8, remaining_hours: 5, assigned_to: '11111111-1111-1111-1111-000000000003', created_by: '11111111-1111-1111-1111-000000000003', due_date: '2025-02-10' },
+    // Pat ProjectManager tasks (user 4) - coordination tasks
+    { id: 'cccccccc-dddd-eeee-ffff-000000000017', name: 'Sprint Planning', description: 'Plan Website Redesign sprint 3', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'high', estimated_hours: 4, remaining_hours: 2, assigned_to: '11111111-1111-1111-1111-000000000004', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-01-29' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000018', name: 'Resource Allocation Review', description: 'Rebalance team workload across projects', project_id: 'ffffffff-0001-0002-0003-000000000002', status: 'todo', priority: 'medium', estimated_hours: 6, remaining_hours: 6, assigned_to: '11111111-1111-1111-1111-000000000004', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-02-05' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000019', name: 'Status Report', description: 'Weekly project status compilation', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'low', estimated_hours: 3, remaining_hours: 1, assigned_to: '11111111-1111-1111-1111-000000000004', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-01-27' },
+    // Andy Admin tasks (user 9) - admin and workflow tasks
+    { id: 'cccccccc-dddd-eeee-ffff-000000000020', name: 'Workflow Optimization', description: 'Streamline approval workflow nodes', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'in_progress', priority: 'medium', estimated_hours: 8, remaining_hours: 4, assigned_to: '11111111-1111-1111-1111-000000000009', created_by: '11111111-1111-1111-1111-000000000009', due_date: '2025-02-08' },
+    { id: 'cccccccc-dddd-eeee-ffff-000000000021', name: 'Permission Audit', description: 'Review and update role permissions', project_id: 'ffffffff-0001-0002-0003-000000000001', status: 'todo', priority: 'high', estimated_hours: 6, remaining_hours: 6, assigned_to: '11111111-1111-1111-1111-000000000009', created_by: '11111111-1111-1111-1111-000000000009', due_date: '2025-02-12' },
+    // Contributor tasks (user 7)
+    { id: 'cccccccc-dddd-eeee-ffff-000000000022', name: 'Social Post Scheduling', description: 'Schedule weekly social media posts', project_id: 'ffffffff-0001-0002-0003-000000000005', status: 'in_progress', priority: 'low', estimated_hours: 4, remaining_hours: 2, assigned_to: '11111111-1111-1111-1111-000000000007', created_by: '11111111-1111-1111-1111-000000000004', due_date: '2025-01-31' },
   ]);
 
   // Workflow templates
@@ -585,15 +604,34 @@ async function loadSeedData(supabase: SupabaseClient) {
   // Task-User-Project mapping for realistic entries WITH estimated hours
   // This ensures time entries don't exceed reasonable bounds
   const taskAssignments = [
+    // Designer tasks (user 5)
     { taskId: 'cccccccc-dddd-eeee-ffff-000000000001', userId: '11111111-1111-1111-1111-000000000005', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Homepage design work', estimatedHours: 16 },
     { taskId: 'cccccccc-dddd-eeee-ffff-000000000002', userId: '11111111-1111-1111-1111-000000000005', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'About page design', estimatedHours: 8 },
-    { taskId: 'cccccccc-dddd-eeee-ffff-000000000003', userId: '11111111-1111-1111-1111-000000000006', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Frontend implementation', estimatedHours: 40 },
-    { taskId: 'cccccccc-dddd-eeee-ffff-000000000004', userId: '11111111-1111-1111-1111-000000000006', projectId: 'ffffffff-0001-0002-0003-000000000003', desc: 'Auth implementation', estimatedHours: 24 },
-    { taskId: 'cccccccc-dddd-eeee-ffff-000000000005', userId: '11111111-1111-1111-1111-000000000006', projectId: 'ffffffff-0001-0002-0003-000000000003', desc: 'Dashboard progress', estimatedHours: 20 },
     { taskId: 'cccccccc-dddd-eeee-ffff-000000000007', userId: '11111111-1111-1111-1111-000000000005', projectId: 'ffffffff-0001-0002-0003-000000000002', desc: 'Content calendar', estimatedHours: 12 },
     { taskId: 'cccccccc-dddd-eeee-ffff-000000000008', userId: '11111111-1111-1111-1111-000000000005', projectId: 'ffffffff-0001-0002-0003-000000000002', desc: 'Email campaign design', estimatedHours: 8 },
     { taskId: 'cccccccc-dddd-eeee-ffff-000000000009', userId: '11111111-1111-1111-1111-000000000005', projectId: 'ffffffff-0001-0002-0003-000000000004', desc: 'Logo design concepts', estimatedHours: 20 },
     { taskId: 'cccccccc-dddd-eeee-ffff-000000000010', userId: '11111111-1111-1111-1111-000000000005', projectId: 'ffffffff-0001-0002-0003-000000000004', desc: 'Brand guidelines', estimatedHours: 12 },
+    // Developer tasks (user 6)
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000003', userId: '11111111-1111-1111-1111-000000000006', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Frontend implementation', estimatedHours: 40 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000004', userId: '11111111-1111-1111-1111-000000000006', projectId: 'ffffffff-0001-0002-0003-000000000003', desc: 'Auth implementation', estimatedHours: 24 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000005', userId: '11111111-1111-1111-1111-000000000006', projectId: 'ffffffff-0001-0002-0003-000000000003', desc: 'Dashboard progress', estimatedHours: 20 },
+    // Alex Executive tasks (user 2)
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000011', userId: '11111111-1111-1111-1111-000000000002', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Strategy review work', estimatedHours: 8 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000012', userId: '11111111-1111-1111-1111-000000000002', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Executive briefing prep', estimatedHours: 6 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000013', userId: '11111111-1111-1111-1111-000000000002', projectId: 'ffffffff-0001-0002-0003-000000000003', desc: 'Budget review', estimatedHours: 4 },
+    // Morgan Manager tasks (user 3)
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000014', userId: '11111111-1111-1111-1111-000000000003', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Account review', estimatedHours: 6 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000015', userId: '11111111-1111-1111-1111-000000000003', projectId: 'ffffffff-0001-0002-0003-000000000003', desc: 'Client onboarding', estimatedHours: 10 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000016', userId: '11111111-1111-1111-1111-000000000003', projectId: 'ffffffff-0001-0002-0003-000000000002', desc: 'Upsell proposal work', estimatedHours: 8 },
+    // Pat ProjectManager tasks (user 4)
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000017', userId: '11111111-1111-1111-1111-000000000004', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Sprint planning', estimatedHours: 4 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000018', userId: '11111111-1111-1111-1111-000000000004', projectId: 'ffffffff-0001-0002-0003-000000000002', desc: 'Resource allocation', estimatedHours: 6 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000019', userId: '11111111-1111-1111-1111-000000000004', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Status report', estimatedHours: 3 },
+    // Andy Admin tasks (user 9)
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000020', userId: '11111111-1111-1111-1111-000000000009', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Workflow optimization', estimatedHours: 8 },
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000021', userId: '11111111-1111-1111-1111-000000000009', projectId: 'ffffffff-0001-0002-0003-000000000001', desc: 'Permission audit', estimatedHours: 6 },
+    // Contributor tasks (user 7)
+    { taskId: 'cccccccc-dddd-eeee-ffff-000000000022', userId: '11111111-1111-1111-1111-000000000007', projectId: 'ffffffff-0001-0002-0003-000000000005', desc: 'Social post scheduling', estimatedHours: 4 },
   ];
 
   // Track logged hours per task to avoid over-logging
@@ -673,6 +711,35 @@ async function loadSeedData(supabase: SupabaseClient) {
       { task_id: 'cccccccc-dddd-eeee-ffff-000000000003', week_start_date: weekStart, allocated_hours: 20, assigned_user_id: '11111111-1111-1111-1111-000000000006' },
       { task_id: 'cccccccc-dddd-eeee-ffff-000000000005', week_start_date: weekStart, allocated_hours: 16, assigned_user_id: '11111111-1111-1111-1111-000000000006' }
     );
+
+    // Allocations for Alex Executive (user 2)
+    taskAllocations.push(
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000011', week_start_date: weekStart, allocated_hours: 8, assigned_user_id: '11111111-1111-1111-1111-000000000002' },
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000013', week_start_date: weekStart, allocated_hours: 4, assigned_user_id: '11111111-1111-1111-1111-000000000002' }
+    );
+
+    // Allocations for Morgan Manager (user 3)
+    taskAllocations.push(
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000014', week_start_date: weekStart, allocated_hours: 6, assigned_user_id: '11111111-1111-1111-1111-000000000003' },
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000016', week_start_date: weekStart, allocated_hours: 8, assigned_user_id: '11111111-1111-1111-1111-000000000003' }
+    );
+
+    // Allocations for Pat ProjectManager (user 4)
+    taskAllocations.push(
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000017', week_start_date: weekStart, allocated_hours: 4, assigned_user_id: '11111111-1111-1111-1111-000000000004' },
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000019', week_start_date: weekStart, allocated_hours: 3, assigned_user_id: '11111111-1111-1111-1111-000000000004' }
+    );
+
+    // Allocations for Andy Admin (user 9)
+    taskAllocations.push(
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000020', week_start_date: weekStart, allocated_hours: 8, assigned_user_id: '11111111-1111-1111-1111-000000000009' },
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000021', week_start_date: weekStart, allocated_hours: 6, assigned_user_id: '11111111-1111-1111-1111-000000000009' }
+    );
+
+    // Allocations for Contributor (user 7)
+    taskAllocations.push(
+      { task_id: 'cccccccc-dddd-eeee-ffff-000000000022', week_start_date: weekStart, allocated_hours: 4, assigned_user_id: '11111111-1111-1111-1111-000000000007' }
+    );
   }
 
   await supabase.from('task_week_allocations').upsert(taskAllocations);
@@ -682,6 +749,78 @@ async function loadSeedData(supabase: SupabaseClient) {
   await supabase.from('newsletters').upsert([
     { id: 'eeeeeeee-ffff-0001-0002-000000000001', title: 'Welcome to MovaLab!', content: 'We are excited to announce the launch of MovaLab, our new project management platform.', created_by: '11111111-1111-1111-1111-000000000002', is_published: true, published_at: '2025-01-15T10:00:00Z' },
     { id: 'eeeeeeee-ffff-0001-0002-000000000002', title: 'Q1 2025 Roadmap', content: 'Here is what we are planning for Q1 2025...', created_by: '11111111-1111-1111-1111-000000000002', is_published: false },
+  ]);
+
+  // Project Updates (for welcome page and project details)
+  console.log('   Loading project updates...');
+  await supabase.from('project_updates').upsert([
+    { id: 'dddddddd-0001-0002-0003-000000000001', project_id: 'ffffffff-0001-0002-0003-000000000001', content: 'Website homepage design mockups completed and approved by client.', created_by: '11111111-1111-1111-1111-000000000005' },
+    { id: 'dddddddd-0001-0002-0003-000000000002', project_id: 'ffffffff-0001-0002-0003-000000000001', content: 'Frontend development started. React components being implemented.', created_by: '11111111-1111-1111-1111-000000000006' },
+    { id: 'dddddddd-0001-0002-0003-000000000003', project_id: 'ffffffff-0001-0002-0003-000000000003', content: 'User authentication module completed ahead of schedule.', created_by: '11111111-1111-1111-1111-000000000006' },
+    { id: 'dddddddd-0001-0002-0003-000000000004', project_id: 'ffffffff-0001-0002-0003-000000000003', content: 'Dashboard UI wireframes reviewed with stakeholders. Moving to high-fidelity designs.', created_by: '11111111-1111-1111-1111-000000000005' },
+    { id: 'dddddddd-0001-0002-0003-000000000005', project_id: 'ffffffff-0001-0002-0003-000000000004', content: 'Three logo concepts presented. Client selected option B for refinement.', created_by: '11111111-1111-1111-1111-000000000005' },
+    { id: 'dddddddd-0001-0002-0003-000000000006', project_id: 'ffffffff-0001-0002-0003-000000000002', content: 'Q1 content calendar finalized. Social media posts scheduled.', created_by: '11111111-1111-1111-1111-000000000004' },
+  ]);
+
+  // Project Issues (for account pages roadblocks)
+  console.log('   Loading project issues...');
+  await supabase.from('project_issues').upsert([
+    { id: 'eeeeeeee-0001-0002-0003-000000000001', project_id: 'ffffffff-0001-0002-0003-000000000001', content: 'Waiting on client for final copy approval for About page', status: 'open', created_by: '11111111-1111-1111-1111-000000000004' },
+    { id: 'eeeeeeee-0001-0002-0003-000000000002', project_id: 'ffffffff-0001-0002-0003-000000000003', content: 'API integration blocked by third-party vendor delay', status: 'in_progress', created_by: '11111111-1111-1111-1111-000000000006' },
+    { id: 'eeeeeeee-0001-0002-0003-000000000003', project_id: 'ffffffff-0001-0002-0003-000000000004', content: 'Brand color palette needs executive approval before finalizing', status: 'open', created_by: '11111111-1111-1111-1111-000000000005' },
+  ]);
+
+  // Add Alex Executive and Morgan Manager to project assignments (so they can see projects in dashboard)
+  console.log('   Adding leadership to project assignments...');
+  await supabase.from('project_assignments').upsert([
+    // Alex Executive - assigned to all projects as executive oversight
+    { project_id: 'ffffffff-0001-0002-0003-000000000001', user_id: '11111111-1111-1111-1111-000000000002', role_in_project: 'Executive Oversight', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    { project_id: 'ffffffff-0001-0002-0003-000000000002', user_id: '11111111-1111-1111-1111-000000000002', role_in_project: 'Executive Oversight', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    { project_id: 'ffffffff-0001-0002-0003-000000000003', user_id: '11111111-1111-1111-1111-000000000002', role_in_project: 'Executive Oversight', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    { project_id: 'ffffffff-0001-0002-0003-000000000004', user_id: '11111111-1111-1111-1111-000000000002', role_in_project: 'Executive Oversight', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    // Morgan Manager - assigned to account projects as account manager
+    { project_id: 'ffffffff-0001-0002-0003-000000000001', user_id: '11111111-1111-1111-1111-000000000003', role_in_project: 'Account Manager', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    { project_id: 'ffffffff-0001-0002-0003-000000000002', user_id: '11111111-1111-1111-1111-000000000003', role_in_project: 'Account Manager', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    { project_id: 'ffffffff-0001-0002-0003-000000000003', user_id: '11111111-1111-1111-1111-000000000003', role_in_project: 'Account Manager', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    { project_id: 'ffffffff-0001-0002-0003-000000000004', user_id: '11111111-1111-1111-1111-000000000003', role_in_project: 'Account Manager', assigned_by: '11111111-1111-1111-1111-000000000001' },
+    // Andy Admin - assigned to projects for time tracking testing
+    { project_id: 'ffffffff-0001-0002-0003-000000000001', user_id: '11111111-1111-1111-1111-000000000009', role_in_project: 'Admin Support', assigned_by: '11111111-1111-1111-1111-000000000001' },
+  ]);
+
+  // Add availability for Alex, Morgan, and Andy
+  console.log('   Adding availability for leadership...');
+  for (let weekOffset = 0; weekOffset < 6; weekOffset++) {
+    const weekStart = getWeekStartNWeeksAgo(weekOffset);
+    // Alex Executive - 40 hours
+    await supabase.from('user_availability').upsert({
+      user_id: '11111111-1111-1111-1111-000000000002',
+      week_start_date: weekStart,
+      available_hours: 40
+    });
+    // Morgan Manager - 40 hours
+    await supabase.from('user_availability').upsert({
+      user_id: '11111111-1111-1111-1111-000000000003',
+      week_start_date: weekStart,
+      available_hours: 40
+    });
+    // Andy Admin - 40 hours
+    await supabase.from('user_availability').upsert({
+      user_id: '11111111-1111-1111-1111-000000000009',
+      week_start_date: weekStart,
+      available_hours: 40
+    });
+  }
+
+  // Add account members for Alex (so he can see all accounts)
+  console.log('   Adding Alex to account memberships...');
+  await supabase.from('account_members').upsert([
+    { user_id: '11111111-1111-1111-1111-000000000002', account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000001' },
+    { user_id: '11111111-1111-1111-1111-000000000002', account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000002' },
+    { user_id: '11111111-1111-1111-1111-000000000002', account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000003' },
+    // Andy Admin - add to accounts too
+    { user_id: '11111111-1111-1111-1111-000000000009', account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000001' },
+    { user_id: '11111111-1111-1111-1111-000000000009', account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000002' },
+    { user_id: '11111111-1111-1111-1111-000000000009', account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000003' },
   ]);
 
   console.log('   ✅ Seed data loaded');

@@ -39,21 +39,21 @@ export function AccountList({ accounts, userProfile, onAccountCreated }: Account
     }
     
     async function checkPermissionsAndFilter() {
-      const canCreate = await hasPermission(userProfile, Permission.MANAGE_ACCOUNTS);
-      setCanCreateAccount(canCreate);
-      
+      const canManage = await hasPermission(userProfile, Permission.MANAGE_ACCOUNTS);
+      setCanCreateAccount(canManage);
+
       // Filter accounts based on permissions
       const filtered: Account[] = [];
       const hasViewAllAccounts = await hasPermission(userProfile, Permission.VIEW_ALL_ACCOUNTS);
       const hasViewAccounts = await hasPermission(userProfile, Permission.VIEW_ACCOUNTS);
-      
+
       for (const account of accounts) {
-        // If user has VIEW_ALL_ACCOUNTS, they can see all accounts
-        if (hasViewAllAccounts) {
+        // If user has MANAGE_ACCOUNTS or VIEW_ALL_ACCOUNTS, they can see all accounts
+        if (canManage || hasViewAllAccounts) {
           filtered.push(account);
           continue;
         }
-        
+
         // If user has VIEW_ACCOUNTS, check if they have access to this specific account
         if (hasViewAccounts) {
           // Check if user has account access (via project assignments)
@@ -63,7 +63,7 @@ export function AccountList({ accounts, userProfile, onAccountCreated }: Account
           }
         }
       }
-      
+
       setVisibleAccounts(filtered);
     }
     

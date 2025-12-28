@@ -335,6 +335,17 @@ async function hasBasePermission(userProfile: UserWithRoles | null, permission: 
     // Check if permissions are already loaded in the role object
     if (role.permissions) {
       const permissions = role.permissions as Record<string, boolean> || {};
+      // Debug: Log what we're checking
+      if (process.env.NODE_ENV === 'development' && (permission === 'manage_time' || permission === 'view_newsletters')) {
+        console.log('🔐 Permission check DETAIL:', {
+          permission,
+          roleName: role.name,
+          roleId: role.id,
+          allPermissions: JSON.stringify(permissions),
+          hasPermission: permissions[permission],
+          permissionValue: permissions[permission]
+        });
+      }
       // Only check if permission is explicitly true - ignore false and undefined
       if (permissions[permission] === true) {
         logger.debug('Permission found in loaded role (OR logic)', {
@@ -480,18 +491,17 @@ export async function checkPermissionHybrid(
       [Permission.VIEW_TEAM_CAPACITY]: [Permission.VIEW_ALL_CAPACITY],
     } as Record<string, unknown>;
 
-    // 5. Check base permission OR override permission
+    // 5. Check base permission
     const hasBase = await hasBasePermission(userProfile, permission, supabaseClient);
 
-    // If no base permission, check for override permissions (e.g., VIEW_ALL_PROJECTS implies VIEW_PROJECTS)
+    // 6. Check for override permissions (e.g., VIEW_ALL_ACCOUNTS bypasses context for MANAGE_ACCOUNTS)
+    // Override check runs ALWAYS, even if base permission exists, because overrides bypass context requirements
     let hasOverride = false;
-    if (!hasBase) {
-      const overrides = overridePermissions[permission] || [];
-      for (const override of overrides) {
-        if (await hasBasePermission(userProfile, override, supabaseClient)) {
-          hasOverride = true;
-          break;
-        }
+    const overrides = overridePermissions[permission] || [];
+    for (const override of overrides) {
+      if (await hasBasePermission(userProfile, override, supabaseClient)) {
+        hasOverride = true;
+        break;
       }
     }
 
@@ -503,7 +513,7 @@ export async function checkPermissionHybrid(
       return false;
     }
 
-    // 6. If override permission, grant access (overrides bypass context checks)
+    // 7. If override permission, grant access immediately (overrides bypass context checks)
     if (hasOverride) {
       const duration = Date.now() - startTime;
       permissionCache.set(cacheKey, { result: true, timestamp: Date.now() });
@@ -511,7 +521,7 @@ export async function checkPermissionHybrid(
       return true;
     }
 
-    // 7. If no context provided, base permission is sufficient
+    // 8. If no context provided, base permission is sufficient
     if (!context || Object.keys(context).length === 0) {
       const duration = Date.now() - startTime;
       permissionCache.set(cacheKey, { result: true, timestamp: Date.now() });

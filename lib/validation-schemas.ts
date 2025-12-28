@@ -9,7 +9,20 @@ import { z } from 'zod';
 // COMMON/REUSABLE SCHEMAS
 // ============================================================================
 
-export const uuidSchema = z.string().uuid('Invalid UUID format');
+// Use regex for UUID validation instead of z.uuid() because:
+// - z.uuid() strictly validates RFC 4122 variant bits (17th char must be 8,9,a,b)
+// - Demo/seed data uses simplified UUIDs like 11111111-1111-1111-1111-000000000001
+// - These are valid UUID-like strings but fail strict RFC 4122 validation
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const uuidSchema = z.string().regex(uuidRegex, 'Invalid UUID format');
+
+// Optional UUID that treats empty strings as undefined
+export const optionalUuidSchema = z.union([
+  z.string().regex(uuidRegex, 'Invalid UUID format'),
+  z.literal(''),
+  z.null(),
+  z.undefined()
+]).transform(val => (val === '' || val === null ? undefined : val));
 export const emailSchema = z.string().email('Invalid email format');
 export const dateSchema = z.string().datetime('Invalid datetime format');
 export const positiveNumberSchema = z.number().positive('Must be a positive number');
@@ -55,7 +68,7 @@ export const createAccountSchema = z.object({
   primary_contact_name: z.string().max(200, 'Contact name too long').optional().nullable(),
   primary_contact_email: emailSchema.optional().nullable(),
   status: z.enum(['active', 'inactive', 'suspended']).optional(),
-  account_manager_id: uuidSchema.optional(),
+  account_manager_id: optionalUuidSchema.optional(),
 });
 
 export const updateAccountSchema = z.object({
@@ -64,7 +77,7 @@ export const updateAccountSchema = z.object({
   primary_contact_name: z.string().max(200).optional().nullable(),
   primary_contact_email: emailSchema.optional().nullable(),
   status: z.enum(['active', 'inactive', 'suspended']).optional(),
-  account_manager_id: uuidSchema.optional().nullable(),
+  account_manager_id: optionalUuidSchema.optional(),
 });
 
 // ============================================================================

@@ -52,18 +52,27 @@ export function AccountCreateDialog({ onAccountCreated, userProfile }: AccountCr
     setLoading(true);
 
     try {
+      // Only include account_manager_id if it's a valid UUID
+      const userId = (userProfile as any)?.id;
+      const requestBody: Record<string, any> = {
+        name: formData.name,
+        description: formData.description || null,
+        primary_contact_name: formData.primary_contact_name || null,
+        status: formData.status,
+      };
+
+      // Only add account_manager_id if it's a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (userId && typeof userId === 'string' && uuidRegex.test(userId)) {
+        requestBody.account_manager_id = userId;
+      }
+
       const response = await fetch('/api/accounts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          primary_contact_name: formData.primary_contact_name,
-          status: formData.status,
-          account_manager_id: (userProfile as any).id
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();

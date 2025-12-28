@@ -110,7 +110,7 @@ const adminMenuItems: AdminMenuItem[] = [
     name: 'Time Tracking',
     href: '/admin/time-tracking',
     icon: Clock,
-    anyPermission: [Permission.VIEW_ALL_TIME_ENTRIES, Permission.MANAGE_TIME],
+    anyPermission: [Permission.VIEW_ALL_TIME_ENTRIES],
   },
   {
     name: 'Analytics',
@@ -222,9 +222,36 @@ export function ClientNavigation() {
         return
       }
 
-      // Check permissions for each navigation item
-      const filtered: NavigationItem[] = []
+      // Check permissions for navigation items IN PARALLEL for better performance
+      // Collect all unique permissions to check
+      const allNavPermissions: Permission[] = []
+      navigationItems.forEach(item => {
+        if (item.permission) allNavPermissions.push(item.permission)
+        if (item.anyPermission) allNavPermissions.push(...item.anyPermission)
+      })
+      adminMenuItems.forEach(item => {
+        allNavPermissions.push(...item.anyPermission)
+      })
 
+      // Deduplicate permissions
+      const uniquePermissions = [...new Set(allNavPermissions)]
+
+      // Check all permissions in parallel
+      const permissionResults = await Promise.all(
+        uniquePermissions.map(async (perm) => ({
+          permission: perm,
+          hasPermission: await hasPermission(userProfile, perm)
+        }))
+      )
+
+      // Build a lookup map for O(1) access
+      const permissionMap = new Map<Permission, boolean>()
+      permissionResults.forEach(({ permission, hasPermission: has }) => {
+        permissionMap.set(permission, has)
+      })
+
+      // Now filter navigation items using the pre-computed permissions
+      const filtered: NavigationItem[] = []
       for (const item of navigationItems) {
         // Items with no permission requirement should not be shown unless explicitly allowed
         if (!item.permission && (!item.anyPermission || item.anyPermission.length === 0)) {
@@ -234,25 +261,17 @@ export function ClientNavigation() {
           continue
         }
 
-        // Check single permission
+        // Check single permission (from map)
         if (item.permission) {
-          const hasPerm = await hasPermission(userProfile, item.permission)
-          if (hasPerm) {
+          if (permissionMap.get(item.permission)) {
             filtered.push(item)
             continue
           }
         }
 
-        // Check any of multiple permissions
+        // Check any of multiple permissions (from map)
         if (item.anyPermission && item.anyPermission.length > 0) {
-          let hasAnyPerm = false
-          for (const perm of item.anyPermission) {
-            const hasPerm = await hasPermission(userProfile, perm)
-            if (hasPerm) {
-              hasAnyPerm = true
-              break
-            }
-          }
+          const hasAnyPerm = item.anyPermission.some(perm => permissionMap.get(perm))
           if (hasAnyPerm) {
             filtered.push(item)
           }
@@ -267,16 +286,10 @@ export function ClientNavigation() {
         }
       }
 
-      // Check permissions for each admin menu item
+      // Filter admin menu items using the pre-computed permissions
       const filteredAdminItems: AdminMenuItem[] = []
       for (const adminItem of adminMenuItems) {
-        let hasAnyPerm = false
-        for (const perm of adminItem.anyPermission) {
-          if (await hasPermission(userProfile, perm)) {
-            hasAnyPerm = true
-            break
-          }
-        }
+        const hasAnyPerm = adminItem.anyPermission.some(perm => permissionMap.get(perm))
         if (hasAnyPerm) {
           filteredAdminItems.push(adminItem)
         }

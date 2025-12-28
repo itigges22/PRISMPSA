@@ -2,48 +2,26 @@
 
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle, AlertCircle, Clock, Activity, Database } from 'lucide-react'
-import { Permission } from '@/lib/permissions'
-import { hasPermission } from '@/lib/rbac'
+import { isSuperadmin } from '@/lib/rbac'
+import { AccessDeniedPage } from '@/components/access-denied-page'
 
 export default function DatabaseStatusPage() {
   const { user, userProfile, loading } = useAuth()
   const router = useRouter()
-  const [hasAccess, setHasAccess] = useState(false)
-  const [dbStatus] = useState({
+
+  const dbStatus = {
     connected: true,
     responseTime: 45,
     uptime: '99.9%',
     queries: 1234,
     errors: 0
-  })
+  }
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading, router])
-
-  // Check if user has permission to view database status
-  useEffect(() => {
-    if (!userProfile || loading) return
-
-    async function checkAccess() {
-      // Database Status requires VIEW_ALL_ANALYTICS permission (same as admin analytics)
-      const canView = await hasPermission(userProfile, Permission.VIEW_ALL_ANALYTICS)
-      setHasAccess(canView)
-      
-      if (!canView) {
-        console.log('DatabasePage: User does not have VIEW_ALL_ANALYTICS permission, redirecting to welcome')
-      router.push('/welcome')
-      }
-    }
-
-    checkAccess()
-  }, [userProfile, loading, router])
+  // Check superadmin access
+  const hasSuperadminAccess = userProfile ? isSuperadmin(userProfile) : false
 
   if (loading) {
     return (
@@ -68,16 +46,14 @@ export default function DatabaseStatusPage() {
     )
   }
 
-  if (!user || !hasAccess) {
+  // Show access denied if not superadmin
+  if (!user || !hasSuperadminAccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
-          <p className="text-sm text-gray-500 mt-2">This page requires VIEW_ALL_ANALYTICS permission.</p>
-        </div>
-      </div>
+      <AccessDeniedPage
+        title="Superadmin Access Required"
+        description="The database status page is restricted to superadmin users only."
+        requiredPermission="Superadmin"
+      />
     )
   }
 

@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle2, XCircle, AlertCircle, Search, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { isSuperadmin } from '@/lib/rbac';
+import { AccessDeniedPage } from '@/components/access-denied-page';
 
 interface UserDiagnostic {
   id: string;
@@ -40,6 +43,7 @@ interface RoleDiagnostic {
 }
 
 export default function RBACDiagnosticsPage() {
+  const { userProfile, loading: authLoading } = useAuth();
   const [users, setUsers] = useState<UserDiagnostic[]>([]);
   const [roles, setRoles] = useState<RoleDiagnostic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,9 +56,14 @@ export default function RBACDiagnosticsPage() {
   } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Check superadmin access
+  const hasSuperadminAccess = userProfile ? isSuperadmin(userProfile) : false;
+
   useEffect(() => {
-    fetchDiagnostics();
-  }, []);
+    if (hasSuperadminAccess) {
+      fetchDiagnostics();
+    }
+  }, [hasSuperadminAccess]);
 
   const fetchDiagnostics = async () => {
     setLoading(true);
@@ -95,6 +104,39 @@ export default function RBACDiagnosticsPage() {
   const allPermissions = Array.from(
     new Set(roles.flatMap((r:any) => Object.keys(r.permissions)))
   ).sort();
+
+  // Show loading while auth is loading
+  if (authLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-96">
+          <RefreshCw className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // If userProfile is still loading, show loading
+  if (!userProfile) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-96">
+          <RefreshCw className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not superadmin
+  if (!hasSuperadminAccess) {
+    return (
+      <AccessDeniedPage
+        title="Superadmin Access Required"
+        description="This diagnostic page is restricted to superadmin users only."
+        requiredPermission="Superadmin"
+      />
+    );
+  }
 
   if (loading) {
     return (

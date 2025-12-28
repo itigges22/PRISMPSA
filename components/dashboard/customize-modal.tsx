@@ -124,6 +124,21 @@ const WIDGET_INFO: Record<string, { label: string; icon: React.ElementType; desc
   },
 };
 
+// Default widget configuration - used when no preferences exist
+const DEFAULT_WIDGETS: WidgetConfig[] = [
+  { id: 'projects', type: 'projects', visible: true, order: 0, size: 'full' },
+  { id: 'capacity', type: 'capacity', visible: true, order: 1, size: 'full' },
+  { id: 'time', type: 'time', visible: true, order: 2, size: 'small' },
+  { id: 'tasks', type: 'tasks', visible: true, order: 3, size: 'small' },
+  { id: 'workflows', type: 'workflows', visible: true, order: 4, size: 'small' },
+  { id: 'accounts', type: 'accounts', visible: true, order: 5, size: 'medium' },
+  { id: 'collaborators', type: 'collaborators', visible: true, order: 6, size: 'medium' },
+  { id: 'time-by-project', type: 'time-by-project', visible: true, order: 7, size: 'small' },
+  { id: 'task-trend', type: 'task-trend', visible: true, order: 8, size: 'small' },
+  { id: 'deadlines', type: 'deadlines', visible: true, order: 9, size: 'small' },
+  { id: 'activity', type: 'activity', visible: true, order: 10, size: 'full' },
+];
+
 // Sortable Widget Item
 function SortableWidgetItem({
   widget,
@@ -158,6 +173,7 @@ function SortableWidgetItem({
     <div
       ref={setNodeRef}
       style={style}
+      data-testid="widget-option"
       className={`flex items-center gap-3 p-3 rounded-lg border ${
         widget.visible ? 'bg-background border-border' : 'bg-muted/50 border-muted'
       }`}
@@ -202,13 +218,16 @@ export function CustomizeModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
-  // Initialize widgets from preferences
+  // Initialize widgets from preferences or use defaults
   useEffect(() => {
-    if (preferences?.widgets) {
-      // Sort by order
-      const sorted = [...preferences.widgets].sort((a, b) => a.order - b.order);
-      setWidgets(sorted);
-    }
+    // Use preferences widgets if available, otherwise use defaults
+    const widgetSource = preferences?.widgets && preferences.widgets.length > 0
+      ? preferences.widgets
+      : DEFAULT_WIDGETS;
+
+    // Sort by order
+    const sorted = [...widgetSource].sort((a, b) => a.order - b.order);
+    setWidgets(sorted);
   }, [preferences]);
 
   const sensors = useSensors(

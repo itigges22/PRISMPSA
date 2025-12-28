@@ -3,6 +3,7 @@ import { createClientSupabase } from './supabase';
 import { Permission } from './permissions';
 import { logger, databaseQuery, databaseError, roleManagement, performance } from './debug-logger';
 import { validateRole } from './validation';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Types for database responses
 interface RoleWithDepartment {
@@ -19,18 +20,6 @@ interface RoleWithDepartment {
   department: { id: string; name: string } | null;
   reporting_role: { id: string; name: string } | null;
   user_roles?: { count: number }[];
-}
-
-interface UserRoleWithRoles {
-  role_id: string;
-  roles?: { name: string } | null;
-}
-
-interface UserRoleWithProfile {
-  user_id: string;
-  assigned_at: string;
-  assigned_by: string;
-  user_profiles: { id: string; name: string; email: string; image: string | null } | null;
 }
 
 interface UserRoleRecord {
@@ -99,8 +88,13 @@ export interface UserRoleAssignment {
 }
 
 class RoleManagementService {
-  private async getSupabase() {
-    return createClientSupabase() as any;
+  private getSupabase(providedClient?: SupabaseClient): SupabaseClient | null {
+    // Use provided client if available (for server-side calls)
+    if (providedClient) {
+      return providedClient;
+    }
+    // Fall back to client-side Supabase (for browser)
+    return createClientSupabase();
   }
 
   // CRUD operations
@@ -119,7 +113,7 @@ class RoleManagementService {
         return null;
       }
 
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) {
         logger.error('Supabase client not available', { action: 'createRole' });
         return null;
@@ -187,7 +181,7 @@ class RoleManagementService {
 
   async updateRole(roleId: string, updates: UpdateRoleData): Promise<Role | null> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return null;
 
       // Check if role is system role (cannot be updated)
@@ -225,7 +219,7 @@ class RoleManagementService {
 
   async deleteRole(roleId: string): Promise<boolean> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return false;
 
       // Check if role is system role (cannot be deleted)
@@ -276,7 +270,7 @@ class RoleManagementService {
         return null;
       }
 
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) {
         logger.error('Supabase client not available', { action: 'getRoleById', roleId });
         return null;
@@ -342,7 +336,7 @@ class RoleManagementService {
 
   async getAllRoles(): Promise<RoleWithDetails[]> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return [];
 
       const { data: roles, error } = await supabase
@@ -374,7 +368,7 @@ class RoleManagementService {
 
   async getRolesByDepartment(departmentId: string): Promise<RoleWithDetails[]> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return [];
 
       const { data: roles, error } = await supabase
@@ -410,7 +404,7 @@ class RoleManagementService {
     const startTime = Date.now();
     
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) {
         logger.error('Supabase client not available', { action: 'getRoleHierarchy' });
         return [];
@@ -545,7 +539,7 @@ class RoleManagementService {
 
   async updateRoleReporting(roleId: string, newReportingRoleId: string | null): Promise<boolean> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return false;
 
       // Check for circular reference
@@ -588,7 +582,7 @@ class RoleManagementService {
   // User-role operations
   async assignUserToRole(userId: string, roleId: string, assignedBy: string): Promise<boolean> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return false;
 
       // First, check user's current roles to see if they have the "unassigned" role
@@ -606,8 +600,8 @@ class RoleManagementService {
       }
 
       // Find the "No Assigned Role" if user has it
-      const noAssignedRole = currentRoles?.find((cr: UserRoleWithRoles) => this.isUnassignedRole(cr.roles?.name));
-      const hasOtherRoles = currentRoles?.some((cr: UserRoleWithRoles) => !this.isUnassignedRole(cr.roles?.name));
+      const noAssignedRole = currentRoles?.find((cr: any) => this.isUnassignedRole(cr.roles?.name));
+      const hasOtherRoles = currentRoles?.some((cr: any) => !this.isUnassignedRole(cr.roles?.name));
 
       // If user has "No Assigned Role" + other roles, remove "No Assigned Role" first
       if (noAssignedRole && hasOtherRoles) {
@@ -658,7 +652,7 @@ class RoleManagementService {
 
   async removeUserFromRole(userId: string, roleId: string): Promise<boolean> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return false;
 
       // Check if this is the user's last role
@@ -691,7 +685,7 @@ class RoleManagementService {
 
   async getUserRoles(userId: string): Promise<Role[]> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return [];
 
       const { data: userRoles, error } = await supabase
@@ -706,7 +700,7 @@ class RoleManagementService {
         return [];
       }
 
-      return userRoles.map((ur: { roles: Role | null }) => ur.roles).filter(Boolean) as Role[];
+      return userRoles.map((ur: any) => ur.roles).filter(Boolean) as Role[];
     } catch (error: unknown) {
       console.error('Error in getUserRoles:', error);
       return [];
@@ -715,7 +709,7 @@ class RoleManagementService {
 
   async getRoleUsers(roleId: string): Promise<{ user_id: string; assigned_at: string; assigned_by: string; user: { id: string; name: string; email: string; image: string | null } | null }[]> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return [];
 
       const { data: userRoles, error } = await supabase
@@ -733,7 +727,7 @@ class RoleManagementService {
         return [];
       }
 
-      return userRoles.map((ur: UserRoleWithProfile) => ({
+      return userRoles.map((ur: any) => ({
         user_id: ur.user_id,
         assigned_at: ur.assigned_at,
         assigned_by: ur.assigned_by,
@@ -748,7 +742,7 @@ class RoleManagementService {
   // Permission operations
   async updateRolePermissions(roleId: string, permissions: Record<Permission, boolean>): Promise<boolean> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return false;
 
       // Check if role is system role (cannot update permissions)
@@ -784,7 +778,7 @@ class RoleManagementService {
 
   async getRolePermissions(roleId: string): Promise<Permission[]> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return [];
 
       const { data: role, error } = await supabase
@@ -812,7 +806,7 @@ class RoleManagementService {
   // Validation helpers
   private async checkCircularReference(roleId: string, reportingRoleId: string): Promise<boolean> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return true;
 
       let currentRoleId = reportingRoleId;
@@ -843,7 +837,7 @@ class RoleManagementService {
 
   async validateRoleAssignment(userId: string, roleId: string): Promise<{ valid: boolean; message?: string }> {
     try {
-      const supabase = await this.getSupabase();
+      const supabase = this.getSupabase();
       if (!supabase) return { valid: false, message: 'Database connection failed' };
 
       // Check if user exists

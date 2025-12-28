@@ -202,22 +202,24 @@ export async function getAuthenticatedUser(): Promise<UserWithRoles | null> {
  * @param userProfile - User profile with roles
  * @param permission - Required permission
  * @param context - Optional context (project, account, department)
+ * @param supabaseClient - Optional Supabase client for context-aware checks (REQUIRED for server-side)
  */
 export async function requirePermission(
   userProfile: UserWithRoles,
   permission: Permission,
-  context?: PermissionContext
+  context?: PermissionContext,
+  supabaseClient?: any
 ): Promise<void> {
   try {
-    const hasPermission = await checkPermissionHybrid(userProfile, permission, context);
-    
+    const hasPermission = await checkPermissionHybrid(userProfile, permission, context, supabaseClient);
+
     if (!hasPermission) {
       logger.warn('Permission denied', {
         userId: (userProfile as any).id,
         permission,
         context
       });
-      
+
       throw new PermissionError(
         `You don't have permission to perform this action`,
         permission,
@@ -238,28 +240,30 @@ export async function requirePermission(
  * @param userProfile - User profile with roles
  * @param permissions - Array of permissions (user needs at least one)
  * @param context - Optional context
+ * @param supabaseClient - Optional Supabase client for context-aware checks (REQUIRED for server-side)
  */
 export async function requireAnyPermission(
   userProfile: UserWithRoles,
   permissions: Permission[],
-  context?: PermissionContext
+  context?: PermissionContext,
+  supabaseClient?: any
 ): Promise<void> {
   for (const permission of permissions) {
     try {
-      await requirePermission(userProfile, permission, context);
+      await requirePermission(userProfile, permission, context, supabaseClient);
       return; // Success - user has at least one permission
     } catch (_error: unknown) {
       // Continue checking other permissions
     }
   }
-  
+
   // None of the permissions matched
   logger.warn('None of required permissions granted', {
     userId: (userProfile as any).id,
     permissions,
     context
   });
-  
+
   throw new PermissionError(
     `You don't have any of the required permissions`,
     permissions[0], // Just use first permission for error tracking
@@ -272,14 +276,16 @@ export async function requireAnyPermission(
  * @param userProfile - User profile with roles
  * @param permissions - Array of permissions (user needs all of them)
  * @param context - Optional context
+ * @param supabaseClient - Optional Supabase client for context-aware checks (REQUIRED for server-side)
  */
 export async function requireAllPermissions(
   userProfile: UserWithRoles,
   permissions: Permission[],
-  context?: PermissionContext
+  context?: PermissionContext,
+  supabaseClient?: any
 ): Promise<void> {
   for (const permission of permissions) {
-    await requirePermission(userProfile, permission, context);
+    await requirePermission(userProfile, permission, context, supabaseClient);
   }
 }
 
@@ -438,7 +444,9 @@ export async function requireAuthAndPermission(
   request?: NextRequest
 ): Promise<UserWithRoles> {
   const user = await requireAuthentication(request);
-  await requirePermission(user, permission, context);
+  // Create Supabase client from request for context-aware permission checks
+  const supabaseClient = request ? createApiSupabaseClient(request) : null;
+  await requirePermission(user, permission, context, supabaseClient);
   return user;
 }
 
@@ -455,7 +463,9 @@ export async function requireAuthAndAnyPermission(
   request?: NextRequest
 ): Promise<UserWithRoles> {
   const user = await requireAuthentication(request);
-  await requireAnyPermission(user, permissions, context);
+  // Create Supabase client from request for context-aware permission checks
+  const supabaseClient = request ? createApiSupabaseClient(request) : null;
+  await requireAnyPermission(user, permissions, context, supabaseClient);
   return user;
 }
 
