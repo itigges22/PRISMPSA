@@ -41,6 +41,35 @@ export async function GET(request: NextRequest) {
   const supabase = createClient(DEMO_PROJECT_URL, serviceRoleKey);
 
   try {
+    // Step 0: Ensure all 5 departments exist
+    const departmentsUpsert = `
+      INSERT INTO departments (id, name, description) VALUES
+        ('11111111-1111-1111-1111-111111111111', 'Leadership', 'Executive leadership and strategic direction'),
+        ('22222222-2222-2222-2222-222222222222', 'Marketing', 'Marketing and communications'),
+        ('33333333-3333-3333-3333-333333333333', 'Design', 'Creative and visual design'),
+        ('44444444-4444-4444-4444-444444444444', 'Development', 'Software development and engineering'),
+        ('55555555-5555-5555-5555-555555555555', 'Operations', 'Operations and project coordination')
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        description = EXCLUDED.description;
+    `;
+    const { error: deptError } = await supabase.rpc('exec_sql', { query: departmentsUpsert });
+    if (deptError) console.error('Departments upsert error:', deptError);
+
+    // Ensure Operations Coordinator role exists
+    const opsRoleUpsert = `
+      INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarchy_level, description) VALUES
+        ('60606060-6060-6060-6060-606060606060', 'Operations Coordinator', '55555555-5555-5555-5555-555555555555',
+          '{"view_projects": true, "manage_time": true, "view_time_entries": true, "edit_own_availability": true, "view_departments": true, "view_newsletters": true}'::jsonb,
+          FALSE, 50, 'Operations and logistics')
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        department_id = EXCLUDED.department_id,
+        permissions = EXCLUDED.permissions;
+    `;
+    const { error: opsRoleError } = await supabase.rpc('exec_sql', { query: opsRoleUpsert });
+    if (opsRoleError) console.error('Operations role upsert error:', opsRoleError);
+
     // Step 1: Clear existing seed data
     const clearQueries = [
       `DELETE FROM workflow_active_steps WHERE workflow_instance_id IN (SELECT id FROM workflow_instances WHERE id::text LIKE 'cccccccc%')`,

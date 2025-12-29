@@ -41,24 +41,17 @@ export function MyTimeWidget({ data, isLoading }: MyTimeWidgetProps) {
     );
   }
 
-  if (!data) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Clock className="h-4 w-4 text-blue-500" />
-            My Time This Week
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No time data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Use default values when data is null (show widget with zeros)
+  const displayData = data || {
+    hoursToday: 0,
+    hoursThisWeek: 0,
+    hoursThisMonth: 0,
+    weeklyTarget: 40,
+    dailyAverage: 0,
+  };
 
-  const weeklyProgress = data.weeklyTarget > 0
-    ? Math.round((data.hoursThisWeek / data.weeklyTarget) * 100)
+  const weeklyProgress = displayData.weeklyTarget > 0
+    ? Math.round((displayData.hoursThisWeek / displayData.weeklyTarget) * 100)
     : 0;
 
   return (
@@ -75,7 +68,7 @@ export function MyTimeWidget({ data, isLoading }: MyTimeWidgetProps) {
           {/* Today */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Today</span>
-            <span className="text-lg font-bold">{data.hoursToday}h</span>
+            <span className="text-lg font-bold">{displayData.hoursToday}h</span>
           </div>
 
           {/* This Week - Highlighted */}
@@ -83,9 +76,9 @@ export function MyTimeWidget({ data, isLoading }: MyTimeWidgetProps) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">This Week</span>
               <span className="text-2xl font-bold">
-                {data.hoursThisWeek}
+                {displayData.hoursThisWeek}
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{data.weeklyTarget}h
+                  /{displayData.weeklyTarget}h
                 </span>
               </span>
             </div>
@@ -96,7 +89,7 @@ export function MyTimeWidget({ data, isLoading }: MyTimeWidgetProps) {
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{weeklyProgress}% of target</span>
-                <span>{Math.max(0, data.weeklyTarget - data.hoursThisWeek)}h remaining</span>
+                <span>{Math.max(0, displayData.weeklyTarget - displayData.hoursThisWeek)}h remaining</span>
               </div>
             </div>
           </div>
@@ -105,11 +98,11 @@ export function MyTimeWidget({ data, isLoading }: MyTimeWidgetProps) {
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="space-y-0.5">
               <p className="text-xs text-muted-foreground">This Month</p>
-              <p className="text-sm font-semibold">{data.hoursThisMonth}h</p>
+              <p className="text-sm font-semibold">{displayData.hoursThisMonth}h</p>
             </div>
             <div className="space-y-0.5">
               <p className="text-xs text-muted-foreground">Daily Avg</p>
-              <p className="text-sm font-semibold">{data.dailyAverage}h</p>
+              <p className="text-sm font-semibold">{displayData.dailyAverage}h</p>
             </div>
           </div>
         </div>

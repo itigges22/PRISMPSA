@@ -69,23 +69,15 @@ export function MyWorkflowsWidget() {
     );
   }
 
-  const workflowData = data?.data;
-
-  if (!workflowData) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Workflow className="h-4 w-4 text-indigo-500" />
-            My Workflows
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No workflow data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Use default values when data is null (show widget with zeros)
+  const workflowData = data?.data || {
+    awaitingAction: 0,
+    activeWorkflows: 0,
+    inPipeline: 0,
+    completedRecently: 0,
+    awaitingDetails: [],
+    pipelineDetails: [],
+  };
 
   const hasNoWorkflows = workflowData.awaitingAction === 0 &&
                          workflowData.activeWorkflows === 0 &&

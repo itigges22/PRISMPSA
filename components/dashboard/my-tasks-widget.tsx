@@ -64,24 +64,17 @@ export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
     );
   }
 
-  if (!data) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <CheckSquare className="h-4 w-4 text-purple-500" />
-            My Tasks
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No task data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Use default values when data is null (show widget with zeros)
+  const displayData = data || {
+    inProgress: 0,
+    dueThisWeek: 0,
+    overdue: 0,
+    completedThisWeek: 0,
+    urgent: [],
+  };
 
-  const hasNoTasks = data.inProgress === 0 && data.dueThisWeek === 0 &&
-                     data.overdue === 0 && data.completedThisWeek === 0;
+  const hasNoTasks = displayData.inProgress === 0 && displayData.dueThisWeek === 0 &&
+                     displayData.overdue === 0 && displayData.completedThisWeek === 0;
 
   return (
     <Card>
@@ -110,16 +103,16 @@ export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
                   <Clock className="h-3.5 w-3.5 text-blue-500" />
                   <span className="text-xs text-muted-foreground">In Progress</span>
                 </div>
-                <p className="text-xl font-bold mt-0.5">{data.inProgress}</p>
+                <p className="text-xl font-bold mt-0.5">{displayData.inProgress}</p>
               </div>
 
-              <div className={`rounded-lg p-2.5 ${data.overdue > 0 ? 'bg-red-50 dark:bg-red-950/30' : 'bg-muted/50'}`}>
+              <div className={`rounded-lg p-2.5 ${displayData.overdue > 0 ? 'bg-red-50 dark:bg-red-950/30' : 'bg-muted/50'}`}>
                 <div className="flex items-center gap-1.5">
-                  <AlertCircle className={`h-3.5 w-3.5 ${data.overdue > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+                  <AlertCircle className={`h-3.5 w-3.5 ${displayData.overdue > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
                   <span className="text-xs text-muted-foreground">Overdue</span>
                 </div>
-                <p className={`text-xl font-bold mt-0.5 ${data.overdue > 0 ? 'text-red-600' : ''}`}>
-                  {data.overdue}
+                <p className={`text-xl font-bold mt-0.5 ${displayData.overdue > 0 ? 'text-red-600' : ''}`}>
+                  {displayData.overdue}
                 </p>
               </div>
 
@@ -128,7 +121,7 @@ export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
                   <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-xs text-muted-foreground">Due This Week</span>
                 </div>
-                <p className="text-xl font-bold mt-0.5">{data.dueThisWeek}</p>
+                <p className="text-xl font-bold mt-0.5">{displayData.dueThisWeek}</p>
               </div>
 
               <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-2.5">
@@ -136,16 +129,16 @@ export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                   <span className="text-xs text-muted-foreground">Completed</span>
                 </div>
-                <p className="text-xl font-bold mt-0.5">{data.completedThisWeek}</p>
+                <p className="text-xl font-bold mt-0.5">{displayData.completedThisWeek}</p>
               </div>
             </div>
 
             {/* Upcoming Deadlines */}
-            {data.urgent.length > 0 && (
+            {displayData.urgent.length > 0 && (
               <div className="pt-2 border-t">
                 <p className="text-xs text-muted-foreground mb-2">Upcoming Deadlines</p>
                 <div className="space-y-1.5">
-                  {data.urgent.slice(0, 3).map((task) => (
+                  {displayData.urgent.slice(0, 3).map((task) => (
                     <Link
                       key={task.id}
                       href={`/projects?task=${task.id}`}

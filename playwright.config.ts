@@ -17,6 +17,17 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /production.*\.spec\.ts/,
+    },
+    {
+      name: 'production',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://demo.movalab.dev',
+      },
+      testMatch: /production.*\.spec\.ts/,
+      timeout: 90000,
+      retries: 1,
     },
   ],
   webServer: {

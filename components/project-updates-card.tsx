@@ -118,9 +118,10 @@ export default function ProjectUpdatesCard({ className }: ProjectUpdatesCardProp
     )
   }
 
+  // For errors, show empty state with retry option instead of error message
   if (error) {
     return (
-      <Card className={className}>
+      <Card className={`w-full ${className ?? ''}`}>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Activity className="w-5 h-5 text-blue-600" />
@@ -128,11 +129,13 @@ export default function ProjectUpdatesCard({ className }: ProjectUpdatesCardProp
           </CardTitle>
           <CardDescription>Latest updates from all projects</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={loadUpdates} variant="outline">
-              Try Again
+        <CardContent className="p-0">
+          <div className="text-center py-8 text-gray-500 px-6">
+            <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p>Unable to load project updates</p>
+            <p className="text-sm mb-4">Updates will appear here when available</p>
+            <Button onClick={loadUpdates} variant="outline" size="sm">
+              Retry
             </Button>
           </div>
         </CardContent>
