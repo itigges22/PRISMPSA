@@ -541,56 +541,59 @@ function generateWorkflowTemplates() {
 // Role IDs: Senior Designer = 10101010-1010-1010-1010-101010101010
 //           Senior Developer = 30303030-3030-3030-3030-303030303030
 //           Project Manager = ffffffff-ffff-ffff-ffff-ffffffffffff
+//           Account Manager = eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+// Settings use roleId/roleName for role nodes, approverRoleId/approverRoleName for approval nodes
 function generateWorkflowNodes() {
   return [
     // Standard Project Delivery workflow nodes
     { id: 'bbbbbbbb-aaaa-0000-0000-000000000001', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'start', label: 'Project Kickoff', position_x: 100, position_y: 200, step_order: 0, settings: {} },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000002', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'role', entity_id: '10101010-1010-1010-1010-101010101010', label: 'Design Phase', position_x: 300, position_y: 200, step_order: 1, settings: { role_name: 'Senior Designer' } },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000003', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'approval', label: 'Design Approval', position_x: 500, position_y: 200, step_order: 2, settings: { required_approvals: 1, approver_role: 'Project Manager' } },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000004', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'role', entity_id: '30303030-3030-3030-3030-303030303030', label: 'Development Phase', position_x: 700, position_y: 200, step_order: 3, settings: { role_name: 'Senior Developer' } },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000005', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'approval', label: 'QA Review', position_x: 900, position_y: 200, step_order: 4, settings: { required_approvals: 1, approver_role: 'Project Manager' } },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000006', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'approval', label: 'Client Sign-off', position_x: 1100, position_y: 200, step_order: 5, settings: { required_approvals: 1, approver_role: 'Account Manager' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000002', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'role', entity_id: '10101010-1010-1010-1010-101010101010', label: 'Design Phase', position_x: 300, position_y: 200, step_order: 1, settings: { roleId: '10101010-1010-1010-1010-101010101010', roleName: 'Senior Designer' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000003', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'approval', entity_id: 'ffffffff-ffff-ffff-ffff-ffffffffffff', label: 'Design Approval', position_x: 500, position_y: 200, step_order: 2, settings: { approverRoleId: 'ffffffff-ffff-ffff-ffff-ffffffffffff', approverRoleName: 'Project Manager' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000004', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'role', entity_id: '30303030-3030-3030-3030-303030303030', label: 'Development Phase', position_x: 700, position_y: 200, step_order: 3, settings: { roleId: '30303030-3030-3030-3030-303030303030', roleName: 'Senior Developer' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000005', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'approval', entity_id: 'ffffffff-ffff-ffff-ffff-ffffffffffff', label: 'QA Review', position_x: 900, position_y: 200, step_order: 4, settings: { approverRoleId: 'ffffffff-ffff-ffff-ffff-ffffffffffff', approverRoleName: 'Project Manager' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000006', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'approval', entity_id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', label: 'Client Sign-off', position_x: 1100, position_y: 200, step_order: 5, settings: { approverRoleId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', approverRoleName: 'Account Manager' } },
     { id: 'bbbbbbbb-aaaa-0000-0000-000000000007', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', node_type: 'end', label: 'Project Complete', position_x: 1300, position_y: 200, step_order: 6, settings: {} },
     // Quick Turnaround workflow nodes
     { id: 'bbbbbbbb-aaaa-0000-0000-000000000008', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', node_type: 'start', label: 'Quick Start', position_x: 100, position_y: 200, step_order: 0, settings: {} },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000009', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', node_type: 'role', entity_id: '10101010-1010-1010-1010-101010101010', label: 'Design & Dev', position_x: 300, position_y: 200, step_order: 1, settings: { role_name: 'Senior Designer' } },
-    { id: 'bbbbbbbb-aaaa-0000-0000-000000000010', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', node_type: 'approval', label: 'Final Review', position_x: 500, position_y: 200, step_order: 2, settings: { required_approvals: 1, approver_role: 'Project Manager' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000009', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', node_type: 'role', entity_id: '10101010-1010-1010-1010-101010101010', label: 'Design & Dev', position_x: 300, position_y: 200, step_order: 1, settings: { roleId: '10101010-1010-1010-1010-101010101010', roleName: 'Senior Designer' } },
+    { id: 'bbbbbbbb-aaaa-0000-0000-000000000010', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', node_type: 'approval', entity_id: 'ffffffff-ffff-ffff-ffff-ffffffffffff', label: 'Final Review', position_x: 500, position_y: 200, step_order: 2, settings: { approverRoleId: 'ffffffff-ffff-ffff-ffff-ffffffffffff', approverRoleName: 'Project Manager' } },
     { id: 'bbbbbbbb-aaaa-0000-0000-000000000011', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', node_type: 'end', label: 'Delivered', position_x: 700, position_y: 200, step_order: 3, settings: {} }
   ];
 }
 
 // Workflow Connections - each approval node has both Approved and Rejected pathways
+// Approval edges need condition JSONB with conditionType: 'approval_decision', conditionValue, decision for UI colors
 function generateWorkflowConnections() {
   return [
     // Standard Project Delivery connections
-    // Start -> Design Phase
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000001', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000001', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000002', label: 'Start Design' },
-    // Design Phase -> Design Approval
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000002', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000002', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000003', label: 'Submit for Approval' },
-    // Design Approval -> Development Phase (Approved)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000003', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000003', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', label: 'Approved' },
-    // Design Approval -> Design Phase (Rejected - revisions needed)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000010', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000003', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000002', label: 'Rejected' },
-    // Development Phase -> QA Review
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000004', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000005', label: 'Ready for QA' },
-    // QA Review -> Client Sign-off (Approved)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000005', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000005', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000006', label: 'QA Passed' },
-    // QA Review -> Development Phase (Rejected - bugs found)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000011', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000005', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', label: 'Rejected' },
-    // Client Sign-off -> Project Complete (Approved)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000006', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000006', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000007', label: 'Client Approved' },
-    // Client Sign-off -> Development Phase (Rejected - client changes requested)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000012', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000006', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', label: 'Rejected' },
+    // Start -> Design Phase (no condition - regular edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000001', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000001', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000002', label: 'Start Design', condition: null },
+    // Design Phase -> Design Approval (no condition - regular edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000002', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000002', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000003', label: 'Submit for Approval', condition: null },
+    // Design Approval -> Development Phase (Approved - green edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000003', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000003', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', label: 'Approved', condition: { conditionType: 'approval_decision', conditionValue: 'approved', decision: 'approved', label: 'Approved' } },
+    // Design Approval -> Design Phase (Rejected - red edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000010', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000003', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000002', label: 'Rejected', condition: { conditionType: 'approval_decision', conditionValue: 'rejected', decision: 'rejected', label: 'Rejected' } },
+    // Development Phase -> QA Review (no condition - regular edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000004', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000005', label: 'Ready for QA', condition: null },
+    // QA Review -> Client Sign-off (Approved - green edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000005', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000005', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000006', label: 'QA Passed', condition: { conditionType: 'approval_decision', conditionValue: 'approved', decision: 'approved', label: 'QA Passed' } },
+    // QA Review -> Development Phase (Rejected - red edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000011', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000005', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', label: 'Rejected', condition: { conditionType: 'approval_decision', conditionValue: 'rejected', decision: 'rejected', label: 'Rejected' } },
+    // Client Sign-off -> Project Complete (Approved - green edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000006', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000006', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000007', label: 'Client Approved', condition: { conditionType: 'approval_decision', conditionValue: 'approved', decision: 'approved', label: 'Client Approved' } },
+    // Client Sign-off -> Development Phase (Rejected - red edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000012', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000001', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000006', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000004', label: 'Rejected', condition: { conditionType: 'approval_decision', conditionValue: 'rejected', decision: 'rejected', label: 'Rejected' } },
 
     // Quick Turnaround connections
-    // Quick Start -> Design & Dev
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000007', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000008', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000009', label: 'Begin Work' },
-    // Design & Dev -> Final Review
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000008', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000009', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000010', label: 'Submit' },
-    // Final Review -> Delivered (Approved)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000009', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000010', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000011', label: 'Approved' },
-    // Final Review -> Design & Dev (Rejected - revisions needed)
-    { id: 'bbbbbbbb-cccc-0000-0000-000000000013', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000010', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000009', label: 'Rejected' }
+    // Quick Start -> Design & Dev (no condition - regular edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000007', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000008', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000009', label: 'Begin Work', condition: null },
+    // Design & Dev -> Final Review (no condition - regular edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000008', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000009', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000010', label: 'Submit', condition: null },
+    // Final Review -> Delivered (Approved - green edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000009', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000010', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000011', label: 'Approved', condition: { conditionType: 'approval_decision', conditionValue: 'approved', decision: 'approved', label: 'Approved' } },
+    // Final Review -> Design & Dev (Rejected - red edge)
+    { id: 'bbbbbbbb-cccc-0000-0000-000000000013', workflow_template_id: 'aaaaaaaa-bbbb-0000-0000-000000000002', from_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000010', to_node_id: 'bbbbbbbb-aaaa-0000-0000-000000000009', label: 'Rejected', condition: { conditionType: 'approval_decision', conditionValue: 'rejected', decision: 'rejected', label: 'Rejected' } }
   ];
 }
 
