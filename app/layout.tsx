@@ -10,6 +10,7 @@ import { ClockWidget } from "@/components/clock-widget";
 import { AuthProviderWrapper } from "@/components/auth-provider-wrapper";
 import { SWRProvider } from "@/lib/swr-config";
 import { ResourceHints } from "@/components/resource-hints";
+import { NavigationProgressProvider } from "@/components/navigation-progress";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -35,35 +36,39 @@ export default function RootLayout({
             <ResourceHints />
             <AuthProviderWrapper>
               <SWRProvider>
-                <ChunkErrorHandler />
-              <div className="min-h-screen bg-gray-50">
-                <Suspense fallback={
-                  <nav className="bg-white shadow-sm border-b">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                      <div className="flex justify-between items-center h-16">
-                        <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
-                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                  </nav>
-                }>
-                  <ClientNavigation />
-                </Suspense>
-                <main className="flex-1">
-                  <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <Suspense fallback={null}>
-                      <Breadcrumb />
-                    </Suspense>
-                    <div className="mt-4 sm:mt-6">
-                      {children}
-                    </div>
-                  </div>
-                </main>
-                <Toaster />
                 <Suspense fallback={null}>
-                  <ClockWidget />
+                  <NavigationProgressProvider>
+                    <ChunkErrorHandler />
+                    <div className="min-h-screen bg-gray-50">
+                      <Suspense fallback={
+                        <nav className="bg-white shadow-sm border-b">
+                          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between items-center h-16">
+                              <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+                              <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                            </div>
+                          </div>
+                        </nav>
+                      }>
+                        <ClientNavigation />
+                      </Suspense>
+                      <main className="flex-1">
+                        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                          <Suspense fallback={null}>
+                            <Breadcrumb />
+                          </Suspense>
+                          <div className="mt-4 sm:mt-6">
+                            {children}
+                          </div>
+                        </div>
+                      </main>
+                      <Toaster />
+                      <Suspense fallback={null}>
+                        <ClockWidget />
+                      </Suspense>
+                    </div>
+                  </NavigationProgressProvider>
                 </Suspense>
-              </div>
               </SWRProvider>
             </AuthProviderWrapper>
           </body>
