@@ -293,19 +293,28 @@ export async function GET(request: NextRequest) {
     const { error: stakeholdersError } = await supabase.from('project_stakeholders').upsert(stakeholders, { onConflict: 'id' });
     if (stakeholdersError) console.error('Stakeholders error:', stakeholdersError);
 
-    // Step 18: Update role permissions for demo (all internal users get manage_time, edit_own_availability, view_newsletters)
+    // Step 18: Update role permissions for demo (all internal users get manage_time, edit_own_availability, view_newsletters, view_issues)
     const rolePermissionsUpdate = `
       UPDATE roles SET permissions = permissions ||
-        '{"manage_time": true, "edit_own_availability": true, "view_newsletters": true, "view_departments": true}'::jsonb
-      WHERE name IN ('Executive', 'Account Manager', 'Project Manager', 'Designer', 'Developer', 'Admin');
+        '{"manage_time": true, "edit_own_availability": true, "view_newsletters": true, "view_departments": true, "view_issues": true}'::jsonb
+      WHERE name IN ('Executive Director', 'Account Manager', 'Project Manager', 'Senior Designer', 'Senior Developer', 'Junior Designer', 'Junior Developer', 'Admin');
     `;
     const { error: permError } = await supabase.rpc('exec_sql', { query: rolePermissionsUpdate });
     if (permError) console.error('Role permissions update error:', permError);
 
-    // Step 19: Add admin-specific permissions to Admin role
+    // Step 19: Add leadership permissions (manage_issues for managers and above)
+    const leadershipPermissionsUpdate = `
+      UPDATE roles SET permissions = permissions ||
+        '{"manage_issues": true}'::jsonb
+      WHERE name IN ('Executive Director', 'Account Manager', 'Project Manager', 'Admin');
+    `;
+    const { error: leadershipPermError } = await supabase.rpc('exec_sql', { query: leadershipPermissionsUpdate });
+    if (leadershipPermError) console.error('Leadership permissions update error:', leadershipPermError);
+
+    // Step 20: Add admin-specific permissions to Admin role
     const adminPermissionsUpdate = `
       UPDATE roles SET permissions = permissions ||
-        '{"manage_departments": true, "manage_user_roles": true, "manage_workflows": true, "manage_accounts": true, "view_all_accounts": true, "view_all_projects": true, "manage_projects": true}'::jsonb
+        '{"manage_departments": true, "manage_user_roles": true, "manage_workflows": true, "manage_accounts": true, "view_all_accounts": true, "view_all_projects": true, "manage_projects": true, "view_all_analytics": true, "view_all_capacity": true, "view_all_time_entries": true, "manage_all_workflows": true, "execute_any_workflow": true, "view_all_updates": true, "view_all_department_analytics": true, "view_all_account_analytics": true}'::jsonb
       WHERE name = 'Admin';
     `;
     const { error: adminPermError } = await supabase.rpc('exec_sql', { query: adminPermissionsUpdate });
