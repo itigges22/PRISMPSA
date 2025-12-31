@@ -631,26 +631,39 @@ export default function ProjectDetailPage() {
           }
         }
 
-        // Fallback: If workflow_instance_id is null, check workflow_instances table
-        let workflowInstanceId = data.workflow_instance_id
-        if (!workflowInstanceId) {
-          const { data: workflowInstances, error: wiError } = await supabase
+        // Check for ACTIVE workflow instance
+        // The projects table may have a stale workflow_instance_id from a cancelled/completed workflow
+        // We need to verify the workflow is actually active before using it
+        let workflowInstanceId: string | null = null
+
+        // First, check if there's an active workflow for this project
+        const { data: activeWorkflows, error: awError } = await supabase
+          .from('workflow_instances')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('status', 'active')
+          .order('started_at', { ascending: false })
+          .limit(1)
+
+        if (!awError && activeWorkflows && activeWorkflows.length > 0) {
+          workflowInstanceId = activeWorkflows[0].id
+          console.log('Found active workflow instance:', workflowInstanceId)
+        } else if (data.workflow_instance_id) {
+          // Check if the stored workflow_instance_id is still valid (active)
+          const { data: storedWorkflow } = await supabase
             .from('workflow_instances')
-            .select('id')
-            .eq('project_id', projectId)
-            .eq('status', 'active')
-            .order('started_at', { ascending: false })
-            .limit(1)
+            .select('id, status')
+            .eq('id', data.workflow_instance_id)
+            .single()
 
-          console.log('Workflow fallback query:', {
-            projectId,
-            found: workflowInstances?.length || 0,
-            error: wiError?.message
-          })
-
-          if (workflowInstances && workflowInstances.length > 0) {
-            workflowInstanceId = workflowInstances[0].id
-            console.log('Found workflow instance via fallback query:', workflowInstanceId)
+          if (storedWorkflow?.status === 'active') {
+            workflowInstanceId = storedWorkflow.id
+            console.log('Using stored workflow instance:', workflowInstanceId)
+          } else {
+            console.log('Stored workflow_instance_id is not active:', {
+              storedId: data.workflow_instance_id,
+              status: storedWorkflow?.status || 'not found'
+            })
           }
         }
 
