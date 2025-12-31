@@ -314,7 +314,7 @@ export async function GET(request: NextRequest) {
     // Step 20: Add admin-specific permissions to Admin role
     const adminPermissionsUpdate = `
       UPDATE roles SET permissions = permissions ||
-        '{"manage_departments": true, "manage_user_roles": true, "manage_workflows": true, "manage_accounts": true, "view_all_accounts": true, "view_all_projects": true, "manage_projects": true, "view_all_analytics": true, "view_all_capacity": true, "view_all_time_entries": true, "manage_all_workflows": true, "execute_any_workflow": true, "view_all_updates": true, "view_all_department_analytics": true, "view_all_account_analytics": true}'::jsonb
+        '{"manage_departments": true, "manage_user_roles": true, "manage_workflows": true, "manage_accounts": true, "view_all_accounts": true, "view_all_projects": true, "manage_projects": true, "view_all_analytics": true, "view_all_capacity": true, "view_all_time_entries": true, "manage_all_workflows": true, "execute_any_workflow": true, "view_all_updates": true, "view_all_department_analytics": true, "view_all_account_analytics": true, "manage_users_in_accounts": true}'::jsonb
       WHERE name = 'Admin';
     `;
     const { error: adminPermError } = await supabase.rpc('exec_sql', { query: adminPermissionsUpdate });

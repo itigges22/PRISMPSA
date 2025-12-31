@@ -225,6 +225,7 @@ export async function GET(request: NextRequest) {
         return {
           id: t.id,
           name: t.name,
+          projectId: t.project_id,
           projectName,
           dueDate: t.due_date!,
           status: t.status,

@@ -9,6 +9,7 @@ import { format, parseISO, isToday, isTomorrow, differenceInDays } from 'date-fn
 interface UrgentTask {
   id: string;
   name: string;
+  projectId: string;
   projectName: string;
   dueDate: string;
   status: string;
@@ -141,7 +142,7 @@ export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
                   {displayData.urgent.slice(0, 3).map((task) => (
                     <Link
                       key={task.id}
-                      href={`/projects?task=${task.id}`}
+                      href={`/projects/${task.projectId}?tab=tasks`}
                       className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
                     >
                       <div className="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
@@ -21,23 +21,40 @@ export function useLoading() {
   return context;
 }
 
+// Minimum time to show loading overlay (ms)
+const MIN_LOADING_TIME = 800;
+
 export function LoadingProvider({ children }: { children: ReactNode }) {
-  const [isLoading, setIsLoading] = useState(false);
+  // Start with loading true for initial page load
+  const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const loadingStartTime = useRef<number>(Date.now());
+  const pendingStop = useRef<boolean>(false);
 
   const startLoading = useCallback(() => {
+    loadingStartTime.current = Date.now();
+    pendingStop.current = false;
     setIsLoading(true);
     setProgress(0);
   }, []);
 
   const stopLoading = useCallback(() => {
+    const elapsed = Date.now() - loadingStartTime.current;
+    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed);
+
+    // Set progress to 100 immediately
     setProgress(100);
+
+    // Delay hiding to ensure minimum display time
     setTimeout(() => {
-      setIsLoading(false);
-      setProgress(0);
-    }, 300);
+      if (!pendingStop.current) {
+        setIsLoading(false);
+        setProgress(0);
+      }
+    }, remainingTime + 300);
   }, []);
 
   // Simulate progress when loading
@@ -45,12 +62,13 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     if (!isLoading) return;
 
     const intervals = [
-      { delay: 50, target: 15 },
-      { delay: 100, target: 30 },
-      { delay: 200, target: 50 },
-      { delay: 400, target: 70 },
-      { delay: 800, target: 85 },
-      { delay: 1500, target: 95 },
+      { delay: 100, target: 20 },
+      { delay: 250, target: 40 },
+      { delay: 400, target: 60 },
+      { delay: 600, target: 75 },
+      { delay: 900, target: 85 },
+      { delay: 1200, target: 90 },
+      { delay: 2000, target: 95 },
     ];
 
     const timeouts: NodeJS.Timeout[] = [];
@@ -67,10 +85,37 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     };
   }, [isLoading]);
 
-  // Track route changes
+  // Handle initial page load
   useEffect(() => {
-    stopLoading();
-  }, [pathname, searchParams, stopLoading]);
+    if (isInitialLoad) {
+      // Wait for the page to be interactive before stopping
+      const handleLoad = () => {
+        setTimeout(() => {
+          setIsInitialLoad(false);
+          stopLoading();
+        }, 300);
+      };
+
+      if (document.readyState === 'complete') {
+        handleLoad();
+      } else {
+        window.addEventListener('load', handleLoad);
+        // Fallback timeout in case load event never fires
+        const fallback = setTimeout(handleLoad, 3000);
+        return () => {
+          window.removeEventListener('load', handleLoad);
+          clearTimeout(fallback);
+        };
+      }
+    }
+  }, [isInitialLoad, stopLoading]);
+
+  // Track route changes (but not on initial load)
+  useEffect(() => {
+    if (!isInitialLoad) {
+      stopLoading();
+    }
+  }, [pathname, searchParams, stopLoading, isInitialLoad]);
 
   // Intercept navigation
   useEffect(() => {
