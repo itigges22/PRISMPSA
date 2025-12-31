@@ -380,6 +380,35 @@ COMMENT ON FUNCTION "public"."user_is_project_creator"("check_project_id" "uuid"
 
 
 
+CREATE OR REPLACE FUNCTION "public"."user_can_start_project_workflow"("check_project_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    -- Check project_assignments table
+    SELECT 1 FROM public.project_assignments
+    WHERE project_id = check_project_id
+    AND user_id = auth.uid()
+    AND removed_at IS NULL
+  )
+  OR EXISTS (
+    -- Check if user is project creator or assigned user
+    SELECT 1 FROM public.projects
+    WHERE id = check_project_id
+    AND (created_by = auth.uid() OR assigned_user_id = auth.uid())
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."user_can_start_project_workflow"("check_project_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."user_can_start_project_workflow"("check_project_id" "uuid") IS 'Checks if the current user can start a workflow on a project. Returns true if user is assigned to the project, or is the project creator/assignee. Uses SECURITY DEFINER to bypass RLS.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."user_is_superadmin"() RETURNS boolean
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'pg_temp'
@@ -2263,7 +2292,7 @@ CREATE POLICY "workflow_instances_delete" ON "public"."workflow_instances" FOR D
 
 
 
-CREATE POLICY "workflow_instances_insert" ON "public"."workflow_instances" FOR INSERT WITH CHECK (("public"."user_is_superadmin"() OR "public"."user_has_permission"('execute_any_workflow'::"text") OR ("public"."user_has_permission"('execute_workflows'::"text") AND "public"."user_is_project_assigned"("project_id"))));
+CREATE POLICY "workflow_instances_insert" ON "public"."workflow_instances" FOR INSERT WITH CHECK (("public"."user_is_superadmin"() OR "public"."user_has_permission"('execute_any_workflow'::"text") OR ("public"."user_has_permission"('execute_workflows'::"text") AND "public"."user_can_start_project_workflow"("project_id"))));
 
 
 
@@ -2392,6 +2421,12 @@ GRANT ALL ON FUNCTION "public"."user_is_project_assigned"("check_project_id" "uu
 GRANT ALL ON FUNCTION "public"."user_is_project_creator"("check_project_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."user_is_project_creator"("check_project_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."user_is_project_creator"("check_project_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."user_can_start_project_workflow"("check_project_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."user_can_start_project_workflow"("check_project_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."user_can_start_project_workflow"("check_project_id" "uuid") TO "service_role";
 
 
 
