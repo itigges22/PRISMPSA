@@ -2292,7 +2292,11 @@ CREATE POLICY "workflow_instances_delete" ON "public"."workflow_instances" FOR D
 
 
 
-CREATE POLICY "workflow_instances_insert" ON "public"."workflow_instances" FOR INSERT WITH CHECK (("public"."user_is_superadmin"() OR "public"."user_has_permission"('execute_any_workflow'::"text") OR ("public"."user_has_permission"('execute_workflows'::"text") AND "public"."user_can_start_project_workflow"("project_id"))));
+CREATE POLICY "workflow_instances_insert" ON "public"."workflow_instances" FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.user_profiles WHERE id = auth.uid() AND is_superadmin = TRUE)
+  OR "public"."user_has_permission"('execute_any_workflow'::"text")
+  OR ("public"."user_has_permission"('execute_workflows'::"text") AND "public"."user_can_start_project_workflow"("project_id"))
+);
 
 
 
