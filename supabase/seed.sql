@@ -143,10 +143,12 @@ INSERT INTO roles (id, name, department_id, permissions, is_system_role, hierarc
 ('77777777-7777-7777-7777-777777777777', 'Admin', '11111111-1111-1111-1111-111111111111',
   '{
     "manage_user_roles": true,
+    "manage_users": true,
     "manage_workflows": true,
     "manage_all_workflows": true,
     "execute_any_workflow": true,
     "view_all_projects": true,
+    "manage_all_projects": true,
     "view_all_accounts": true,
     "view_all_departments": true,
     "view_all_time_entries": true,

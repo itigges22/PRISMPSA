@@ -2994,7 +2994,22 @@ export default function ProjectDetailPage() {
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">{member.user_profiles?.name || 'Unknown User'}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-medium text-gray-900">{member.user_profiles?.name || 'Unknown User'}</p>
+                                {/* Member type badges */}
+                                {member.memberType === 'both' && (
+                                  <>
+                                    <span className="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Collaborator</span>
+                                    <span className="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">Workflow</span>
+                                  </>
+                                )}
+                                {member.memberType === 'collaborator' && (
+                                  <span className="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Collaborator</span>
+                                )}
+                                {member.memberType === 'workflow' && (
+                                  <span className="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">Workflow</span>
+                                )}
+                              </div>
                               {/* Show workflow step assignments */}
                               {hasWorkflowSteps ? (
                                 <div className="flex flex-wrap gap-1 mt-0.5">
@@ -3009,9 +3024,9 @@ export default function ProjectDetailPage() {
                                 </div>
                               ) : member.primary_role ? (
                                 <p className="text-xs text-gray-500">
-                                  Collaborator - {member.primary_role}
+                                  {member.primary_role}
                                 </p>
-                              ) : member.role_in_project ? (
+                              ) : member.role_in_project && member.role_in_project !== 'workflow_step' ? (
                                 <p className="text-xs text-gray-500 capitalize">
                                   {member.role_in_project.replace('_', ' ')}
                                 </p>

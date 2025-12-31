@@ -13,6 +13,7 @@ interface UrgentTask {
   projectName: string;
   dueDate: string;
   status: string;
+  isOverdue?: boolean;
 }
 
 interface TasksData {
@@ -134,30 +135,54 @@ export function MyTasksWidget({ data, isLoading }: MyTasksWidgetProps) {
               </div>
             </div>
 
-            {/* Upcoming Deadlines */}
+            {/* Priority Tasks - Show overdue first, then upcoming */}
             {displayData.urgent.length > 0 && (
               <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground mb-2">Upcoming Deadlines</p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {displayData.overdue > 0 ? 'Priority Tasks' : 'Upcoming Deadlines'}
+                </p>
                 <div className="space-y-1.5">
-                  {displayData.urgent.slice(0, 3).map((task) => (
-                    <Link
-                      key={task.id}
-                      href={`/projects/${task.projectId}?tab=tasks`}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate group-hover:text-primary">
-                          {task.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {task.projectName}
-                        </p>
-                      </div>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ml-2 ${getDueDateColor(task.dueDate)}`}>
-                        {formatDueDate(task.dueDate)}
-                      </span>
+                  {displayData.urgent.slice(0, 5).map((task) => {
+                    // Check if task is overdue (either from API flag or calculated)
+                    const isOverdue = task.isOverdue ?? differenceInDays(parseISO(task.dueDate), new Date()) < 0;
+                    return (
+                      <Link
+                        key={task.id}
+                        href={`/projects/${task.projectId}?tab=tasks`}
+                        className={`flex items-center justify-between p-2 rounded-lg transition-colors group ${
+                          isOverdue
+                            ? 'bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 border border-red-200 dark:border-red-800'
+                            : 'hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-medium truncate group-hover:text-primary ${isOverdue ? 'text-red-700 dark:text-red-400' : ''}`}>
+                            {task.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {task.projectName}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ml-2 ${getDueDateColor(task.dueDate)}`}>
+                          {formatDueDate(task.dueDate)}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Show message if there are overdue tasks but none in the list */}
+            {displayData.overdue > 0 && displayData.urgent.length === 0 && (
+              <div className="pt-2 border-t">
+                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                  <p className="text-sm text-red-700 dark:text-red-400">
+                    You have {displayData.overdue} overdue task{displayData.overdue > 1 ? 's' : ''}.
+                    <Link href="/projects" className="underline ml-1 font-medium hover:text-red-800">
+                      View all projects
                     </Link>
-                  ))}
+                  </p>
                 </div>
               </div>
             )}

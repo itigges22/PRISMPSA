@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { createClientSupabase } from '@/lib/supabase';
-import { WorkflowStepAssignments } from './workflow-step-assignments';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
   Play,
@@ -255,7 +254,6 @@ export function WorkflowProgress({ workflowInstanceId, onStepClick }: WorkflowPr
   const [currentSteps, setCurrentSteps] = useState<CurrentStepInfo[]>([]);
   const [nextSteps, setNextSteps] = useState<NextStepInfo[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [canManageAssignments, setCanManageAssignments] = useState(false);
   const { userProfile } = useAuth();
 
   /**
@@ -349,25 +347,6 @@ export function WorkflowProgress({ workflowInstanceId, onStepClick }: WorkflowPr
 
       setWorkflowInstance(instance as WorkflowInstance);
       setIsCompleted((instance as WorkflowInstance).status === 'completed');
-
-      // Check if user can manage assignments (project creator or superadmin)
-      if (userProfile) {
-        const isSuperadmin = (userProfile as any).is_superadmin ||
-          userProfile.user_roles?.some((ur: any) => (ur.roles as any)?.name?.toLowerCase() === 'superadmin');
-
-        if (isSuperadmin) {
-          setCanManageAssignments(true);
-        } else if ((instance as any).project_id) {
-          // Check if user is project creator
-          const { data: project } = await supabase
-            .from('projects')
-            .select('created_by')
-            .eq('id', (instance as any).project_id)
-            .single();
-
-          setCanManageAssignments(project?.created_by === (userProfile as any).id);
-        }
-      }
 
       let allNodes: WorkflowNode[] = [];
       let connections: WorkflowConnection[] = [];
@@ -633,17 +612,6 @@ export function WorkflowProgress({ workflowInstanceId, onStepClick }: WorkflowPr
             <span>Next</span>
           </div>
         </div>
-
-        {/* Step Assignments Section */}
-        {!isCompleted && workflowInstanceId && (
-          <div className="mt-4 pt-4 border-t">
-            <WorkflowStepAssignments
-              workflowInstanceId={workflowInstanceId}
-              currentUserId={(userProfile as any)?.id}
-              canManageAssignments={canManageAssignments}
-            />
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -204,15 +204,17 @@ export async function GET(request: NextRequest) {
 
     const completedThisWeek = completedThisWeekResult.data?.length || 0;
 
-    // Get 3 most urgent tasks (nearest due dates)
+    // Get urgent tasks - prioritize overdue tasks, then sort by nearest due dates
+    // Include up to 5 tasks to ensure overdue tasks are visible
     const urgentTasks = tasks
       .filter(t => t.due_date && t.status !== 'done')
       .sort((a, b) => {
-        const dateA = new Date(a.due_date!).getTime();
-        const dateB = new Date(b.due_date!).getTime();
+        // Use parseISO for consistent date parsing
+        const dateA = parseISO(a.due_date!).getTime();
+        const dateB = parseISO(b.due_date!).getTime();
         return dateA - dateB;
       })
-      .slice(0, 3)
+      .slice(0, 5)
       .map(t => {
         // Handle both array and single object for projects relation
         const projectData = t.projects;
@@ -222,6 +224,9 @@ export async function GET(request: NextRequest) {
         } else if (projectData && typeof projectData === 'object' && 'name' in projectData) {
           projectName = (projectData as { name: string }).name;
         }
+        // Check if this task is overdue
+        const dueDate = parseISO(t.due_date!);
+        const isOverdue = isBefore(dueDate, now);
         return {
           id: t.id,
           name: t.name,
@@ -229,6 +234,7 @@ export async function GET(request: NextRequest) {
           projectName,
           dueDate: t.due_date!,
           status: t.status,
+          isOverdue,
         };
       });
 

@@ -6,6 +6,7 @@ import { Permission } from '@/lib/permissions'
 /**
  * GET /api/projects/[projectId]/assignments
  * Get all active project assignments (team members) with workflow step info
+ * Returns memberType: 'collaborator' | 'workflow' | 'both' for each member
  */
 export async function GET(
   request: NextRequest,
@@ -24,220 +25,208 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get active assignments with user details
-    const { data: assignments, error } = await supabase
-      .from('project_assignments')
-      .select(`
-        id,
-        user_id,
-        role_in_project,
-        assigned_at,
-        assigned_by,
-        user_profiles:user_id (
+    // PARALLEL QUERY 1: Get assignments and workflow instance concurrently
+    const [assignmentsResult, workflowResult] = await Promise.all([
+      supabase
+        .from('project_assignments')
+        .select(`
           id,
-          name,
-          email,
-          image
-        )
-      `)
-      .eq('project_id', projectId)
-      .is('removed_at', null)
-      .order('assigned_at', { ascending: false })
+          user_id,
+          role_in_project,
+          assigned_at,
+          assigned_by,
+          user_profiles:user_id (
+            id,
+            name,
+            email,
+            image
+          )
+        `)
+        .eq('project_id', projectId)
+        .is('removed_at', null)
+        .order('assigned_at', { ascending: false }),
+      supabase
+        .from('workflow_instances')
+        .select('id, status, workflow_template_id, started_snapshot')
+        .eq('project_id', projectId)
+        .in('status', ['active', 'completed'])
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ])
+
+    const { data: assignments, error } = assignmentsResult
+    const workflowInstance = workflowResult.data
 
     if (error) {
       console.error('Error fetching project assignments:', error)
       return NextResponse.json({ error: 'Failed to fetch assignments' }, { status: 500 })
     }
 
-    // Get user roles for all assigned users (separate query to avoid nested relation issues)
-    const userIds = (assignments || []).map((a: any) => a.user_id).filter(Boolean)
+    // Get user IDs from collaborators
+    const collaboratorUserIds = (assignments || []).map((a: any) => a.user_id).filter(Boolean)
+
+    // PARALLEL QUERY 2: Get user roles, node assignments, and active steps concurrently
+    const [userRolesResult, nodeAssignmentsResult, activeStepsResult] = await Promise.all([
+      collaboratorUserIds.length > 0
+        ? supabase
+            .from('user_roles')
+            .select(`user_id, roles (name)`)
+            .in('user_id', collaboratorUserIds)
+        : Promise.resolve({ data: [] }),
+      workflowInstance
+        ? supabase
+            .from('workflow_node_assignments')
+            .select('node_id, user_id')
+            .eq('workflow_instance_id', workflowInstance.id)
+        : Promise.resolve({ data: [] }),
+      workflowInstance
+        ? supabase
+            .from('workflow_active_steps')
+            .select('node_id, assigned_user_id, status')
+            .eq('workflow_instance_id', workflowInstance.id)
+            .not('assigned_user_id', 'is', null)
+        : Promise.resolve({ data: [] })
+    ])
+
+    // Build user roles map
     const userRolesMap: Record<string, string> = {}
+    if (userRolesResult.data) {
+      for (const ur of userRolesResult.data) {
+        const roles = (ur as any).roles as Record<string, unknown> | Record<string, unknown>[];
+        const roleName = Array.isArray(roles)
+          ? (roles[0]?.name as string)
+          : (roles?.name as string);
+        if (!userRolesMap[(ur as any).user_id] && roleName) {
+          userRolesMap[(ur as any).user_id] = roleName;
+        }
+      }
+    }
 
-    if (userIds.length > 0) {
-      const { data: userRoles } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          roles (
-            name
-          )
-        `)
-        .in('user_id', userIds)
+    // Helper to get node label from snapshot
+    const getNodeLabel = (nodeId: string): string => {
+      if (!workflowInstance) return 'Unknown Step';
+      const snapshot = (workflowInstance as Record<string, unknown>).started_snapshot as Record<string, unknown>;
+      const nodes = snapshot?.nodes as Record<string, unknown>[] | undefined;
+      const node = nodes?.find((n: any) => n.id === nodeId);
+      return (node?.label as string) || 'Unknown Step';
+    };
 
-      // Build a map of user_id -> primary role name
-      if (userRoles) {
-        for (const ur of userRoles) {
-          const roles = ur.roles as Record<string, unknown> | Record<string, unknown>[];
+    // Build node assignments map from both sources
+    const nodeAssignmentsMap: Record<string, Array<{ stepId: string; stepName: string; isActive?: boolean }>> = {}
+    const workflowUserIds = new Set<string>()
+
+    // From workflow_node_assignments
+    if (nodeAssignmentsResult.data) {
+      for (const na of nodeAssignmentsResult.data) {
+        const userId = (na as any).user_id as string
+        workflowUserIds.add(userId)
+        if (!nodeAssignmentsMap[userId]) {
+          nodeAssignmentsMap[userId] = []
+        }
+        nodeAssignmentsMap[userId].push({
+          stepId: (na as any).node_id,
+          stepName: getNodeLabel((na as any).node_id)
+        })
+      }
+    }
+
+    // From workflow_active_steps
+    if (activeStepsResult.data) {
+      for (const step of activeStepsResult.data) {
+        const userId = (step as any).assigned_user_id as string
+        if (!userId) continue
+        workflowUserIds.add(userId)
+
+        const stepInfo = {
+          stepId: (step as any).node_id,
+          stepName: getNodeLabel((step as any).node_id),
+          isActive: (step as any).status === 'active'
+        }
+
+        if (!nodeAssignmentsMap[userId]) {
+          nodeAssignmentsMap[userId] = []
+        }
+
+        // Only add if not already present for this node
+        if (!nodeAssignmentsMap[userId].some((s: any) => s.stepId === stepInfo.stepId)) {
+          nodeAssignmentsMap[userId].push(stepInfo)
+        }
+      }
+    }
+
+    // Find workflow-only users (not in project_assignments)
+    const collaboratorSet = new Set(collaboratorUserIds)
+    const workflowOnlyUserIds = [...workflowUserIds].filter(id => !collaboratorSet.has(id))
+
+    // PARALLEL QUERY 3: Get profiles and roles for workflow-only users
+    let missingUserProfiles: any[] = []
+    const missingRolesMap: Record<string, string> = {}
+
+    if (workflowOnlyUserIds.length > 0) {
+      const [profilesResult, rolesResult] = await Promise.all([
+        supabase
+          .from('user_profiles')
+          .select('id, name, email, image')
+          .in('id', workflowOnlyUserIds),
+        supabase
+          .from('user_roles')
+          .select(`user_id, roles (name)`)
+          .in('user_id', workflowOnlyUserIds)
+      ])
+
+      missingUserProfiles = profilesResult.data || []
+
+      if (rolesResult.data) {
+        for (const ur of rolesResult.data) {
+          const roles = (ur as any).roles as Record<string, unknown> | Record<string, unknown>[];
           const roleName = Array.isArray(roles)
             ? (roles[0]?.name as string)
             : (roles?.name as string);
-
-          if (!userRolesMap[ur.user_id] && roleName) {
-            userRolesMap[ur.user_id] = roleName;
+          if (!missingRolesMap[(ur as any).user_id] && roleName) {
+            missingRolesMap[(ur as any).user_id] = roleName;
           }
         }
       }
     }
 
-    // Get workflow instance for this project to find node assignments
-    // Include started_snapshot for node labels (FK to workflow_nodes may not exist)
-    const { data: workflowInstance } = await supabase
-      .from('workflow_instances')
-      .select('id, status, workflow_template_id, started_snapshot')
-      .eq('project_id', projectId)
-      .in('status', ['active', 'completed'])
-      .order('started_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    // If there's a workflow, get node assignments (supporting multiple per user)
-    const nodeAssignmentsMap: Record<string, Array<{ stepId: string; stepName: string; isActive?: boolean }>> = {}
-    // Track users from active steps who may not be in project_assignments
-    const activeStepUsers: Array<{ userId: string; stepId: string; stepName: string }> = []
-
-    if (workflowInstance) {
-      // Helper to get node label from snapshot
-      const getNodeLabel = (nodeId: string): string => {
-        const snapshot = (workflowInstance as Record<string, unknown>).started_snapshot as Record<string, unknown>;
-        const nodes = snapshot?.nodes as Record<string, unknown>[] | undefined;
-        const node = nodes?.find((n: any) => n.id === nodeId);
-        return (node?.label as string) || 'Unknown Step';
-      };
-
-      // Get all node assignments for this workflow instance
-      // NOTE: We don't join workflow_nodes because FK may not exist after template modifications
-      const { data: nodeAssignments } = await supabase
-        .from('workflow_node_assignments')
-        .select('node_id, user_id')
-        .eq('workflow_instance_id', workflowInstance.id)
-
-      // Build a map of user_id -> array of { stepId, stepName }
-      if (nodeAssignments) {
-        for (const na of nodeAssignments) {
-          if (!nodeAssignmentsMap[na.user_id]) {
-            nodeAssignmentsMap[na.user_id] = []
-          }
-          nodeAssignmentsMap[na.user_id].push({
-            stepId: na.node_id,
-            stepName: getNodeLabel(na.node_id)
-          })
-        }
-      }
-
-      // Also get users assigned directly to active workflow steps (via assigned_user_id)
-      // These users may not be in workflow_node_assignments but are actively working on steps
-      const { data: activeSteps } = await supabase
-        .from('workflow_active_steps')
-        .select('node_id, assigned_user_id, status')
-        .eq('workflow_instance_id', workflowInstance.id)
-        .not('assigned_user_id', 'is', null)
-
-      if (activeSteps) {
-        for (const step of activeSteps) {
-          const userId = step.assigned_user_id
-          if (!userId) continue
-
-          const stepInfo = {
-            stepId: step.node_id,
-            stepName: getNodeLabel(step.node_id),
-            isActive: step.status === 'active'
-          }
-
-          // Add to node assignments map
-          if (!nodeAssignmentsMap[userId]) {
-            nodeAssignmentsMap[userId] = []
-          }
-
-          // Only add if not already present for this node
-          const existingSteps = nodeAssignmentsMap[userId]
-          if (!existingSteps.some((s: any) => s.stepId === stepInfo.stepId)) {
-            nodeAssignmentsMap[userId].push(stepInfo)
-          }
-
-          // Track for adding to team if not already in project_assignments
-          activeStepUsers.push({
-            userId,
-            stepId: stepInfo.stepId,
-            stepName: stepInfo.stepName
-          })
-        }
-      }
-    }
-
-    // Enrich assignments with workflow node info and primary role
+    // Enrich collaborator assignments with workflow info and memberType
     const enrichedAssignments = (assignments || []).map((assignment: any) => {
       const userId = assignment.user_id as string;
       const nodeAssignments = nodeAssignmentsMap[userId] || []
       const primaryRole = userRolesMap[userId] || null
+      const hasWorkflowSteps = nodeAssignments.length > 0
 
       return {
         ...assignment,
-        // Keep backward compatibility with workflow_step (first assignment)
-        workflow_step: nodeAssignments.length > 0 ? nodeAssignments[0] : null,
-        // New field: all workflow step assignments
+        workflow_step: hasWorkflowSteps ? nodeAssignments[0] : null,
         workflow_steps: nodeAssignments,
-        primary_role: primaryRole
+        primary_role: primaryRole,
+        // New field: memberType indicates how user is part of the team
+        memberType: hasWorkflowSteps ? 'both' : 'collaborator'
       }
     })
 
-    // Find users from active workflow steps who are NOT in project_assignments
-    // These users should appear in the Team Members section with their step assignments
-    const existingUserIds = new Set((assignments || []).map((a: any) => a.user_id))
-    const missingStepUserIds = [...new Set(activeStepUsers.map((u: any) => u.userId))]
-      .filter(userId => !existingUserIds.has(userId))
-
-    // Fetch user profiles for missing users
-    const virtualTeamMembers: Record<string, unknown>[] = []
-    if (missingStepUserIds.length > 0) {
-      const { data: missingUserProfiles } = await supabase
-        .from('user_profiles')
-        .select('id, name, email, image')
-        .in('id', missingStepUserIds)
-
-      // Get roles for these users
-      const { data: missingUserRoles } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          roles (name)
-        `)
-        .in('user_id', missingStepUserIds)
-
-      const missingRolesMap: Record<string, string> = {}
-      if (missingUserRoles) {
-        for (const ur of missingUserRoles) {
-          const roles = ur.roles as Record<string, unknown> | Record<string, unknown>[];
-          const roleName = Array.isArray(roles)
-            ? (roles[0]?.name as string)
-            : (roles?.name as string);
-
-          if (!missingRolesMap[ur.user_id] && roleName) {
-            missingRolesMap[ur.user_id] = roleName;
-          }
-        }
+    // Create workflow-only team members
+    const virtualTeamMembers = missingUserProfiles.map((profile: any) => {
+      const nodeAssignments = nodeAssignmentsMap[profile.id] || []
+      return {
+        id: `virtual-${profile.id}`,
+        user_id: profile.id,
+        role_in_project: 'workflow_step',
+        assigned_at: null,
+        assigned_by: null,
+        user_profiles: profile,
+        workflow_step: nodeAssignments.length > 0 ? nodeAssignments[0] : null,
+        workflow_steps: nodeAssignments,
+        primary_role: missingRolesMap[profile.id] || null,
+        is_virtual: true,
+        // New field: workflow-only members
+        memberType: 'workflow'
       }
+    })
 
-      // Create virtual team members from workflow step assignments
-      if (missingUserProfiles) {
-        for (const profile of missingUserProfiles) {
-          const nodeAssignments = nodeAssignmentsMap[profile.id] || []
-          virtualTeamMembers.push({
-            id: `virtual-${profile.id}`, // Virtual ID to distinguish from real assignments
-            user_id: profile.id,
-            role_in_project: 'workflow_step', // Special role indicating they're here via workflow
-            assigned_at: null,
-            assigned_by: null,
-            user_profiles: profile,
-            workflow_step: nodeAssignments.length > 0 ? nodeAssignments[0] : null,
-            workflow_steps: nodeAssignments,
-            primary_role: missingRolesMap[profile.id] || null,
-            is_virtual: true // Flag to indicate this is a workflow-only assignment
-          })
-        }
-      }
-    }
-
-    // Combine regular assignments with virtual team members from workflow steps
+    // Combine all members
     const allAssignments = [...enrichedAssignments, ...virtualTeamMembers]
 
     return NextResponse.json({

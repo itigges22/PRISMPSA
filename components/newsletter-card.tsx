@@ -35,25 +35,28 @@ export default function NewsletterCard({ className, canCreate = false }: Newslet
   const [canEditNewsletter, setCanEditNewsletter] = useState(false)
   const [canDeleteNewsletter, setCanDeleteNewsletter] = useState(false)
 
-  // Check permissions
+  // Check permissions - parallelized for faster loading
   useEffect(() => {
     if (!userProfile) return
-    
+
     async function checkPermissions() {
-      const view = await hasPermission(userProfile, Permission.VIEW_NEWSLETTERS)
-      const manage = await hasPermission(userProfile, Permission.MANAGE_NEWSLETTERS)
+      // Run permission checks in parallel for faster loading
+      const [view, manage] = await Promise.all([
+        hasPermission(userProfile, Permission.VIEW_NEWSLETTERS),
+        hasPermission(userProfile, Permission.MANAGE_NEWSLETTERS)
+      ])
 
       setCanViewNewsletters(view)
       setCanCreateNewsletter(manage)
       setCanEditNewsletter(manage)
       setCanDeleteNewsletter(manage)
-      
+
       // Only load newsletters if user can view them
       if (view) {
-    void loadNewsletters()
+        void loadNewsletters()
       }
     }
-    
+
     void checkPermissions()
   }, [userProfile])
 

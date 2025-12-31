@@ -391,6 +391,20 @@ async function loadSeedData(supabase: SupabaseClient) {
       created_by: '11111111-1111-1111-1111-000000000004',
       assigned_user_id: '11111111-1111-1111-1111-000000000007',
     },
+    // Project 7: Internal Tool - No workflow (demonstrates "Complete Project" button)
+    {
+      id: 'ffffffff-0001-0002-0003-000000000007',
+      name: 'Internal Dashboard Tool',
+      description: 'Simple internal project without workflow - use "Complete Project" button when done',
+      account_id: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000001',
+      status: 'in_progress',
+      priority: 'low',
+      start_date: '2025-01-15',
+      end_date: '2025-02-28',
+      estimated_hours: 40,
+      created_by: '11111111-1111-1111-1111-000000000003',
+      assigned_user_id: '11111111-1111-1111-1111-000000000004',
+    },
   ]);
 
   // Project assignments
@@ -406,6 +420,8 @@ async function loadSeedData(supabase: SupabaseClient) {
     { project_id: 'ffffffff-0001-0002-0003-000000000004', user_id: '11111111-1111-1111-1111-000000000005', role_in_project: 'Brand Designer', assigned_by: '11111111-1111-1111-1111-000000000003' },
     { project_id: 'ffffffff-0001-0002-0003-000000000005', user_id: '11111111-1111-1111-1111-000000000007', role_in_project: 'Content Creator', assigned_by: '11111111-1111-1111-1111-000000000004' },
     { project_id: 'ffffffff-0001-0002-0003-000000000006', user_id: '11111111-1111-1111-1111-000000000007', role_in_project: 'SEO Specialist', assigned_by: '11111111-1111-1111-1111-000000000004' },
+    // Project 7: Internal Dashboard Tool - No workflow project
+    { project_id: 'ffffffff-0001-0002-0003-000000000007', user_id: '11111111-1111-1111-1111-000000000004', role_in_project: 'Project Lead', assigned_by: '11111111-1111-1111-1111-000000000003' },
   ]);
 
   // Tasks

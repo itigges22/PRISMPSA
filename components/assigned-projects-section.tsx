@@ -56,6 +56,7 @@ export function AssignedProjectsSection({ userProfile }: AssignedProjectsSection
   // Use SWR hook for automatic caching and deduplication
   const { projects: assignedProjects, isLoading: projectsLoading, error: projectsError } = useProjects((userProfile as any)?.id as string | undefined, 10)
   const [visibleProjects, setVisibleProjects] = useState<ProjectWithDetails[]>([])
+  const [permissionsChecked, setPermissionsChecked] = useState(false)
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'name' | 'priority' | 'deadline'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -72,10 +73,12 @@ export function AssignedProjectsSection({ userProfile }: AssignedProjectsSection
   useEffect(() => {
     if (!userProfile || assignedProjects.length === 0) {
       setVisibleProjects([])
+      setPermissionsChecked(true)
       return
     }
 
     let isMounted = true
+    setPermissionsChecked(false)
 
     async function filterProjects() {
       // Batch all permission checks upfront instead of checking per project
@@ -89,12 +92,14 @@ export function AssignedProjectsSection({ userProfile }: AssignedProjectsSection
       // If user has VIEW_ALL_PROJECTS, they can see all projects - no need to check individual projects
       if (hasViewAllProjects) {
         setVisibleProjects([...assignedProjects])
+        setPermissionsChecked(true)
         return
       }
 
       // If user doesn't have VIEW_PROJECTS, they can't see any projects
       if (!hasViewProjects) {
         setVisibleProjects([])
+        setPermissionsChecked(true)
         return
       }
 
@@ -110,6 +115,7 @@ export function AssignedProjectsSection({ userProfile }: AssignedProjectsSection
       // Filter projects based on permission results
       const filtered = assignedProjects.filter((_: ProjectWithDetails, index: number) => projectPermissionChecks[index])
       setVisibleProjects(filtered)
+      setPermissionsChecked(true)
     }
 
     filterProjects()
@@ -273,7 +279,7 @@ export function AssignedProjectsSection({ userProfile }: AssignedProjectsSection
         </div>
       </CardHeader>
       <CardContent>
-        {projectsLoading ? (
+        {projectsLoading || !permissionsChecked ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-sm text-gray-600">Loading your projects...</p>

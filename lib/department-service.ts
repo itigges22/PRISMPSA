@@ -1,5 +1,6 @@
 import { createServerSupabase } from './supabase-server';
 import { Department, Project } from './supabase';
+import { DEFAULT_WEEKLY_HOURS } from './constants';
 
 // Department service for managing department data and analytics
 
@@ -550,7 +551,7 @@ class ServerDepartmentService {
     // Calculate workload distribution with real data
     const workloadDistribution = Array.from(uniqueUsers.values()).map((user: any) => {
       const actualHours = timeEntriesMap.get((user as any).id as string) || 0;
-      const availableHours = availabilityMap.get((user as any).id as string) || 0; // Default 0 hours/week if not set
+      const availableHours = availabilityMap.get((user as any).id as string) || DEFAULT_WEEKLY_HOURS; // Default 40 hours/week if not set
 
       // Calculate utilization percentage
       const workloadPercentage = availableHours > 0

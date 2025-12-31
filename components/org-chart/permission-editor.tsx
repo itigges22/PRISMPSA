@@ -186,30 +186,47 @@ export function PermissionEditor({
               
               {isExpanded && (
                 <div className="ml-6 space-y-3">
-                  {categoryPermissions.map((permission:any) => (
-                    <div key={permission} className="flex items-start space-x-3">
-                      <Checkbox
-                        id={permission}
-                        checked={(permissions as any)[permission] || false}
-                        onCheckedChange={(checked) => 
-                          { handlePermissionChange(permission, checked as boolean); }
-                        }
-                        disabled={disabled}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 space-y-1">
-                        <Label
-                          htmlFor={permission}
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          {getPermissionName(permission)}
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          {getPermissionDescription(permission)}
-                        </p>
+                  {categoryPermissions.map((permission:any) => {
+                    const isOverridePermission = (PermissionDefinitions as any)[permission]?.isOverride === true;
+                    return (
+                      <div
+                        key={permission}
+                        className={`flex items-start space-x-3 ${
+                          isOverridePermission
+                            ? 'bg-red-50 border border-red-200 rounded-md p-2 -ml-2'
+                            : ''
+                        }`}
+                      >
+                        <Checkbox
+                          id={permission}
+                          checked={(permissions as any)[permission] || false}
+                          onCheckedChange={(checked) =>
+                            { handlePermissionChange(permission, checked as boolean); }
+                          }
+                          disabled={disabled}
+                          className={`mt-1 ${isOverridePermission ? 'border-red-400' : ''}`}
+                        />
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={permission}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {getPermissionName(permission)}
+                            </Label>
+                            {isOverridePermission && (
+                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                                Override
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {getPermissionDescription(permission)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               
