@@ -2301,7 +2301,7 @@ CREATE POLICY "workflow_instances_insert" ON "public"."workflow_instances" FOR I
 
 
 
-CREATE POLICY "workflow_instances_select" ON "public"."workflow_instances" FOR SELECT USING ("public"."user_is_superadmin"() OR "public"."user_has_permission"('view_all_workflows'::"text") OR "public"."user_can_view_workflow"("id"));
+CREATE POLICY "workflow_instances_select" ON "public"."workflow_instances" FOR SELECT USING ("public"."user_is_superadmin"() OR "public"."user_has_permission"('view_all_workflows'::"text") OR "public"."user_has_permission"('execute_any_workflow'::"text") OR "public"."user_has_permission"('manage_all_workflows'::"text") OR "public"."user_can_view_workflow"("id"));
 
 
 
