@@ -948,7 +948,8 @@ function findConditionalNextNodeWithFormData(
 
 /**
  * Assign project to user(s) based on workflow node
- * Also handles removing previous assignments (except project creator)
+ * Team members ACCUMULATE across workflow steps - they are not removed
+ * Each member tracks whether they were added manually or via workflow step
  */
 async function assignProjectToNode(
   supabase: any,
@@ -960,23 +961,12 @@ async function assignProjectToNode(
   if (!supabase) return;
 
   try {
-    // Get project creator to preserve their access
+    // Get project info for account access
     const { data: project } = await supabase
       .from('projects')
       .select('account_id, created_by')
       .eq('id', projectId)
       .single();
-
-    const creatorId = project?.created_by;
-
-    // Mark all current assignments as removed (except for the project creator)
-    // This ensures previous workflow step users lose active access
-    await supabase
-      .from('project_assignments')
-      .update({ removed_at: new Date().toISOString() })
-      .eq('project_id', projectId)
-      .is('removed_at', null)
-      .neq('user_id', creatorId || '00000000-0000-0000-0000-000000000000');
 
     // Get users for the role/entity
     let userIds: string[] = [];
@@ -992,168 +982,64 @@ async function assignProjectToNode(
         .eq('role_id', node.entity_id);
 
       userIds = userRoles?.map((ur: any) => {
-        const userId = ur.user_id;
-        return isString(userId) ? userId : '';
+        const usrId = ur.user_id;
+        return isString(usrId) ? usrId : '';
       }).filter((id: any) => id !== '') || [];
     }
 
-    // Create project assignments for each user (including re-adding creator if needed)
-    if (userIds.length > 0) {
-      // Also ensure creator keeps active assignment
-      if (creatorId && !userIds.includes(creatorId)) {
-        userIds.push(creatorId);
+    // Get workflow node details for tracking
+    const nodeId = isString(node.id) ? node.id : null;
+    const nodeLabel = isString(node.label) ? node.label : null;
+
+    // Add each user (skip if they already have an active assignment)
+    for (const userId of userIds) {
+      // Check if user already has an ACTIVE assignment for this project
+      const { data: existingActive } = await supabase
+        .from('project_assignments')
+        .select('id, source_type')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .is('removed_at', null)
+        .single();
+
+      if (existingActive) {
+        // User already has an active assignment - skip (don't overwrite their source)
+        console.log(`[assignProjectToNode] User ${userId} already assigned to project ${projectId}, skipping`);
+        continue;
       }
 
-      for (const userId of userIds) {
-        // Try to update existing removed assignment first, otherwise insert new
-        const { data: existing } = await supabase
-          .from('project_assignments')
-          .select('id')
-          .eq('project_id', projectId)
-          .eq('user_id', userId)
-          .single();
-
-        if (existing) {
-          // Reactivate existing assignment
-          await supabase
-            .from('project_assignments')
-            .update({
-              removed_at: null,
-              role_in_project: userId === creatorId ? 'creator' : node.node_type,
-              assigned_by: assignedBy
-            })
-            .eq('id', existing.id);
-        } else {
-          // Insert new assignment
-          await supabase.from('project_assignments').insert({
-            project_id: projectId,
-            user_id: userId,
-            role_in_project: userId === creatorId ? 'creator' : node.node_type,
-            assigned_by: assignedBy,
-          });
-        }
-
-        // Add to project_contributors for time tracking history
-        await supabase
-          .from('project_contributors')
-          .upsert({
-            project_id: projectId,
-            user_id: userId,
-            contribution_type: 'workflow',
-            last_contributed_at: new Date().toISOString(),
-          }, { onConflict: 'project_id,user_id' });
-      }
-
-      // Grant account access if needed
-      if (project) {
-        const accountMembers = userIds.map((userId) => ({
-          user_id: userId,
-          account_id: project.account_id,
-        }));
-
-        // Insert account members (ignore duplicates)
-        await supabase
-          .from('account_members')
-          .upsert(accountMembers, { onConflict: 'user_id,account_id', ignoreDuplicates: true });
-      }
-    }
-  } catch (error: unknown) {
-    console.error('Error assigning project to node:', error);
-  }
-}
-
-/**
- * Assign project to multiple parallel nodes at once
- * This is used when a workflow forks into parallel branches with different user assignments
- * We remove old assignments ONCE, then add all new assignments together
- */
-async function assignProjectToParallelNodes(
-  supabase: any,
-  projectId: string,
-  assignments: Array<{ node: Record<string, unknown>; userId: string | null }>,
-  assignedBy: string
-): Promise<void> {
-  if (!supabase || assignments.length === 0) return;
-
-  try {
-    // Get project creator to preserve their access
-    const { data: project } = await supabase
-      .from('projects')
-      .select('account_id, created_by')
-      .eq('id', projectId)
-      .single();
-
-    const creatorId = project?.created_by;
-
-    // Mark all current assignments as removed ONCE (except for the project creator)
-    await supabase
-      .from('project_assignments')
-      .update({ removed_at: new Date().toISOString() })
-      .eq('project_id', projectId)
-      .is('removed_at', null)
-      .neq('user_id', creatorId || '00000000-0000-0000-0000-000000000000');
-
-    // Collect all users to assign from all parallel branches
-    const allUserIds = new Set<string>();
-
-    // For each assignment, add the specific user or all users in the role
-    for (const assignment of assignments) {
-      if (assignment.userId) {
-        // Specific user assigned
-        allUserIds.add(assignment.userId);
-      } else {
-        const entityId = assignment.node.entity_id;
-        if (isString(entityId)) {
-          // Get all users with this role
-          const { data: userRoles } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .eq('role_id', entityId);
-
-          userRoles?.forEach((ur: any) => {
-            const userId = ur.user_id;
-            if (isString(userId)) {
-              allUserIds.add(userId);
-            }
-          });
-        }
-      }
-    }
-
-    // Always include the creator
-    if (creatorId) {
-      allUserIds.add(creatorId);
-    }
-
-    // Create/update project assignments for each user
-    for (const userId of allUserIds) {
-      const roleInProject = userId === creatorId ? 'creator' : 'workflow';
-
-      // Try to update existing removed assignment first, otherwise insert new
-      const { data: existing } = await supabase
+      // Check if user has an inactive (removed) assignment we can reactivate
+      const { data: existingInactive } = await supabase
         .from('project_assignments')
         .select('id')
         .eq('project_id', projectId)
         .eq('user_id', userId)
+        .not('removed_at', 'is', null)
         .single();
 
-      if (existing) {
-        // Reactivate existing assignment
+      if (existingInactive) {
+        // Reactivate existing assignment with workflow source
         await supabase
           .from('project_assignments')
           .update({
             removed_at: null,
-            role_in_project: roleInProject,
-            assigned_by: assignedBy
+            role_in_project: nodeLabel || node.node_type,
+            assigned_by: assignedBy,
+            source_type: 'workflow',
+            workflow_node_id: nodeId,
+            workflow_node_label: nodeLabel
           })
-          .eq('id', existing.id);
+          .eq('id', existingInactive.id);
       } else {
-        // Insert new assignment
+        // Insert new assignment with workflow source
         await supabase.from('project_assignments').insert({
           project_id: projectId,
           user_id: userId,
-          role_in_project: roleInProject,
+          role_in_project: nodeLabel || node.node_type,
           assigned_by: assignedBy,
+          source_type: 'workflow',
+          workflow_node_id: nodeId,
+          workflow_node_label: nodeLabel
         });
       }
 
@@ -1169,9 +1055,140 @@ async function assignProjectToParallelNodes(
     }
 
     // Grant account access if needed
-    if (project) {
-      const accountMembers = Array.from(allUserIds).map((userId) => ({
-        user_id: userId,
+    if (project && userIds.length > 0) {
+      const accountMembers = userIds.map((usrId) => ({
+        user_id: usrId,
+        account_id: project.account_id,
+      }));
+
+      // Insert account members (ignore duplicates)
+      await supabase
+        .from('account_members')
+        .upsert(accountMembers, { onConflict: 'user_id,account_id', ignoreDuplicates: true });
+    }
+  } catch (error: unknown) {
+    console.error('Error assigning project to node:', error);
+  }
+}
+
+/**
+ * Assign project to multiple parallel nodes at once
+ * This is used when a workflow forks into parallel branches with different user assignments
+ * Team members ACCUMULATE - they are not removed when new members are added
+ */
+async function assignProjectToParallelNodes(
+  supabase: any,
+  projectId: string,
+  assignments: Array<{ node: Record<string, unknown>; userId: string | null }>,
+  assignedBy: string
+): Promise<void> {
+  if (!supabase || assignments.length === 0) return;
+
+  try {
+    // Get project info for account access
+    const { data: project } = await supabase
+      .from('projects')
+      .select('account_id, created_by')
+      .eq('id', projectId)
+      .single();
+
+    // Build a map of userId -> node info (for tracking which node added them)
+    const userNodeMap = new Map<string, { nodeId: string | null; nodeLabel: string | null }>();
+
+    // For each assignment, collect user IDs with their source node
+    for (const assignment of assignments) {
+      const nodeId = isString(assignment.node.id) ? assignment.node.id : null;
+      const nodeLabel = isString(assignment.node.label) ? assignment.node.label : null;
+
+      if (assignment.userId) {
+        // Specific user assigned
+        userNodeMap.set(assignment.userId, { nodeId, nodeLabel });
+      } else {
+        const entityId = assignment.node.entity_id;
+        if (isString(entityId)) {
+          // Get all users with this role
+          const { data: userRoles } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role_id', entityId);
+
+          userRoles?.forEach((ur: any) => {
+            const usrId = ur.user_id;
+            if (isString(usrId)) {
+              userNodeMap.set(usrId, { nodeId, nodeLabel });
+            }
+          });
+        }
+      }
+    }
+
+    // Add each user (skip if they already have an active assignment)
+    for (const [userId, nodeInfo] of userNodeMap) {
+      // Check if user already has an ACTIVE assignment for this project
+      const { data: existingActive } = await supabase
+        .from('project_assignments')
+        .select('id, source_type')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .is('removed_at', null)
+        .single();
+
+      if (existingActive) {
+        // User already has an active assignment - skip
+        console.log(`[assignProjectToParallelNodes] User ${userId} already assigned to project ${projectId}, skipping`);
+        continue;
+      }
+
+      // Check if user has an inactive (removed) assignment we can reactivate
+      const { data: existingInactive } = await supabase
+        .from('project_assignments')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .not('removed_at', 'is', null)
+        .single();
+
+      if (existingInactive) {
+        // Reactivate existing assignment with workflow source
+        await supabase
+          .from('project_assignments')
+          .update({
+            removed_at: null,
+            role_in_project: nodeInfo.nodeLabel || 'workflow',
+            assigned_by: assignedBy,
+            source_type: 'workflow',
+            workflow_node_id: nodeInfo.nodeId,
+            workflow_node_label: nodeInfo.nodeLabel
+          })
+          .eq('id', existingInactive.id);
+      } else {
+        // Insert new assignment with workflow source
+        await supabase.from('project_assignments').insert({
+          project_id: projectId,
+          user_id: userId,
+          role_in_project: nodeInfo.nodeLabel || 'workflow',
+          assigned_by: assignedBy,
+          source_type: 'workflow',
+          workflow_node_id: nodeInfo.nodeId,
+          workflow_node_label: nodeInfo.nodeLabel
+        });
+      }
+
+      // Add to project_contributors for time tracking history
+      await supabase
+        .from('project_contributors')
+        .upsert({
+          project_id: projectId,
+          user_id: userId,
+          contribution_type: 'workflow',
+          last_contributed_at: new Date().toISOString(),
+        }, { onConflict: 'project_id,user_id' });
+    }
+
+    // Grant account access if needed
+    if (project && userNodeMap.size > 0) {
+      const accountMembers = Array.from(userNodeMap.keys()).map((usrId) => ({
+        user_id: usrId,
         account_id: project.account_id,
       }));
 
@@ -1183,7 +1200,7 @@ async function assignProjectToParallelNodes(
 
     console.log('Assigned project to parallel nodes:', {
       projectId,
-      userCount: allUserIds.size,
+      userCount: userNodeMap.size,
       nodeCount: assignments.length
     });
   } catch (error: unknown) {

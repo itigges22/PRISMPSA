@@ -649,7 +649,11 @@ CREATE TABLE IF NOT EXISTS "public"."project_assignments" (
     "assigned_by" "uuid",
     "removed_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "source_type" "text" DEFAULT 'manual'::"text",
+    "workflow_node_id" "uuid",
+    "workflow_node_label" "text",
+    CONSTRAINT "project_assignments_source_type_check" CHECK ("source_type" = ANY (ARRAY['manual'::"text", 'workflow'::"text", 'creator'::"text"]))
 );
 
 
@@ -1367,6 +1371,11 @@ CREATE INDEX "idx_project_assignments_removed_at" ON "public"."project_assignmen
 CREATE INDEX "idx_project_assignments_user_id" ON "public"."project_assignments" USING "btree" ("user_id");
 
 
+CREATE INDEX "idx_project_assignments_source_type" ON "public"."project_assignments" USING "btree" ("source_type");
+
+
+CREATE INDEX "idx_project_assignments_workflow_node_id" ON "public"."project_assignments" USING "btree" ("workflow_node_id");
+
 
 CREATE INDEX "idx_project_issues_project_id" ON "public"."project_issues" USING "btree" ("project_id");
 
@@ -1744,6 +1753,9 @@ ALTER TABLE ONLY "public"."project_assignments"
 ALTER TABLE ONLY "public"."project_assignments"
     ADD CONSTRAINT "project_assignments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("id") ON DELETE CASCADE;
 
+
+ALTER TABLE ONLY "public"."project_assignments"
+    ADD CONSTRAINT "project_assignments_workflow_node_id_fkey" FOREIGN KEY ("workflow_node_id") REFERENCES "public"."workflow_nodes"("id") ON DELETE SET NULL;
 
 
 ALTER TABLE ONLY "public"."project_issues"

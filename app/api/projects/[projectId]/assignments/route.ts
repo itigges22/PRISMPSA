@@ -35,6 +35,9 @@ export async function GET(
           role_in_project,
           assigned_at,
           assigned_by,
+          source_type,
+          workflow_node_id,
+          workflow_node_label,
           user_profiles:user_id (
             id,
             name,
@@ -195,15 +198,28 @@ export async function GET(
       const userId = assignment.user_id as string;
       const nodeAssignments = nodeAssignmentsMap[userId] || []
       const primaryRole = userRolesMap[userId] || null
-      const hasWorkflowSteps = nodeAssignments.length > 0
+      const sourceType = assignment.source_type || 'manual'
+
+      // Determine memberType from source_type
+      // - 'creator' stays as 'creator'
+      // - 'workflow' stays as 'workflow'
+      // - 'manual' becomes 'collaborator'
+      let memberType: string
+      if (sourceType === 'creator') {
+        memberType = 'creator'
+      } else if (sourceType === 'workflow') {
+        memberType = 'workflow'
+      } else {
+        memberType = 'collaborator'
+      }
 
       return {
         ...assignment,
-        workflow_step: hasWorkflowSteps ? nodeAssignments[0] : null,
+        workflow_step: nodeAssignments.length > 0 ? nodeAssignments[0] : null,
         workflow_steps: nodeAssignments,
         primary_role: primaryRole,
-        // New field: memberType indicates how user is part of the team
-        memberType: hasWorkflowSteps ? 'both' : 'collaborator'
+        // memberType indicates how user was added to the team
+        memberType
       }
     })
 
@@ -333,7 +349,8 @@ export async function POST(
         .from('project_assignments')
         .update({
           removed_at: null,
-          role_in_project: roleInProject || 'member'
+          role_in_project: roleInProject || 'member',
+          source_type: 'manual'
         })
         .eq('id', existingAssignment.id)
 
@@ -349,7 +366,8 @@ export async function POST(
           project_id: projectId,
           user_id: userId,
           role_in_project: roleInProject || 'member',
-          assigned_by: (user as any).id
+          assigned_by: (user as any).id,
+          source_type: 'manual'
         })
 
       if (insertError) {

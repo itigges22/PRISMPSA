@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
         user_id: (user as any).id,
         role_in_project: 'Project Creator',
         assigned_at: new Date().toISOString(),
-        assigned_by: (user as any).id
+        assigned_by: (user as any).id,
+        source_type: 'creator'
       })
 
     if (assignmentError) {

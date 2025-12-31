@@ -329,6 +329,9 @@ export default function ProjectDetailPage() {
     workflow_step?: { stepId: string; stepName: string } | null
     workflow_steps?: Array<{ stepId: string; stepName: string }>
     primary_role?: string | null
+    memberType?: 'creator' | 'collaborator' | 'workflow'
+    source_type?: 'creator' | 'manual' | 'workflow'
+    workflow_node_label?: string | null
   }>>([])
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false)
   const [addingMember, setAddingMember] = useState(false)
@@ -2996,18 +2999,17 @@ export default function ProjectDetailPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className="text-sm font-medium text-gray-900">{member.user_profiles?.name || 'Unknown User'}</p>
-                                {/* Member type badges */}
-                                {member.memberType === 'both' && (
-                                  <>
-                                    <span className="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Collaborator</span>
-                                    <span className="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">Workflow</span>
-                                  </>
+                                {/* Member type badges - shows how they were added */}
+                                {member.memberType === 'creator' && (
+                                  <span className="text-[9px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Project Creator</span>
                                 )}
                                 {member.memberType === 'collaborator' && (
                                   <span className="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Collaborator</span>
                                 )}
                                 {member.memberType === 'workflow' && (
-                                  <span className="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">Workflow</span>
+                                  <span className="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">
+                                    {member.workflow_node_label || 'Workflow'}
+                                  </span>
                                 )}
                               </div>
                               {/* Show workflow step assignments */}

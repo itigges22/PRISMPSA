@@ -185,13 +185,14 @@ export async function POST(
         project_id: projectId,
         user_id: (user as any).id,
         role_in_project: 'collaborator',
-        assigned_by: (user as any).id
+        assigned_by: (user as any).id,
+        source_type: 'manual'
       });
     } else if (existingAssignment.removed_at) {
       // Reactivate removed assignment
       await supabase
         .from('project_assignments')
-        .update({ removed_at: null, role_in_project: 'collaborator' })
+        .update({ removed_at: null, role_in_project: 'collaborator', source_type: 'manual' })
         .eq('id', existingAssignment.id);
     }
 
