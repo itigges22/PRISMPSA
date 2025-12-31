@@ -1,6 +1,3 @@
-Dumping schemas from local database...
-
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -217,7 +214,8 @@ BEGIN
   RETURN EXISTS (
     SELECT 1
     FROM workflow_instances wi
-    LEFT JOIN project_assignments pa ON pa.project_id = wi.project_id
+    LEFT JOIN project_assignments pa ON pa.project_id = wi.project_id AND pa.removed_at IS NULL
+    LEFT JOIN projects p ON p.id = wi.project_id
     WHERE wi.id = user_can_manage_workflow.workflow_instance_id
     AND (
       user_is_superadmin()
@@ -249,7 +247,8 @@ BEGIN
   RETURN EXISTS (
     SELECT 1
     FROM workflow_instances wi
-    LEFT JOIN project_assignments pa ON pa.project_id = wi.project_id
+    LEFT JOIN project_assignments pa ON pa.project_id = wi.project_id AND pa.removed_at IS NULL
+    LEFT JOIN projects p ON p.id = wi.project_id
     LEFT JOIN tasks t ON t.id = wi.task_id
     WHERE wi.id = user_can_view_workflow.workflow_instance_id
     AND (
@@ -257,6 +256,8 @@ BEGIN
       OR user_has_permission('view_all_workflows')
       OR (pa.user_id = auth.uid() AND pa.removed_at IS NULL)
       OR t.assigned_to = auth.uid()
+      OR p.created_by = auth.uid()
+      OR p.assigned_user_id = auth.uid()
     )
   );
 END;
@@ -2300,7 +2301,7 @@ CREATE POLICY "workflow_instances_insert" ON "public"."workflow_instances" FOR I
 
 
 
-CREATE POLICY "workflow_instances_select" ON "public"."workflow_instances" FOR SELECT USING ("public"."user_can_view_workflow"("id"));
+CREATE POLICY "workflow_instances_select" ON "public"."workflow_instances" FOR SELECT USING ("public"."user_is_superadmin"() OR "public"."user_has_permission"('view_all_workflows'::"text") OR "public"."user_can_view_workflow"("id"));
 
 
 
@@ -2686,5 +2687,3 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-A new version of Supabase CLI is available: v2.67.1 (currently installed v2.65.3)
-We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
